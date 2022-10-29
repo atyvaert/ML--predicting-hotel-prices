@@ -63,14 +63,16 @@ hist(train_X$car_parking_spaces)
 boxplot(train_X$car_parking_spaces)
 # enkel 0 of 1 (informatie voor encoding)
 
+#8 country
 table(train_X$country)
 
+#15 last_status_date
+sum(is.na(train$last_status_date))
+# what to do with 2615 missing values (where are we going to use this column)
 
-
-
-
-
-
+#16 lead_time
+boxplot(train_X$lead_time)
+hist(train_X$lead_time, breaks = 1000)
 
 
 
