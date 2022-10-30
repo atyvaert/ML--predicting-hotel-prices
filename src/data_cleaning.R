@@ -66,6 +66,10 @@ train_X <- train_X_impute
 
 
 
+#train_y
+train_y <- as.double(gsub('.{6}$', '', train_y))
 
 #WRITE
 write.csv(train,"data/silver_data/train.csv", row.names = FALSE)
+write.csv(train_X,"data/silver_data/train_X.csv", row.names = FALSE)
+write.csv(train_y,"data/silver_data/train_y.csv", row.names = FALSE)
