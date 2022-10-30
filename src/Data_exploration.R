@@ -73,34 +73,78 @@ sum(is.na(train$last_status_date))
 #16 lead_time
 boxplot(train_X$lead_time)
 hist(train_X$lead_time, breaks = 1000)
+#0 when cancelled
+
+#17 market_segment
+table(train_X$market_segment)
+
+#18 meal_booked
+table(train_X$meal_booked)
+#No NA
+
+#19 nr_adults
+table(train_X$nr_adults)
+#values 26, 27 -> large groups (cancelled)
+
+#20 nr_babies
+table(train_X$nr_babies)
+#string n/ = 0
+
+#21 nr_booking_changes  
+barplot(table(train_X$nr_booking_changes))
+table(train_X$nr_booking_changes)
+# frequency decreases drastically, and after 5 it becomes really small. Lots of Na which = 0!
+
+#22 nr_children        
+barplot(table(train_X$nr_children))
+table(train_X$nr_children)
+# Vast majority has 0 zero children, 1 and 2 also prevalent (>2000), 3 (44 times), and 1 observation of 10 children => mistake?
+
+#23 nr_nights  
+barplot(table(train_X$nr_nights))
+table(train_X$nr_nights)
+#(0 to 10 is well present, >10 less observations), lot of different amount of days with 1 observations...
+
+#24 nr_previous_bookings  
+barplot(table(train_X$nr_previous_bookings))
+table(train_X$nr_previous_bookings)
+#lots of hifg values but extreme low frequencies (1)
+
+#25 previous_bookings_not_canceled  
+barplot(table(train_X$previous_bookings_not_canceled))
+table(train_X$previous_bookings_not_canceled)
+
+#26 previous_cancellations  
+barplot(table(train_X$previous_cancellations))
+table(train_X$previous_cancellations)
+# 0 - 8 captures most of observations, but goes through 72...
+
+#27 reserved_room_type  
+barplot(table(train_X$reserved_room_type))
+table(train_X$reserved_room_type)
+#L and P have few observations
+# I and K were NEVER reserved, but assigned. A lot of A reservations are not assigned to A 
+
+#28 special_requests  
+barplot(table(train_X$special_requests))
+table(train_X$special_requests)
+#decreases exponentially
 
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# Na overview
+# 83045 rows
+sum(is.na((train_X$nr_booking_changes))) #72192, a lot!
+sum(is.na((train_X$nr_children))) #16894
+sum(is.na((train_X$nr_nights))) #0
+sum(is.na((train_X$nr_previous_bookings))) #18394
+sum(is.na((train_X$previous_bookings_not_canceled))) #5027
+sum(is.na((train_X$previous_cancellations))) #4992
+sum(is.na((train_X$reserved_room_type))) #0
+sum(is.na((train_X$special_requests))) #0
 
 
 
