@@ -73,20 +73,22 @@ sum(is.na(train$last_status_date))
 #16 lead_time
 boxplot(train_X$lead_time)
 hist(train_X$lead_time, breaks = 1000)
+#0 when cancelled
 
+#17 market_segment
+table(train_X$market_segment)
 
+#18 meal_booked
+table(train_X$meal_booked)
+#No NA
 
+#19 nr_adults
+table(train_X$nr_adults)
+#values 26, 27 -> large groups (cancelled)
 
-
-
-
-
-
-
-
-
-
-
+#20 nr_babies
+table(train_X$nr_babies)
+#string n/ = 0
 
 
 
