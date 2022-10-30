@@ -38,5 +38,34 @@ train_X_impute <- train_X
 train_X_impute$nr_babies <- as.numeric(str_replace_all(train_X$nr_babies, "n/a", "0"))
 train_X <- train_X_impute
 
+#---------
+#21 impute nr_booking_changes: "n/a" -> 0
+train_X_impute <- train_X
+train_X_impute$nr_booking_changes[is.na(train_X_impute$nr_booking_changes)] <- 0
+train_X <- train_X_impute
+
+#22 impute nr_children with mode (0)       
+train_X_impute <- train_X
+train_X_impute$nr_children[is.na(train_X_impute$nr_children)] <- getmode(train_X$nr_children)
+train_X <- train_X_impute
+
+# tot hier done
+
+#19 impute nr_adults with mode
+train_X_impute <- train_X
+train_X_impute$nr_adults[is.na(train_X_impute$nr_adults)] <- getmode(train_X$nr_adults)
+train_X <- train_X_impute
+
+#19 impute nr_adults with mode
+train_X_impute <- train_X
+train_X_impute$nr_adults[is.na(train_X_impute$nr_adults)] <- getmode(train_X$nr_adults)
+train_X <- train_X_impute
+
+#--------
+
+
+
+
+
 #WRITE
 write.csv(train,"data/silver_data/train.csv", row.names = FALSE)
