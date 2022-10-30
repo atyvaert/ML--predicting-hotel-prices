@@ -102,17 +102,32 @@ train_X_impute <- train_X
 train_X_impute$nr_children[is.na(train_X_impute$nr_children)] <- getmode(train_X$nr_children)
 train_X <- train_X_impute
 
-# tot hier done
+#23 impute nr_nights
+# No Na values!
 
-#19 impute nr_adults with mode
+#24 impute nr_previous_bookings with mode (0)  
 train_X_impute <- train_X
-train_X_impute$nr_adults[is.na(train_X_impute$nr_adults)] <- getmode(train_X$nr_adults)
+train_X_impute$nr_previous_bookings[is.na(train_X_impute$nr_previous_bookings)] <- getmode(train_X$nr_previous_bookings)
 train_X <- train_X_impute
 
-#19 impute nr_adults with mode
+#25 impute previous_bookings_not_canceled with mode (0) 
 train_X_impute <- train_X
-train_X_impute$nr_adults[is.na(train_X_impute$nr_adults)] <- getmode(train_X$nr_adults)
+train_X_impute$previous_bookings_not_canceled[is.na(train_X_impute$previous_bookings_not_canceled)] <- getmode(train_X$previous_bookings_not_canceled)
 train_X <- train_X_impute
+
+#26 impute previous_cancellations with mode (0)   
+train_X_impute <- train_X
+train_X_impute$previous_cancellations[is.na(train_X_impute$previous_cancellations)] <- getmode(train_X$previous_cancellations)
+train_X <- train_X_impute
+
+#27 reserved_room_type  
+# No Na values!
+
+#28 special_requests  
+# No Na values!
+
+
+
 
 #--------
 

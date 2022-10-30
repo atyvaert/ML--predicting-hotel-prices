@@ -152,4 +152,3 @@ sum(is.na((train_X$special_requests))) #0
 
 
 
-
