@@ -4,8 +4,9 @@
 ##############################################################
 ##############################################################
 rm(list = ls())
-setwd(dir = '/Users/Artur/Desktop/uni jaar 6 sem 1/machine learning/groepswerk/R/data')
-train <- read.csv('./train.csv')
+setwd(dir = 'C:/Users/vikto/OneDrive/Documenten/GroepswerkMachineLearning/ml22-team10/data/bronze_data')
+#setwd(dir = '/Users/Artur/Desktop/uni jaar 6 sem 1/machine learning/groepswerk/R/data')
+train <- read.csv('./train.csv', fileEncoding = 'latin1')
 test_X <- read.csv('./test.csv')
 
 
@@ -105,7 +106,35 @@ cut_off_point_perc <- cut_off_point/(sum(cut_off_point))
 sort(cut_off_point_perc, decreasing  = T)
 # 13 dummies hierop gebaseerd (tot het ten minste 0.01% van de data voorsteld)
 
+#  9 customer type 
+train_X$customer_type
+barplot(table(train_X$customer_type))
+# categorical variable
 
+# 10 days in waiting list 
+train_X$days_in_waiting_list
+hist(train_X$days_in_waiting_list)
+# numerical variable
+
+# 11 deposit 
+train_X$deposit
+barplot(table(train_X$deposit))
+# categorical variable
+
+# 12 hotel type 
+train_X$hotel_type
+barplot(table(train_X$hotel_type))
+# categorical variable
+
+# 13 is repeated guest 
+train_X$is_repeated_guest
+barplot(table(train_X$is_repeated_guest))
+# binary variable
+
+# 14 last_status
+train_X$last_status
+barplot(table(train_X$last_status))
+# categorical variable
 
 #15 last_status_date
 train_X$last_status_date
