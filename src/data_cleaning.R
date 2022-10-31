@@ -101,12 +101,10 @@ impute <- function(x, method = mean, val = NULL){
 
 
 # impute numerical variables with the mean
-num.cols <- c('days_in_waiting_list', 'lead time')
+num.cols <- c('days_in_waiting_list', 'lead_time')
 train_X_impute[, num.cols] <- lapply(train_X_impute[, num.cols], 
                                      FUN = impute,
                                      method = mean)
-
-quantile(train_X_impute$car_parking_spaces, na.rm = T, probs = seq(0, 1, 0.01))
 
 test_X_impute[, num.cols] <- mapply(test_X_impute[, num.cols],
                                     FUN = impute,
@@ -119,8 +117,6 @@ median.cols <- c('car_parking_spaces', 'nr_adults', 'nr_children', 'nr_previous_
 train_X_impute[, median.cols] <- lapply(train_X_impute[, median.cols], 
                                      FUN = impute,
                                      method = median)
-
-quantile(train_X_impute$car_parking_spaces, na.rm = T, probs = seq(0, 1, 0.01))
 
 test_X_impute[, median.cols] <- mapply(test_X_impute[, median.cols],
                                     FUN = impute,
@@ -136,7 +132,6 @@ modus <- function(x, na.rm = FALSE) {
 }
 
 # handle
-str(train_X)
 cat.cols <- c('booking_distribution_channel', 'country', 'customer_type', 'deposit', 'hotel_type',
               'is_repeated_guest', 'last_status', 'market_segment')
 train_X_impute[, cat.cols] <- lapply(train_X_impute[, cat.cols],
@@ -171,8 +166,9 @@ colMeans(is.na(test_X_impute))
 ##############################################################
 train_X_outlier <- train_X_impute
 
-# VRAAG: OOK NODIG VORO TEST SET?
-test_X_outlier <- test_X_impute
+# VRAAG: OOK NODIG VOOR TEST SET?
+# DENK DAT JE ZE ERIN MOET LATEN IN TEST SET WANT IS IN ECHT OOK ZO
+# test_X_outlier <- test_X_impute
 
 # make a vector of all the variables of which valid outliers need to be handled
 outlier.cols <- c()
@@ -197,7 +193,7 @@ handle_outlier_z <- function(col){
 
 # handle all the outlier at once
 train_X_outlier[, outlier.cols] <-  sapply(train_X_impute[, outlier.cols], FUN = handle_outlier_z)
-test_X_outlier[, outlier.cols] <-  sapply(test_X_outlier[, outlier.cols], FUN = handle_outlier_z)
+# test_X_outlier[, outlier.cols] <-  sapply(test_X_outlier[, outlier.cols], FUN = handle_outlier_z)
 
 
 ##############################################################
@@ -205,7 +201,8 @@ test_X_outlier[, outlier.cols] <-  sapply(test_X_outlier[, outlier.cols], FUN = 
 # 4. Parsing dates
 ##############################################################
 ##############################################################
-# VRAAG: MOET DIT OOK VOOR TEST SET?
+# VRAAG: MOET DIT OOK VOOR TEST SET? denk het wel
+# HIER WEL AANGEZIEN DEZE DATA NORMAAL OOK ZO BINNEN KOMT
 
 
 # Parse arrival_date to filter out the month, day of the month and year
@@ -230,9 +227,16 @@ test_X_outlier$posix_last_status <- as.POSIXct(test_X_outlier$last_status_date, 
 
 
 #WRITE
-write.csv(train,"data/silver_data/train.csv", row.names = FALSE)
-write.csv(train_X,"data/silver_data/train_X.csv", row.names = FALSE)
-write.csv(train_y,"data/silver_data/train_y.csv", row.names = FALSE)
+training_data_after_data_cleaning <- train_X_outlier
+training_data_after_data_cleaning$average_daily_rate <- train_y
+
+test_data_after_data_cleaning <- test_X_outlier
+
+setwd(dir = '/Users/Artur/Desktop/uni jaar 6 sem 1/machine learning/ml22-team10/')
+write.csv(training_data_after_data_cleaning,"data/silver_data/train.csv", row.names = FALSE)
+write.csv(test_data_after_data_cleaning,"data/silver_data/train.csv", row.names = FALSE)
+#write.csv(train_X,"data/silver_data/train_X.csv", row.names = FALSE)
+#write.csv(train_y,"data/silver_data/train_y.csv", row.names = FALSE)
 
 
 ##########@
