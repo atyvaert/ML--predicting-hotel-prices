@@ -3,13 +3,18 @@
 # Feature engineering
 ##############################################################
 ##############################################################
-
+library(readr)
+library(dummy)
 
 # import data
 setwd(dir = '/Users/Artur/Desktop/uni jaar 6 sem 1/machine learning/ml22-team10/data/silver_data')
 train <- read.csv('./train.csv')
 test_X <- read.csv('./test.csv')
 
+#for Viktor
+setwd(dir = 'C:/Users/vikto/OneDrive - UGent/TweedeMaster/MachineLearning/ML_Team10/data/silver_data')
+train <- read.csv('./train.csv', fileEncoding = 'latin1')
+test_X <- read.csv('./test.csv')
 # separate dependent and independent variables
 train_X <- subset(train, select = -c(average_daily_rate))
 train_y <- train$average_daily_rate
@@ -44,11 +49,13 @@ test_X_encode <- test_X
 # we only select the top 10 levels with highest frequency so our model does not explode
 # For all cases, this includes most of the data: KIJKEN ALS DIT KLOPT BIJ DE REST
 cats <- categories(train_X_encode[, c('assigned_room_type', 'booking_distribution_channel',
-                                      'canceled', 'country')], p = 10)
+                                      'canceled', 'country', 'customer_type', 'deposit',
+                                      'hotel_type', 'is_repeated_guest', 'last_status')], p = 10)
 
 # apply on train set (exclude reference categories)
 dummies_train <- dummy(train_X_encode[,c('assigned_room_type', 'booking_distribution_channel', 
-                                         'canceled', 'country')], object = cats)
+                                         'canceled', 'country', 'customer_type', 'deposit',
+                                         'hotel_type', 'is_repeated_guest', 'last_status')], object = cats)
 
 # exclude the reference category: take the first one of the variable you added
 names(dummies_train)
@@ -59,18 +66,23 @@ dummies_train <- subset(dummies_train,
 # apply on test set (exclude reference categories)
 # excluded no.canceled so it becomes one when it was canceled
 dummies_test <- dummy(test_X_encode[, c('assigned_room_type', 'booking_distribution_channel', 
-                                        'canceled', 'country')], object = cats)
+                                        'canceled', 'country', 'customer_type', 'deposit',
+                                        'hotel_type', 'is_repeated_guest', 'last_status')], object = cats)
 dummies_test <- subset(dummies_test, select = -c(assigned_room_type_A, booking_distribution_channel_TA.TO,
-                                                 country_Belgium, canceled_no.cancellation))
+                                                 country_Belgium, canceled_no.cancellation, customer_type_Transient,
+                                                 deposit_nodeposit, hotel_type_City.Hotel, is_repeated_guest_no,
+                                                 last_status_Check.Out))
 
 # we remove the original predictors and merge them with the other predictors
 ## merge with overall training set
 train_X_encode <- subset(train_X_encode, select = -c(assigned_room_type, booking_distribution_channel,
-                                                     canceled, country))
+                                                     canceled, country, customer_type, deposit,
+                                                     hotel_type, is_repeated_guest, last_status))
 train_X_encode <- cbind(train_X_encode, dummies_train)
 ## merge with overall test set
 test_X_encode <- subset(test_X_encode, select = -c(assigned_room_type, booking_distribution_channel,
-                                                   canceled, country))
+                                                   canceled, country, customer_type, deposit,
+                                                   hotel_type, is_repeated_guest, last_status))
 test_X_encode <- cbind(test_X_encode, dummies_test)
 
 train_X_encode
@@ -99,8 +111,20 @@ test_X_encode <- subset(test_X_encode, select = -c(booking_agent, booking_compan
 # 2. Numerical data
 ##############################################################
 ##############################################################
-
-
+# bining of the days in waiting list variable 
+# write a function to calculate the bin frequency
+bin_data_frequency <- function(x_train, x_val, bins = 5) {
+  cut(x_val, breaks = quantile(x_train, seq(0, 1, 1 / bins)), include.lowest = TRUE)
+}
+# apply the function to the days in waiting list variable 
+train_X_encode$days_in_waiting_list <- bin_data_frequency(x_train = train_X_encode$days_in_waiting_list, x_val = train_X_encode$days_in_waiting_list, bins = 5)
+test_X_encode$days_in_waiting_list <- bin_data_frequency(x_train = train_X_encode$days_in_waiting_list, x_val = test_X_encode$days_in_waiting_list, bins = 5)
+# observe the frequencies 
+train_X_encode$days_in_waiting_list
+test_X_encode$days_in_waiting_list
+# perform integer encoding because the levels have a logical order between them 
+train_X_encode$days_in_waiting_list <- as.numeric(train_X_encode$days_in_waiting_list)
+test_X_encode$days_in_waiting_list <- as.numeric(test_X_encode$days_in_waiting_list)
 
 
 
