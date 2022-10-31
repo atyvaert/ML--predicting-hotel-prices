@@ -1,0 +1,43 @@
+##############################################################
+##############################################################
+# Feature engineering
+##############################################################
+##############################################################
+
+
+# import data
+setwd(dir = '/Users/Artur/Desktop/uni jaar 6 sem 1/machine learning/ml22-team10/data/silver_data')
+train <- read.csv('./train.csv')
+test_X <- read.csv('./test.csv')
+
+str(train)
+# separate dependent and independent variables
+train_X <- subset(train, select = -c(average_daily_rate))
+train_y <- train$average_daily_rate
+
+# inspect
+str(train_X)
+str(test_X)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -165,6 +165,7 @@ colMeans(is.na(test_X_impute))
 ##############################################################
 ##############################################################
 train_X_outlier <- train_X_impute
+test_X_outlier <- test_X_impute
 
 # VRAAG: OOK NODIG VOOR TEST SET?
 # Zei in de les van niet
@@ -231,7 +232,7 @@ training_data_after_data_cleaning$average_daily_rate <- train_y
 test_data_after_data_cleaning <- test_X_outlier
 
 # inspect:
-str(training_data_after_data_cleaning)
+print(training_data_after_data_cleaning)
 str(test_data_after_data_cleaning)
 
 setwd(dir = '/Users/Artur/Desktop/uni jaar 6 sem 1/machine learning/ml22-team10/')
