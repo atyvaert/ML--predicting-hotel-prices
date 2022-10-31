@@ -167,8 +167,7 @@ colMeans(is.na(test_X_impute))
 train_X_outlier <- train_X_impute
 
 # VRAAG: OOK NODIG VOOR TEST SET?
-# DENK DAT JE ZE ERIN MOET LATEN IN TEST SET WANT IS IN ECHT OOK ZO
-# test_X_outlier <- test_X_impute
+# Zei in de les van niet
 
 # make a vector of all the variables of which valid outliers need to be handled
 outlier.cols <- c()
@@ -193,7 +192,6 @@ handle_outlier_z <- function(col){
 
 # handle all the outlier at once
 train_X_outlier[, outlier.cols] <-  sapply(train_X_impute[, outlier.cols], FUN = handle_outlier_z)
-# test_X_outlier[, outlier.cols] <-  sapply(test_X_outlier[, outlier.cols], FUN = handle_outlier_z)
 
 
 ##############################################################
@@ -231,6 +229,10 @@ training_data_after_data_cleaning <- train_X_outlier
 training_data_after_data_cleaning$average_daily_rate <- train_y
 
 test_data_after_data_cleaning <- test_X_outlier
+
+# inspect:
+str(training_data_after_data_cleaning)
+str(test_data_after_data_cleaning)
 
 setwd(dir = '/Users/Artur/Desktop/uni jaar 6 sem 1/machine learning/ml22-team10/')
 write.csv(training_data_after_data_cleaning,"data/silver_data/train.csv", row.names = FALSE)
