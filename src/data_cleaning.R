@@ -3,7 +3,6 @@
 # Data Cleaning
 ##############################################################
 ##############################################################
-
 # packages and libraries needed
 library(readr)
 library(dummy)
@@ -11,8 +10,9 @@ library(stringr)
 library(miscTools)
 
 # import the data
-setwd(dir = '/Users/Artur/Desktop/uni jaar 6 sem 1/machine learning/ml22-team10/data/bronze_data')
-train <- read.csv('./train.csv')
+setwd(dir = 'C:/Users/vikto/OneDrive/Documenten/GroepswerkMachineLearning/ml22-team10/data/bronze_data')
+# setwd(dir = '/Users/Artur/Desktop/uni jaar 6 sem 1/machine learning/ml22-team10/data/bronze_data')
+train <- read.csv('./train.csv', fileEncoding = 'latin1')
 test_X <- read.csv('./test.csv')
 
 # for Viktor:
@@ -181,9 +181,6 @@ quantile(car_parking_spaces_z, na.rm = T, probs = seq(0, 1, 0.01))
 # add car_parking_spaces to variables that need to be handled
 outlier.cols <- append(outlier.cols, 'car_parking_spaces')
 
-
-
-
 # use this function to handle valid outliers
 handle_outlier_z <- function(col){
   col_z <- scale(col)
@@ -193,6 +190,23 @@ handle_outlier_z <- function(col){
 
 # handle all the outlier at once
 train_X_outlier[, outlier.cols] <-  sapply(train_X_impute[, outlier.cols], FUN = handle_outlier_z)
+
+# We cannot use the previous method to handle outliers of the number of days in waiting list 
+# This is because this variable has a lot of 0 values, and if we would use the z score, a lot of outliers would be identified
+quantile(train_X_impute$days_in_waiting_list, na.rm = T, probs = seq(0, 1, 0.001))
+# When we look at the distribution of the days in waiting list variable, we see that less than 1 % has a value higher than 125 days 
+# We arbitrary set the boundary to be an outlier to 125
+# We write a function to identify outliers 
+handle_outlier_daysInWaitingList <- function(column) {
+  ifelse(column>125,
+         125 , column)
+}
+# applying the function 
+daysInWaitingList_col <- c('days_in_waiting_list')
+train_X_outlier$days_in_waiting_list <-  sapply(train_X_impute[,daysInWaitingList_col], FUN = handle_outlier_daysInWaitingList)
+train_X_outlier$days_in_waiting_list
+# in the boxplot you can see that all values above 125 are gone
+boxplot(train_X_outlier$days_in_waiting_list)
 
 
 ##############################################################
@@ -235,9 +249,9 @@ test_data_after_data_cleaning <- test_X_outlier
 print(training_data_after_data_cleaning)
 str(test_data_after_data_cleaning)
 
-setwd(dir = '/Users/Artur/Desktop/uni jaar 6 sem 1/machine learning/ml22-team10/')
-write.csv(training_data_after_data_cleaning,"data/silver_data/train.csv", row.names = FALSE)
-write.csv(test_data_after_data_cleaning,"data/silver_data/train.csv", row.names = FALSE)
+setwd(dir = 'C:/Users/vikto/OneDrive/Documenten/GroepswerkMachineLearning/ml22-team10/data/silver_data')
+write.csv(training_data_after_data_cleaning,"/train.csv", row.names = FALSE)
+write.csv(test_data_after_data_cleaning,"/test.csv", row.names = FALSE)
 #write.csv(train_X,"data/silver_data/train_X.csv", row.names = FALSE)
 #write.csv(train_y,"data/silver_data/train_y.csv", row.names = FALSE)
 
