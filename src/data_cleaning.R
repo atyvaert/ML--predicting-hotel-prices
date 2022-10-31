@@ -11,8 +11,8 @@ library(miscTools)
 
 # import the data
 # setwd(dir = '/Users/Artur/Desktop/uni jaar 6 sem 1/machine learning/ml22-team10/data/bronze_data')
-train <- read.csv('./train.csv', )
 train <- read_csv('./data/bronze_data/train.csv', )
+test_X <- read_csv('./data/bronze_data/test.csv')
 
 # for Viktor:
 # setwd(dir = 'C:/Users/vikto/OneDrive - UGent/TweedeMaster/MachineLearning/ML_Team10/data/bronze_data')
