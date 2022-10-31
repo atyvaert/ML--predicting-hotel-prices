@@ -8,6 +8,7 @@
 library(readr)
 library(dummy)
 library(stringr)
+library(miscTools)
 
 # import the data
 setwd(dir = '/Users/Artur/Desktop/uni jaar 6 sem 1/machine learning/ml22-team10/data/bronze_data')
@@ -26,20 +27,23 @@ train_y <- as.numeric(word(train_y, 1))
 
 ##############################################################
 ##############################################################
-# 1. Adjust structure + Parse dates
+# 1. Adjust structure
 ##############################################################
 ##############################################################
-# Parse arrival_date to filter out the month, day of the month and year
-train_X$arrival_date
-train_X$posix <- as.POSIXct(train_X$arrival_date, format="%B  %d  %Y")
-train_X$day_of_month <- format(train_X$posix, format = '%d')
-train_X$month <- format(train_X$posix, format = '%B')
-train_X$year <- format(train_X$posix, format = '%Y')
+# VRAAG: MOET DIT OOK VOOR TEST SET
 
-#16 lead_time to integer number of days
+
+#lead_time to integer number of days for training set
 train_X$lead_time <- substr(train_X$lead_time, start = 1, stop = (nchar(train_X$lead_time)-7))
 train_X$lead_time <- as.numeric(train_X$lead_time)
-train_X$lead_time
+
+# for test set
+test_X$lead_time <- substr(test_X$lead_time, start = 1, stop = (nchar(test_X$lead_time)-7))
+test_X$lead_time <- as.numeric(test_X$lead_time)
+
+
+# convert the necessary characters to numeric
+
 
 
 ##############################################################
@@ -77,12 +81,12 @@ naFlag <- function(df, df_val = NULL) {
 }
 
 # Flag the missing values
-train_X_impute <- cbind(train_X_impute, naFlag(df = train_X_impute))
-test_X_impute <- cbind(test_X_impute,naFlag(df = test_X_impute, df_val = train_X_impute))
+train_X_impute <- cbind(train_X_impute, naFlag(df = train_X))
+test_X_impute <- cbind(test_X_impute,naFlag(df = test_X, df_val = train_X))
 
 # inspect
 str(train_X_impute)
-# str(test_X_impute)
+str(test_X_impute)
 
 # 2.2.1 Impute NUMERIC variables with information from the training set
 
@@ -95,7 +99,9 @@ impute <- function(x, method = mean, val = NULL){
   return(x)
 }
 
-num.cols <- c('car_parking_spaces', 'days_in_waiting_list')
+
+# impute numerical variables with the mean
+num.cols <- c('days_in_waiting_list', 'lead time')
 train_X_impute[, num.cols] <- lapply(train_X_impute[, num.cols], 
                                      FUN = impute,
                                      method = mean)
@@ -107,6 +113,20 @@ test_X_impute[, num.cols] <- mapply(test_X_impute[, num.cols],
                                     val = colMeans(train_X[, num.cols], na.rm = T))
 
 
+# impute categorical variables with the median
+median.cols <- c('car_parking_spaces', 'nr_adults', 'nr_children', 'nr_previous_bookings',
+                 'previous_bookings_not_canceled', 'previous_cancellations')
+train_X_impute[, median.cols] <- lapply(train_X_impute[, median.cols], 
+                                     FUN = impute,
+                                     method = median)
+
+quantile(train_X_impute$car_parking_spaces, na.rm = T, probs = seq(0, 1, 0.01))
+
+test_X_impute[, median.cols] <- mapply(test_X_impute[, median.cols],
+                                    FUN = impute,
+                                    val = colMedians(train_X[, median.cols], na.rm = T))
+
+
 # 2.2.1 Impute CATEGORICAL variables with information from the training set
 # use the 'modus' function for categorical predictors. This returns the mode of a column.
 modus <- function(x, na.rm = FALSE) {
@@ -116,9 +136,9 @@ modus <- function(x, na.rm = FALSE) {
 }
 
 # handle
+str(train_X)
 cat.cols <- c('booking_distribution_channel', 'country', 'customer_type', 'deposit', 'hotel_type',
-              'is_repeated_guest', 'last_status', 'market_segment', 'nr_adults', 'nr_children',
-              'nr_previous_bookings', 'previous_bookings_not_canceled', 'previous_cancellations')
+              'is_repeated_guest', 'last_status', 'market_segment')
 train_X_impute[, cat.cols] <- lapply(train_X_impute[, cat.cols],
                                      FUN = impute,
                                      method = modus)
@@ -151,6 +171,9 @@ colMeans(is.na(test_X_impute))
 ##############################################################
 train_X_outlier <- train_X_impute
 
+# VRAAG: OOK NODIG VORO TEST SET?
+test_X_outlier <- test_X_impute
+
 # make a vector of all the variables of which valid outliers need to be handled
 outlier.cols <- c()
 # look at all the numeric variables and detect valid and invalid outliers:
@@ -174,6 +197,35 @@ handle_outlier_z <- function(col){
 
 # handle all the outlier at once
 train_X_outlier[, outlier.cols] <-  sapply(train_X_impute[, outlier.cols], FUN = handle_outlier_z)
+test_X_outlier[, outlier.cols] <-  sapply(test_X_outlier[, outlier.cols], FUN = handle_outlier_z)
+
+
+##############################################################
+##############################################################
+# 4. Parsing dates
+##############################################################
+##############################################################
+# VRAAG: MOET DIT OOK VOOR TEST SET?
+
+
+# Parse arrival_date to filter out the month, day of the month and year
+# for training set:
+train_X_outlier$posix_arrival <- as.POSIXct(train_X_outlier$arrival_date, format="%B  %d  %Y")
+train_X_outlier$day_of_month_arrival <- format(train_X_outlier$posix_arrival, format = '%d')
+train_X_outlier$month_arrival <- format(train_X_outlier$posix_arrival, format = '%B')
+train_X_outlier$year_arrival <- format(train_X_outlier$posix_arrival, format = '%Y')
+
+# parse last_status_date
+train_X_outlier$posix_last_status <- as.POSIXct(train_X_outlier$last_status_date, format="%Y-%m-%d")
+
+# for test set:
+test_X_outlier$posix_arrival <- as.POSIXct(test_X_outlier$arrival_date, format="%B  %d  %Y")
+test_X_outlier$day_of_month_arrival <- format(test_X_outlier$posix_arrival, format = '%d')
+test_X_outlier$month_arrival <- format(test_X_outlier$posix_arrival, format = '%B')
+test_X_outlier$year_arrival <- format(test_X_outlier$posix_arrival, format = '%Y')
+
+test_X_outlier$posix_last_status <- as.POSIXct(test_X_outlier$last_status_date, format="%Y-%m-%d")
+
 
 
 
