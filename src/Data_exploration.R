@@ -4,10 +4,13 @@
 ##############################################################
 ##############################################################
 rm(list = ls())
-setwd(dir = 'C:/Users/vikto/OneDrive/Documenten/GroepswerkMachineLearning/ml22-team10/data/bronze_data')
-#setwd(dir = '/Users/Artur/Desktop/uni jaar 6 sem 1/machine learning/groepswerk/R/data')
-train <- read.csv('./train.csv', fileEncoding = 'latin1')
-test_X <- read.csv('./test.csv')
+
+setwd(dir = "./GitHub/ml22-team10")
+
+
+
+train <- read.csv('.data/bronze_data/train.csv', fileEncoding = 'latin1')
+test_X <- read.csv('.data/bronze_data/test.csv')
 
 
 # packages and libraries needed
