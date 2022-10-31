@@ -10,14 +10,14 @@ library(stringr)
 library(miscTools)
 
 # import the data
-setwd(dir = 'C:/Users/vikto/OneDrive/Documenten/GroepswerkMachineLearning/ml22-team10/data/bronze_data')
 # setwd(dir = '/Users/Artur/Desktop/uni jaar 6 sem 1/machine learning/ml22-team10/data/bronze_data')
-train <- read.csv('./train.csv', fileEncoding = 'latin1')
+train <- read.csv('./train.csv', )
 test_X <- read.csv('./test.csv')
 
 # for Viktor:
-# train <- read_csv("C:/Users/vikto/OneDrive - UGent/TweedeMaster/MachineLearning/ML_Team10/data/raw_data/train.csv")
-# train <- read.csv("data/raw_data/train.csv")
+# setwd(dir = 'C:/Users/vikto/OneDrive - UGent/TweedeMaster/MachineLearning/ML_Team10/data/bronze_data')
+# train <- read.csv("/train.csv", fileEncoding = 'latin1')
+# test_X <- read.csv('./test.csv')
 
 # separate dependent and independent variables
 train_X <- subset(train, select = -c(average_daily_rate))
@@ -172,14 +172,24 @@ test_X_outlier <- test_X_impute
 
 # make a vector of all the variables of which valid outliers need to be handled
 outlier.cols <- c()
+outlier.cols <- append(outlier.cols, '')
+
 # look at all the numeric variables and detect valid and invalid outliers:
 # 1) car_parking_spaces
 car_parking_spaces_z <- scale(train_X_impute$car_parking_spaces)
 quantile(car_parking_spaces_z, na.rm = T, probs = seq(0, 1, 0.01))
+
 # hier zien we wel wat outliers, met een maximum van 3 parking spaces
 # dit lijken valid outliers (3 parking spaces required by customer is possible)
 # add car_parking_spaces to variables that need to be handled
 outlier.cols <- append(outlier.cols, 'car_parking_spaces')
+
+# All the car parking spaces have a value between 0 and 3, with the majority being 0
+# as 1, 2 and 3 are seen as outliers, we bring back these values to one as these are 
+# valid outliers and this indicates if a parking place was required
+# VRAAG: HIER OF BIJ FEATURE ENGINEERING
+
+
 
 # use this function to handle valid outliers
 handle_outlier_z <- function(col){
