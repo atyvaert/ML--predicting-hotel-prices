@@ -9,8 +9,8 @@ setwd(dir = "./GitHub/ml22-team10")
 
 
 
-train <- read.csv('.data/bronze_data/train.csv', fileEncoding = 'latin1')
-test_X <- read.csv('.data/bronze_data/test.csv')
+train <- read.csv('./data/bronze_data/train.csv', fileEncoding = 'latin1')
+test_X <- read.csv('./data/bronze_data/test.csv')
 
 
 # packages and libraries needed
