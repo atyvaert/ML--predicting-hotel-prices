@@ -3,7 +3,6 @@
 # Data Cleaning
 ##############################################################
 ##############################################################
-
 # packages and libraries needed
 library(readr)
 library(dummy)
@@ -11,13 +10,14 @@ library(stringr)
 library(miscTools)
 
 # import the data
-setwd(dir = '/Users/Artur/Desktop/uni jaar 6 sem 1/machine learning/ml22-team10/data/bronze_data')
-train <- read.csv('./train.csv')
+# setwd(dir = '/Users/Artur/Desktop/uni jaar 6 sem 1/machine learning/ml22-team10/data/bronze_data')
+train <- read.csv('./train.csv', )
 test_X <- read.csv('./test.csv')
 
 # for Viktor:
-# train <- read_csv("C:/Users/vikto/OneDrive - UGent/TweedeMaster/MachineLearning/ML_Team10/data/raw_data/train.csv")
-# train <- read.csv("data/raw_data/train.csv")
+# setwd(dir = 'C:/Users/vikto/OneDrive - UGent/TweedeMaster/MachineLearning/ML_Team10/data/bronze_data')
+# train <- read.csv("/train.csv", fileEncoding = 'latin1')
+# test_X <- read.csv('./test.csv')
 
 # separate dependent and independent variables
 train_X <- subset(train, select = -c(average_daily_rate))
@@ -178,10 +178,17 @@ outlier.cols <- append(outlier.cols, '')
 # 1) car_parking_spaces
 car_parking_spaces_z <- scale(train_X_impute$car_parking_spaces)
 quantile(car_parking_spaces_z, na.rm = T, probs = seq(0, 1, 0.01))
+
+# hier zien we wel wat outliers, met een maximum van 3 parking spaces
+# dit lijken valid outliers (3 parking spaces required by customer is possible)
+# add car_parking_spaces to variables that need to be handled
+outlier.cols <- append(outlier.cols, 'car_parking_spaces')
+
 # All the car parking spaces have a value between 0 and 3, with the majority being 0
 # as 1, 2 and 3 are seen as outliers, we bring back these values to one as these are 
 # valid outliers and this indicates if a parking place was required
 # VRAAG: HIER OF BIJ FEATURE ENGINEERING
+
 
 
 # use this function to handle valid outliers
@@ -193,6 +200,23 @@ handle_outlier_z <- function(col){
 
 # handle all the outlier at once
 train_X_outlier[, outlier.cols] <-  sapply(train_X_impute[, outlier.cols], FUN = handle_outlier_z)
+
+# We cannot use the previous method to handle outliers of the number of days in waiting list 
+# This is because this variable has a lot of 0 values, and if we would use the z score, a lot of outliers would be identified
+quantile(train_X_impute$days_in_waiting_list, na.rm = T, probs = seq(0, 1, 0.001))
+# When we look at the distribution of the days in waiting list variable, we see that less than 1 % has a value higher than 125 days 
+# We arbitrary set the boundary to be an outlier to 125
+# We write a function to identify outliers 
+handle_outlier_daysInWaitingList <- function(column) {
+  ifelse(column>125,
+         125 , column)
+}
+# applying the function 
+daysInWaitingList_col <- c('days_in_waiting_list')
+train_X_outlier$days_in_waiting_list <-  sapply(train_X_impute[,daysInWaitingList_col], FUN = handle_outlier_daysInWaitingList)
+train_X_outlier$days_in_waiting_list
+# in the boxplot you can see that all values above 125 are gone
+boxplot(train_X_outlier$days_in_waiting_list)
 
 
 ##############################################################
@@ -235,9 +259,9 @@ test_data_after_data_cleaning <- test_X_outlier
 print(training_data_after_data_cleaning)
 str(test_data_after_data_cleaning)
 
-setwd(dir = '/Users/Artur/Desktop/uni jaar 6 sem 1/machine learning/ml22-team10/')
-write.csv(training_data_after_data_cleaning,"data/silver_data/train.csv", row.names = FALSE)
-write.csv(test_data_after_data_cleaning,"data/silver_data/train.csv", row.names = FALSE)
+setwd(dir = 'C:/Users/vikto/OneDrive/Documenten/GroepswerkMachineLearning/ml22-team10/data/silver_data')
+write.csv(training_data_after_data_cleaning,"/train.csv", row.names = FALSE)
+write.csv(test_data_after_data_cleaning,"/test.csv", row.names = FALSE)
 #write.csv(train_X,"data/silver_data/train_X.csv", row.names = FALSE)
 #write.csv(train_y,"data/silver_data/train_y.csv", row.names = FALSE)
 
