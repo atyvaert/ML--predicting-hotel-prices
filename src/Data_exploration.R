@@ -163,13 +163,16 @@ table(train_X$meal_booked)
 
 #19 nr_adults
 table(train_X$nr_adults)
+boxplot(train_X$nr_adults)
 #values 26, 27 -> large groups (cancelled)
 # Vraag: wat hiermee doen?
+#z-score
 
 #20 nr_babies
 table(train_X$nr_babies)
 #string n/ = 0
 # 9 als valid of invalid outlier?
+#invalid, -> NA
 
 #21 nr_booking_changes  
 barplot(table(train_X$nr_booking_changes))
