@@ -145,12 +145,14 @@ sum(is.na(train_X$last_status_date))
 # what to do with 2615 missing values (where are we going to use this column)
 # Na: look at average time since last_status_update for the others
 # use variable for hint but not in prediction model I think
+#!FE!
 
 #16 lead_time
 train_X$lead_time
 boxplot(train_X$lead_time)
 hist(train_X$lead_time, breaks = 1000)
 #0 when cancelled
+#Q3+1.5IQR = 297
 
 #17 market_segment
 table(train_X$market_segment) # no problems
