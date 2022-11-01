@@ -336,19 +336,39 @@ train_X_outlier$day_of_month_arrival <- format(train_X_outlier$posix_arrival, fo
 train_X_outlier$month_arrival <- format(train_X_outlier$posix_arrival, format = '%B')
 train_X_outlier$year_arrival <- format(train_X_outlier$posix_arrival, format = '%Y')
 
-# parse last_status_date
-train_X_outlier$posix_last_status <- as.POSIXct(train_X_outlier$last_status_date, format="%Y-%m-%d")
-
 # for test set:
 test_X_outlier$posix_arrival <- as.POSIXct(test_X_outlier$arrival_date, format="%B  %d  %Y")
 test_X_outlier$day_of_month_arrival <- format(test_X_outlier$posix_arrival, format = '%d')
 test_X_outlier$month_arrival <- format(test_X_outlier$posix_arrival, format = '%B')
 test_X_outlier$year_arrival <- format(test_X_outlier$posix_arrival, format = '%Y')
 
-test_X_outlier$posix_last_status <- as.POSIXct(test_X_outlier$last_status_date, format="%Y-%m-%d")
 
+# last_status_date
+# to impute NA we calculate the mean of the difference between
+# arrival_date and last_status_date for each category
+# add this value to arrival_date and impute in NA rows
 
+#train
+train_X_outlier$posix_last_status <- as.POSIXlt(train_X_outlier$last_status_date, format='%Y-%m-%dT %H:%M:%S')
 
+mean_diff_canceled <- round(mean((difftime(train_X_outlier$posix_last_status[train_X_outlier$last_status=="Canceled"], train_X_outlier$posix_arrival[train_X_outlier$last_status=="Canceled"], units = "d")), na.rm = T))
+mean_diff_check_out <- round(mean((difftime(train_X_outlier$posix_last_status[train_X_outlier$last_status=="Check-Out"], train_X_outlier$posix_arrival[train_X_outlier$last_status=="Check-Out"], units = "d")), na.rm = T))
+mean_diff_no_show <- round(mean((difftime(train_X_outlier$posix_arrival[train_X_outlier$last_status=="No-Show"], train_X_outlier$posix_last_status[train_X_outlier$last_status=="No-Show"], units = "d")), na.rm = T))
+
+train_X_outlier$posix_last_status[is.na(train_X_outlier$posix_last_status) & (train_X_outlier$last_status=="Canceled")] <- train_X_outlier$posix_arrival[is.na(train_X_outlier$posix_last_status) & (train_X_outlier$last_status=="Canceled")] + mean_diff_canceled
+train_X_outlier$posix_last_status[is.na(train_X_outlier$posix_last_status) & (train_X_outlier$last_status=="Check-Out")] <- train_X_outlier$posix_arrival[is.na(train_X_outlier$posix_last_status) & (train_X_outlier$last_status=="Check-Out")] + mean_diff_check_out
+train_X_outlier$posix_last_status[is.na(train_X_outlier$posix_last_status) & (train_X_outlier$last_status=="No-Show")] <- train_X_outlier$posix_arrival[is.na(train_X_outlier$posix_last_status) & (train_X_outlier$last_status=="No-Show")] + mean_diff_canceled
+
+train_X_outlier$posix_last_status <- format(as.POSIXct(train_X_outlier$posix_last_status, format="%Y-%m-%d"), format="%Y-%m-%d")
+
+#test
+test_X_outlier$posix_last_status <- as.POSIXlt(test_X_outlier$last_status_date, format='%Y-%m-%dT %H:%M:%S')
+
+test_X_outlier$posix_last_status[is.na(test_X_outlier$posix_last_status) & (test_X_outlier$last_status=="Canceled")] <- test_X_outlier$posix_arrival[is.na(test_X_outlier$posix_last_status) & (test_X_outlier$last_status=="Canceled")] + mean_diff_canceled
+test_X_outlier$posix_last_status[is.na(test_X_outlier$posix_last_status) & (test_X_outlier$last_status=="Check-Out")] <- test_X_outlier$posix_arrival[is.na(test_X_outlier$posix_last_status) & (test_X_outlier$last_status=="Check-Out")] + mean_diff_check_out
+test_X_outlier$posix_last_status[is.na(test_X_outlier$posix_last_status) & (test_X_outlier$last_status=="No-Show")] <- test_X_outlier$posix_arrival[is.na(test_X_outlier$posix_last_status) & (test_X_outlier$last_status=="No-Show")] + mean_diff_canceled
+
+test_X_outlier$posix_last_status <- format(as.POSIXct(test_X_outlier$posix_last_status, format="%Y-%m-%d"), format="%Y-%m-%d")
 
 #WRITE
 training_data_after_data_cleaning <- train_X_outlier
