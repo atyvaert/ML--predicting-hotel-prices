@@ -111,6 +111,9 @@ test_X_impute[, num.cols] <- mapply(test_X_impute[, num.cols],
                                     val = colMeans(train_X[, num.cols], na.rm = T))
 
 
+
+
+
 # impute categorical variables with the median
 median.cols <- c('car_parking_spaces', 'nr_adults', 'nr_children', 'nr_previous_bookings',
                  'previous_bookings_not_canceled', 'previous_cancellations')
@@ -188,6 +191,85 @@ outlier.cols <- append(outlier.cols, 'car_parking_spaces')
 # as 1, 2 and 3 are seen as outliers, we bring back these values to one as these are 
 # valid outliers and this indicates if a parking place was required
 # VRAAG: HIER OF BIJ FEATURE ENGINEERING
+
+
+
+# 21) nr_booking_changes  
+nr_booking_changes_z <- scale(train_X_impute$nr_booking_changes)
+quantile(nr_booking_changes_z, na.rm = T, probs = seq(0, 1, 0.01))
+quantile(train_X_impute$nr_booking_changes, na.rm = T, probs = seq(0, 1, 0.01))
+
+# >3  are outliers, however valid? like lots of travel insecurities => change number of rooms depending on people
+outlier.cols <- append(outlier.cols, 'nr_booking_changes')
+
+# 22) nr_children  
+train_X_impute$nr_children
+nr_children_z <- scale(train_X_impute$nr_children)
+quantile(nr_children_z, na.rm = T, probs = seq(0, 1, 0.01))
+quantile(train_X_impute$nr_children, na.rm = T, probs = seq(0, 1, 0.01))
+
+# starting from 98% outliers => from 2 (and 10) but valid
+outlier.cols <- append(outlier.cols, 'nr_children')
+
+
+# 23) nr_nights
+train_X_impute$nr_nights
+nr_nights_z <- scale(train_X_impute$nr_nights)
+quantile(nr_nights_z, na.rm = T, probs = seq(0, 1, 0.01))
+quantile(train_X_impute$nr_nights, na.rm = T, probs = seq(0, 1, 0.01))
+
+# starting from 99% outliers => from 14 but valid I suppose? ALso 69 days is about two months, perhaps business trips for consultants can last that long?
+outlier.cols <- append(outlier.cols, 'nr_nights')
+
+# 24) nr_previous_bookings  
+train_X_impute$nr_previous_bookings
+nr_previous_bookings_z <- scale(train_X_impute$nr_previous_bookings)
+quantile(nr_previous_bookings_z, na.rm = T, probs = seq(0, 1, 0.01))
+quantile(train_X_impute$nr_previous_bookings, na.rm = T, probs = seq(0, 1, 0.01))
+
+#starting from 100% (78!!) trips, we have an outlier. The dataset spans 2 years, so about 40 trips each year what to do?
+#outlier.cols <- append(outlier.cols, 'nr_previous_bookings')
+
+# drop or handle? ALSO what about 75,72,70????
+# function compares every value to three right? SO it should be more detailed than the quantile
+
+
+# 25) previous_bookings_not_canceled  
+train_X_impute$previous_bookings_not_canceled
+previous_bookings_not_canceled_z <- scale(train_X_impute$previous_bookings_not_canceled)
+quantile(previous_bookings_not_canceled_z, na.rm = T, probs = seq(0, 1, 0.01))
+quantile(train_X_impute$previous_bookings_not_canceled, na.rm = T, probs = seq(0, 1, 0.01))
+
+#starting from 100% (72!!), we have an outlier. Same comment as before
+#outlier.cols <- append(outlier.cols, 'nr_previous_bookings_not_canceled')
+
+
+# 26) previous_cancellations  
+train_X_impute$previous_cancellations
+previous_cancellations_z <- scale(train_X_impute$previous_cancellations)
+quantile(previous_cancellations_z, na.rm = T, probs = seq(0, 1, 0.01))
+quantile(train_X_impute$previous_cancellations, na.rm = T, probs = seq(0, 1, 0.01))
+
+#starting from 100% (26!!), we have an outlier. Same comment as before
+#outlier.cols <- append(outlier.cols, 'previous_cancellations')
+
+
+
+# 27) reserved_room_type
+
+# categorical so?
+
+
+
+# 28) special_requests  
+train_X_impute$special_requests
+special_requests_z <- scale(train_X_impute$special_requests)
+quantile(special_requests_z, na.rm = T, probs = seq(0, 1, 0.01))
+quantile(train_X_impute$special_requests, na.rm = T, probs = seq(0, 1, 0.01))
+ 
+#starting from 98% (3), we have outliers
+
+outlier.cols <- append(outlier.cols, 'special requests')
 
 
 

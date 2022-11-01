@@ -5,16 +5,19 @@
 ##############################################################
 rm(list = ls())
 
+
+# packages and libraries needed
+library(stringr)
+library(miscTools)
+
+
 setwd(dir = "./GitHub/ml22-team10")
 
 
 
-train <- read.csv('./data/bronze_data/train.csv', fileEncoding = 'latin1')
-test_X <- read.csv('./data/bronze_data/test.csv')
+train <- read_csv('./data/bronze_data/train.csv')
+test_X <- read_csv('./data/bronze_data/test.csv')
 
-
-# packages and libraries needed
-library(stringr)
 
 # Look at the data
 summary(train)
@@ -52,16 +55,16 @@ train_X$arrival_date
 # 2 assigned_room_type
 barplot(table(train_X$assigned_room_type))
 table(train_X$assigned_room_type)
-# 2 categorieën met bijna geen enkele observatie
-# Wat doen we hiermee?
-# Op zich kunnen we erin laten want geen misssing values
+# 2 categories with almost no observations
+# What to do?
+# We can keep it since there are no missing values
 # nominal feature: dummy encoding
 
 # 3 booking_agent
 barplot(table(train_X$booking_agent))
 table(train_X$booking_agent)
-# lots of different values or NULL values (11 361): is niet gelijk aan Na values
-# Maak variabele aan die aangeeft als booking agent wel (=1) of niet (= 0) aanwezig was:
+# lots of different values or NULL values (11 361): is not NA!
+#Create variable that show if booking agent is available (=1) or not (= 0):
 # booking_agent_present
 # => binary feature: integer encoding (indicator variable)
 
@@ -69,8 +72,8 @@ table(train_X$booking_agent)
 # 4 booking_company
 barplot(table(train_X$booking_company))
 table(train_X$booking_company)
-# lots of different values or NULL values (78 303): is niet gelijk aan Na values
-# Maak variabele aan die aangeeft als booking company wel (=1) of niet (= 0) aanwezig was:
+# lots of different values or NULL values (78 303): is not NA!
+# Create variable that show if booking company is available (=1) or not (= 0):
 # booking_company_present
 # => binary feature: integer encoding (indicator variable)
 
@@ -78,40 +81,41 @@ table(train_X$booking_company)
 # 5 booking_distribution_channel
 barplot(table(train_X$booking_distribution_channel))
 table(train_X$booking_distribution_channel)
-# only 2 undefined dus zou ditlaten, op zich geen Na?
+# only 2 undefined so we would keep it since it is not really Na
 # other option: impute with modus and treat undefined as Na
 # nominal feature: dummy encoding
 
 # 6 canceled
 barplot(table(train_X$canceled))
 table(train_X$canceled)
-# geen problemen met variabelen, enkel nog dummies ofzo van maken
-# # nominal feature: dummy encoding OF binary feature: integer encoding (denk dit)
+# No troubles with this variable, only make this binary
+# # nominal feature: dummy encoding OF binary feature: integer encoding (we think)
 
 # 7 car_parking_spaces
 hist(train_X$car_parking_spaces)
 quantile(train_X$car_parking_spaces, na.rm = T, probs = seq(0, 1, 0.01))
 summary(train_X$car_parking_spaces)
-# van 0 tot 3 (informatie voor encoding)
-# 93% die nul hebben als value, 6% heeft 1 en 1% die 2 of 3 hebben
-# zal zich waarschijnlijk oplossen bij behandelen van outliers
-# dus binary: integer encoding
+# from 0 to 3 (information needed for encoding)
+# 93% have value 0, 6% has value 1 and 1% has 2 or 3 
+# will probably be handled when treating outliers
+# so binary: integer encoding
 
 # 8 country
 barplot(table(train_X$country))
 table(train_X$country)
 unique(train_X$country)
-# heel wat verschillende landen (164)
-# nominal feature: dummy encoding maar beperkt tot x aantal belangrijkste
-# zou persoonlijk voor 11 gaan obv die barplot
+# lots of different countries (164)
+# nominal feature: dummy encoding but limited to x most important ones
+# barplot observation: x = 11?
 cut_off_point <- as.numeric(table(train_X$country))
 cut_off_point_perc <- cut_off_point/(sum(cut_off_point))
 sort(cut_off_point_perc, decreasing  = T)
-# 13 dummies hierop gebaseerd (tot het ten minste 0.01% van de data voorsteld)
+# 13 dummies based on this (until it represents at least 0.01% of the  data)
 
 #  9 customer type 
 train_X$customer_type
 barplot(table(train_X$customer_type))
+table(train_X$customer_type)
 # categorical variable
 
 # 10 days in waiting list 
@@ -172,14 +176,16 @@ table(train_X$nr_babies)
 #21 nr_booking_changes  
 barplot(table(train_X$nr_booking_changes))
 table(train_X$nr_booking_changes)
+
 # frequency decreases drastically, and after 5 it becomes really small. Lots of Na which = 0!
 
-#22 nr_children        
-barplot(table(train_X$nr_children))
+#22 nr_children  
+(train_X$nr_children)
 table(train_X$nr_children)
+
 # Vast majority has 0 zero children, 1 and 2 also prevalent (>2000), 3 (44 times), and 1 observation of 10 children => mistake?
 
-#23 nr_nights  
+#23 nr_nights 
 barplot(table(train_X$nr_nights))
 table(train_X$nr_nights)
 #(0 to 10 is well present, >10 less observations), lot of different amount of days with 1 observations...
@@ -187,7 +193,8 @@ table(train_X$nr_nights)
 #24 nr_previous_bookings  
 barplot(table(train_X$nr_previous_bookings))
 table(train_X$nr_previous_bookings)
-#lots of hifg values but extreme low frequencies (1)
+train_X$nr_previous_bookings
+#lots of high values but extreme low frequencies (1)
 
 #25 previous_bookings_not_canceled  
 barplot(table(train_X$previous_bookings_not_canceled))
