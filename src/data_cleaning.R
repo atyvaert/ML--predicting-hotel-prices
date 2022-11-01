@@ -192,7 +192,22 @@ outlier.cols <- append(outlier.cols, 'car_parking_spaces')
 # valid outliers and this indicates if a parking place was required
 # VRAAG: HIER OF BIJ FEATURE ENGINEERING
 
+# 16) lead_time
+outlier.cols <- append(outlier.cols, 'lead_time')
 
+# 17) market_segment
+# categorical
+
+# 18) meal_booked
+# categorical
+
+# 19) nr_adults
+outlier.cols <- append(outlier.cols, 'nr_adults')
+
+# 20) nr_babies
+# 1 invalid outlier: "9" treat as NA -> "0"
+train_X$nr_babies[train_X$nr_babies==9] <- 0
+#FE: dummy variable babies: 0 = No, 1 = Yes
 
 # 21) nr_booking_changes  
 nr_booking_changes_z <- scale(train_X_impute$nr_booking_changes)
