@@ -160,7 +160,16 @@ test_X_impute$nr_booking_changes[is.na(test_X_impute$nr_booking_changes)] <- 0
 colMeans(is.na(train_X_impute))
 colMeans(is.na(test_X_impute))
 
-
+##############################################################
+##############################################################
+# Data inconsistencies: nr_previous_bookings = 
+# previous_cancellations + previous_bookings_not_canceled
+# This is not always the case!
+##############################################################
+##############################################################
+train_X_impute$nr_previous_bookings[train_X_impute$nr_previous_bookings==0] <- rowSums(cbind(train_X_impute$previous_bookings_not_canceled, train_X_impute$previous_cancellations))[train_X_impute$nr_previous_bookings==0]
+train_X_impute$previous_bookings_not_canceled[train_X_impute$previous_bookings_not_canceled==0] <- (train_X_impute$nr_previous_bookings - train_X_impute$previous_cancellations)[train_X_impute$previous_bookings_not_canceled==0]
+train_X_impute$previous_cancellations[train_X_impute$previous_cancellations==0] <- (train_X_impute$nr_previous_bookings - train_X_impute$previous_bookings_not_canceled)[train_X_impute$previous_cancellations==0]
 
 ##############################################################
 ##############################################################
@@ -175,7 +184,7 @@ test_X_outlier <- test_X_impute
 
 # make a vector of all the variables of which valid outliers need to be handled
 outlier.cols <- c()
-outlier.cols <- append(outlier.cols, '')
+#outlier.cols <- append(outlier.cols, '')
 
 # look at all the numeric variables and detect valid and invalid outliers:
 # 1) car_parking_spaces
@@ -206,7 +215,7 @@ outlier.cols <- append(outlier.cols, 'nr_adults')
 
 # 20) nr_babies
 # 1 invalid outlier: "9" treat as NA -> "0"
-train_X$nr_babies[train_X$nr_babies==9] <- 0
+train_X_outlier$nr_babies[train_X$nr_babies==9] <- 0
 #FE: dummy variable babies: 0 = No, 1 = Yes
 
 # 21) nr_booking_changes  
@@ -242,8 +251,8 @@ nr_previous_bookings_z <- scale(train_X_impute$nr_previous_bookings)
 quantile(nr_previous_bookings_z, na.rm = T, probs = seq(0, 1, 0.01))
 quantile(train_X_impute$nr_previous_bookings, na.rm = T, probs = seq(0, 1, 0.01))
 
-#starting from 100% (78!!) trips, we have an outlier. The dataset spans 2 years, so about 40 trips each year what to do?
-#outlier.cols <- append(outlier.cols, 'nr_previous_bookings')
+#starting from 100% (78!!) trips, we have an outlier.
+outlier.cols <- append(outlier.cols, 'nr_previous_bookings')
 
 # drop or handle? ALSO what about 75,72,70????
 # function compares every value to three right? SO it should be more detailed than the quantile
@@ -284,9 +293,7 @@ quantile(train_X_impute$special_requests, na.rm = T, probs = seq(0, 1, 0.01))
  
 #starting from 98% (3), we have outliers
 
-outlier.cols <- append(outlier.cols, 'special requests')
-
-
+outlier.cols <- append(outlier.cols, 'special_requests')
 
 # use this function to handle valid outliers
 handle_outlier_z <- function(col){
@@ -295,7 +302,7 @@ handle_outlier_z <- function(col){
          sign(col_z)*3*attr(col_z,"scaled:scale") + attr(col_z,"scaled:center"), col)
 }
 
-# handle all the outlier at once
+# handle all the outliers at once
 train_X_outlier[, outlier.cols] <-  sapply(train_X_impute[, outlier.cols], FUN = handle_outlier_z)
 
 # We cannot use the previous method to handle outliers of the number of days in waiting list 
