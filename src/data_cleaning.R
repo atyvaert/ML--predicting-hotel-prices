@@ -265,7 +265,7 @@ quantile(previous_bookings_not_canceled_z, na.rm = T, probs = seq(0, 1, 0.01))
 quantile(train_X_impute$previous_bookings_not_canceled, na.rm = T, probs = seq(0, 1, 0.01))
 
 #starting from 100% (72!!), we have an outlier. Same comment as before
-#outlier.cols <- append(outlier.cols, 'nr_previous_bookings_not_canceled')
+outlier.cols <- append(outlier.cols, 'nr_previous_bookings_not_canceled')
 
 
 # 26) previous_cancellations  
@@ -275,14 +275,11 @@ quantile(previous_cancellations_z, na.rm = T, probs = seq(0, 1, 0.01))
 quantile(train_X_impute$previous_cancellations, na.rm = T, probs = seq(0, 1, 0.01))
 
 #starting from 100% (26!!), we have an outlier. Same comment as before
-#outlier.cols <- append(outlier.cols, 'previous_cancellations')
-
+outlier.cols <- append(outlier.cols, 'previous_cancellations')
 
 
 # 27) reserved_room_type
-
-# categorical so?
-
+# categorical
 
 
 # 28) special_requests  
@@ -292,8 +289,8 @@ quantile(special_requests_z, na.rm = T, probs = seq(0, 1, 0.01))
 quantile(train_X_impute$special_requests, na.rm = T, probs = seq(0, 1, 0.01))
  
 #starting from 98% (3), we have outliers
-
 outlier.cols <- append(outlier.cols, 'special_requests')
+
 
 # use this function to handle valid outliers
 handle_outlier_z <- function(col){
