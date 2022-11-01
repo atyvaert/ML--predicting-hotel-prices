@@ -149,12 +149,14 @@ sum(is.na(train_X$last_status_date))
 # what to do with 2615 missing values (where are we going to use this column)
 # Na: look at average time since last_status_update for the others
 # use variable for hint but not in prediction model I think
+#!FE!
 
 #16 lead_time
 train_X$lead_time
 boxplot(train_X$lead_time)
 hist(train_X$lead_time, breaks = 1000)
 #0 when cancelled
+#Q3+1.5IQR = 297
 
 #17 market_segment
 table(train_X$market_segment) # no problems
@@ -165,13 +167,16 @@ table(train_X$meal_booked)
 
 #19 nr_adults
 table(train_X$nr_adults)
+boxplot(train_X$nr_adults)
 #values 26, 27 -> large groups (cancelled)
 # Vraag: wat hiermee doen?
+#z-score
 
 #20 nr_babies
 table(train_X$nr_babies)
 #string n/ = 0
 # 9 als valid of invalid outlier?
+#invalid, -> NA
 
 #21 nr_booking_changes  
 barplot(table(train_X$nr_booking_changes))
