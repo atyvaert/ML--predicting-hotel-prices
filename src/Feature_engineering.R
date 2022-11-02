@@ -7,9 +7,9 @@ library(readr)
 library(dummy)
 
 # import data
-setwd(dir = '/Users/Artur/Desktop/uni jaar 6 sem 1/machine learning/ml22-team10/data')
-train <- read.csv('./silver_data/train.csv')
-test_X <- read.csv('./silver_data/test.csv')
+setwd(dir = '/Users/Artur/Desktop/uni jaar 6 sem 1/machine learning/ml22-team10/data/silver_data')
+train <- read.csv('./train.csv')
+test_X <- read.csv('./test.csv')
 
 #for Viktor
 setwd(dir = 'C:/Users/vikto/OneDrive - UGent/TweedeMaster/MachineLearning/ML_Team10/data/silver_data')
@@ -31,8 +31,8 @@ str(test_X)
 # 1. Categorical data
 ##############################################################
 ##############################################################
-train_X_encode <- train_X
-test_X_encode <- test_X
+train_X_encode <- train_X_outlier
+test_X_encode <- test_X_outlier
 
 ##############################################################
 # 1.1 Ordinal data: integer encoding
@@ -52,44 +52,52 @@ cats <- categories(train_X_encode[, c('assigned_room_type', 'booking_distributio
                                       'canceled', 'country', 'customer_type', 'deposit',
                                       'hotel_type', 'is_repeated_guest', 'last_status',
                                       'market_segment', 'meal_booked', 'reserved_room_type')], p = 10)
+# month_arrival seperate because we want all 12 categories here
+cats <- append(cats, categories(train_X_encode['month_arrival']))
 
 # apply on train set (exclude reference categories)
 dummies_train <- dummy(train_X_encode[,c('assigned_room_type', 'booking_distribution_channel', 
                                          'canceled', 'country', 'customer_type', 'deposit',
                                          'hotel_type', 'is_repeated_guest', 'last_status',
-                                         'market_segment', 'meal_booked', 'reserved_room_type')], object = cats)
+                                         'market_segment', 'meal_booked', 'reserved_room_type',
+                                         'month_arrival')], object = cats)
 
 # exclude the reference category: take the first one of the variable you added
 names(dummies_train)
 dummies_train <- subset(dummies_train, 
                         select = -c(assigned_room_type_A, booking_distribution_channel_TA.TO,
-                                    country_Belgium, canceled_no.cancellation, market_segment_Online.travel.agent,
-                                    meal_booked_meal.package.NOT.booked, reserved_room_type_A))
+                                    country_Belgium, canceled_no.cancellation, customer_type_Transient,
+                                    deposit_nodeposit, hotel_type_City.Hotel, is_repeated_guest_no,
+                                    last_status_Check.Out, market_segment_Online.travel.agent,
+                                    meal_booked_meal.package.NOT.booked, reserved_room_type_A, month_arrival_January))
 
 # apply on test set (exclude reference categories)
 # excluded no.canceled so it becomes one when it was canceled
 dummies_test <- dummy(test_X_encode[, c('assigned_room_type', 'booking_distribution_channel', 
                                         'canceled', 'country', 'customer_type', 'deposit',
                                         'hotel_type', 'is_repeated_guest', 'last_status',
-                                        'market_segment', 'meal_booked', 'reserved_room_type')], object = cats)
+                                        'market_segment', 'meal_booked', 'reserved_room_type',
+                                        'month_arrival')], object = cats)
 dummies_test <- subset(dummies_test, select = -c(assigned_room_type_A, booking_distribution_channel_TA.TO,
                                                  country_Belgium, canceled_no.cancellation, customer_type_Transient,
                                                  deposit_nodeposit, hotel_type_City.Hotel, is_repeated_guest_no,
                                                  last_status_Check.Out, market_segment_Online.travel.agent,
-                                                 meal_booked_meal.package.NOT.booked, reserved_room_type_A))
+                                                 meal_booked_meal.package.NOT.booked, reserved_room_type_A, month_arrival_January))
 
 # we remove the original predictors and merge them with the other predictors
 ## merge with overall training set
 train_X_encode <- subset(train_X_encode, select = -c(assigned_room_type, booking_distribution_channel,
                                                      canceled, country, customer_type, deposit,
                                                      hotel_type, is_repeated_guest, last_status,
-                                                     market_segment, meal_booked, reserved_room_type))
+                                                     market_segment, meal_booked, reserved_room_type,
+                                                     month_arrival))
 train_X_encode <- cbind(train_X_encode, dummies_train)
 ## merge with overall test set
 test_X_encode <- subset(test_X_encode, select = -c(assigned_room_type, booking_distribution_channel,
                                                    canceled, country, customer_type, deposit,
                                                    hotel_type, is_repeated_guest, last_status,
-                                                   market_segment, meal_booked, reserved_room_type))
+                                                   market_segment, meal_booked, reserved_room_type,
+                                                   month_arrival))
 test_X_encode <- cbind(test_X_encode, dummies_test)
 
 train_X_encode
