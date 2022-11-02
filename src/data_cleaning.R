@@ -365,14 +365,13 @@ training_data_after_data_cleaning$average_daily_rate <- train_y
 test_data_after_data_cleaning <- test_X_outlier
 
 # inspect:
-print(training_data_after_data_cleaning)
+str(training_data_after_data_cleaning)
 str(test_data_after_data_cleaning)
 
-setwd(dir = 'C:/Users/vikto/OneDrive/Documenten/GroepswerkMachineLearning/ml22-team10/data/silver_data')
+setwd(dir = '/Users/Artur/Desktop/uni jaar 6 sem 1/machine learning/ml22-team10/data/silver_data')
 write.csv(training_data_after_data_cleaning,"/train.csv", row.names = FALSE)
 write.csv(test_data_after_data_cleaning,"/test.csv", row.names = FALSE)
-#write.csv(train_X,"data/silver_data/train_X.csv", row.names = FALSE)
-#write.csv(train_y,"data/silver_data/train_y.csv", row.names = FALSE)
+
 
 
 ##########@
