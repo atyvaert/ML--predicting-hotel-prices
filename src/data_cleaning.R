@@ -156,7 +156,7 @@ train_X_impute$previous_cancellations[train_X_impute$previous_cancellations==0] 
 ##############################################################
 ##############################################################
 train_X_outlier <- train_X_impute
-test_X_outlier <- test_X_impute
+
 
 # make a vector of all the variables of which valid outliers need to be handled
 outlier.cols <- c()
@@ -175,7 +175,6 @@ outlier.cols <- c()
 # indicator variable for car_parking_spaces in the feature engineering part
 # add car_parking_spaces to variables that need to be handled
 outlier.cols <- append(outlier.cols, 'car_parking_spaces')
-
 
 # 16) lead_time
 outlier.cols <- append(outlier.cols, 'lead_time')
