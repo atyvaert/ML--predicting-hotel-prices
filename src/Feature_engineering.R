@@ -7,6 +7,14 @@
 library(lubridate)
 library(readr)
 library(dummy)
+library(ppcor)
+if(!require('ppcor')) install.packages('ppcor')
+if(!require('corpcor')) install.packages('corpcor')
+if(!require('mctest')) install.packages('mctest')
+library(corpcor)
+library(mctest)
+
+
 
 # import data
 train <- read.csv('./data/silver_data/train.csv')
@@ -194,8 +202,21 @@ train_X_scale[, scale_cols] <- scale(train_X_scale[, scale_cols], center = TRUE,
 # apply on test set
 test_X_scale[, scale_cols] <- scale(test_X_scale[, scale_cols], center = mean_train, scale = sd_train)
 
+
 ##############################################################
-# 2.3 Column deleting
+# 2.3 Check correlations
+##############################################################
+
+# we tested correlations with the following code that we do not repeat all the time
+cor(train_X_encode$nr_previous_bookings, train_X_encode$previous_bookings_not_canceled)
+cor(train_X_encode$nr_previous_bookings, train_X_encode$previous_cancellations)
+
+# drop number of previous bookings as this contains the information of the columns
+# previous_cancellations and previous_bookings_not_canceled and this has high correlation
+# This happens in the next section
+
+##############################################################
+# 2.4 Column deleting
 ##############################################################
 
 train_X_final <- train_X_scale
@@ -209,26 +230,20 @@ test_X_final <- subset(test_X_scale, select = -c(id, arrival_date, last_status_d
                                                    day_of_month_arrival, posix_last_status))
 
 
+
 ##############################################################
-# 2.3 Check correlations
 ##############################################################
+# 5. Write data away
+##############################################################
+##############################################################
+training_data_after_FE <- train_X_final
+training_data_after_FE$average_daily_rate <- train_y
 
-#check multicolinearity 
-test_cor <- subset(train_X_encode, select = -c(arrival_date, last_status_date, posix_arrival, year_arrival, posix_last_status, arrival_date_weekday))
-# pearson correlation 
-pcor(test_cor, method = "pearson")
-# correlation matrix 
-cor2pcor(cov(test_cor))
-# Glauber test for multicollinearity 
-omcdiag(test_cor, train_y)
+test_data_after_FE <- test_X_final
 
-
-cor(train_X_encode$nr_previous_bookings, train_X_encode$previous_bookings_not_canceled)
-cor(train_X_encode$nr_previous_bookings, train_X_encode$previous_cancellations)
-
-
-
-
+# Write
+write.csv(training_data_after_data_cleaning,"./data/gold_data/train.csv", row.names = FALSE)
+write.csv(test_data_after_data_cleaning,"./data/gold_data/test.csv", row.names = FALSE)
 
 
 

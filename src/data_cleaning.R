@@ -303,19 +303,26 @@ test_X_outlier$posix_last_status[is.na(test_X_outlier$posix_last_status) & (test
 
 test_X_outlier$posix_last_status <- format(as.POSIXct(test_X_outlier$posix_last_status, format="%Y-%m-%d"), format="%Y-%m-%d")
 
+
 ##############################################################
 ##############################################################
 # 5. Write data away
 ##############################################################
 ##############################################################
+
 training_data_after_data_cleaning <- train_X_outlier
 training_data_after_data_cleaning$average_daily_rate <- train_y
 
 test_data_after_data_cleaning <- test_X_outlier
 
 # inspect:
-str(training_data_after_data_cleaning)
-str(test_data_after_data_cleaning)
+#str(training_data_after_data_cleaning)
+#str(test_data_after_data_cleaning)
 
 write.csv(training_data_after_data_cleaning,"./data/silver_data/train.csv", row.names = FALSE)
 write.csv(test_data_after_data_cleaning,"./data/silver_data/test.csv", row.names = FALSE)
+
+
+
+
+
