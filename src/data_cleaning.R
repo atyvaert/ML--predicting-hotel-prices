@@ -296,17 +296,7 @@ train_X_outlier[, outlier.cols] <-  sapply(train_X_impute[, outlier.cols], FUN =
 quantile(train_X_impute$days_in_waiting_list, na.rm = T, probs = seq(0, 1, 0.001))
 # When we look at the distribution of the days in waiting list variable, we see that less than 1 % has a value higher than 125 days 
 # We arbitrary set the boundary to be an outlier to 125
-# We write a function to identify outliers 
-handle_outlier_daysInWaitingList <- function(column) {
-  ifelse(column>125,
-         125 , column)
-}
-# applying the function 
-daysInWaitingList_col <- c('days_in_waiting_list')
-train_X_outlier$days_in_waiting_list <-  sapply(train_X_impute[,daysInWaitingList_col], FUN = handle_outlier_daysInWaitingList)
-train_X_outlier$days_in_waiting_list
-# in the boxplot you can see that all values above 125 are gone
-boxplot(train_X_outlier$days_in_waiting_list)
+train_X_outlier$days_in_waiting_list <- ifelse(train_X_impute$days_in_waiting_list >= 125, 125, train_X_impute$days_in_waiting_list)
 
 
 ##############################################################
