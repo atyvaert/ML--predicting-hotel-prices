@@ -105,12 +105,12 @@ median.cols <- c('car_parking_spaces', 'nr_adults', 'nr_children', 'nr_previous_
                  'previous_bookings_not_canceled', 'previous_cancellations', 'days_in_waiting_list',
                  'lead_time')
 train_X_impute[, median.cols] <- lapply(train_X_impute[, median.cols], 
-                                     FUN = impute,
-                                     method = median)
+                                        FUN = impute,
+                                        method = median)
 
 test_X_impute[, median.cols] <- mapply(test_X_impute[, median.cols],
-                                    FUN = impute,
-                                    val = colMedians(train_X[, median.cols], na.rm = T))
+                                       FUN = impute,
+                                       val = colMedians(train_X[, median.cols], na.rm = T))
 
 
 # 2.2.1 Impute CATEGORICAL variables with information from the training set
@@ -207,6 +207,8 @@ boxplot(train_X_impute$nr_booking_changes)
 #########  NOG AAN TE PASSEN
 # moeilijk idd
 # >3  are outliers, however valid? like lots of travel insecurities => change number of rooms depending on people
+train_X_outlier$nr_booking_changes[train_X_outlier$nr_booking_changes>3] <- NA
+train_X_outlier$nr_booking_changes <- impute(train_X_outlier$nr_booking_changes, method = median)
 outlier.cols <- append(outlier.cols, 'nr_booking_changes')
 
 
@@ -218,6 +220,8 @@ quantile(nr_children_z, na.rm = T, probs = seq(0, 1, 0.01))
 quantile(train_X_impute$nr_children, na.rm = T, probs = seq(0, 1, 0.01))
 
 # starting from 98% outliers => from 2 (and 10) but valid
+train_X_outlier$nr_children[train_X$nr_children==10] <- NA
+train_X_outlier$nr_children <- impute(train_X_outlier$nr_children, method = median)
 outlier.cols <- append(outlier.cols, 'nr_children')
 
 
@@ -229,6 +233,8 @@ quantile(train_X_impute$nr_nights, na.rm = T, probs = seq(0, 1, 0.01))
 
 #########  NOG AAN TE PASSEN
 # starting from 99% outliers => from 14 but valid I suppose? ALso 69 days is about two months, perhaps business trips for consultants can last that long?
+train_X_outlier$nr_nights[train_X$nr_nights>30] <- NA
+train_X_outlier$nr_nights <- impute(train_X_outlier$nr_nights, method = median)
 outlier.cols <- append(outlier.cols, 'nr_nights')
 
 # 24) nr_previous_bookings  
@@ -270,7 +276,7 @@ train_X_impute$special_requests
 special_requests_z <- scale(train_X_impute$special_requests)
 quantile(special_requests_z, na.rm = T, probs = seq(0, 1, 0.01))
 quantile(train_X_impute$special_requests, na.rm = T, probs = seq(0, 1, 0.01))
- 
+
 #starting from 98% (3), we have outliers
 outlier.cols <- append(outlier.cols, 'special_requests')
 
@@ -314,13 +320,13 @@ boxplot(train_X_outlier$days_in_waiting_list)
 train_X_outlier$posix_arrival <- as.POSIXct(train_X_outlier$arrival_date, format="%B  %d  %Y")
 train_X_outlier$day_of_month_arrival <- format(train_X_outlier$posix_arrival, format = '%d')
 train_X_outlier$month_arrival <- format(train_X_outlier$posix_arrival, format = '%B')
-train_X_outlier$year_arrival <- format(train_X_outlier$posix_arrival, format = '%Y')
+train_X_outlier$year_arrival <- as.factor(format(train_X_outlier$posix_arrival, format = '%Y'))
 
 # for test set:
 test_X_outlier$posix_arrival <- as.POSIXct(test_X_outlier$arrival_date, format="%B  %d  %Y")
 test_X_outlier$day_of_month_arrival <- format(test_X_outlier$posix_arrival, format = '%d')
 test_X_outlier$month_arrival <- format(test_X_outlier$posix_arrival, format = '%B')
-test_X_outlier$year_arrival <- format(test_X_outlier$posix_arrival, format = '%Y')
+test_X_outlier$year_arrival <- as.factor(format(test_X_outlier$posix_arrival, format = '%Y'))
 
 
 # last_status_date
@@ -362,20 +368,3 @@ str(test_data_after_data_cleaning)
 
 write.csv(training_data_after_data_cleaning,"./data/silver_data/train.csv", row.names = FALSE)
 write.csv(test_data_after_data_cleaning,"./data/silver_data/test.csv", row.names = FALSE)
-
-
-
-##########@
-# HOORT BIJ FE EN NIET HIER
-###########
-
-
-
-#ENCODING 
-# get all columns that are categorical variables 
-train_X_encode <- train_X_impute[, c("customer_type", "deposit", "hotel_type", "is_repeated_guest","last_status" )]
-# create dataframe
-df_merge <- cbind(X = train_X_encode, y = train_y)
-# encode the variables
-train_X_encode <- model.matrix(y ~ . - 1, data = df_merge)
-train_X_encode
