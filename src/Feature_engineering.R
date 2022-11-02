@@ -158,13 +158,17 @@ test_X_encode$nr_children[test_X_encode$nr_children>=1] <- 1
 train_X_encode$days_in_waiting_list[train_X_encode$days_in_waiting_list == 0] <- 0
 train_X_encode$days_in_waiting_list[train_X_encode$days_in_waiting_list > 0] <- 1
 
+#check multicolinearity 
+test_cor <- subset(train_X_encode, select = -c(arrival_date, last_status_date, posix_arrival, year_arrival, posix_last_status, arrival_date_weekday))
+# pearson correlation 
+pcor(test_cor, method = "pearson")
+# correlation matrix 
+cor2pcor(cov(test_cor))
+# Glauber test for multicollinearity 
+omcdiag(test_cor, train_y)
 
-
-
-
-
-
-
+cor(train_X_encode$nr_previous_bookings, train_X_encode$previous_bookings_not_canceled)
+cor(train_X_encode$nr_previous_bookings, train_X_encode$previous_cancellations)
 
 
 
