@@ -10,9 +10,8 @@ library(stringr)
 library(miscTools)
 
 # import the data
-setwd(dir = '/Users/Artur/Desktop/uni jaar 6 sem 1/machine learning/ml22-team10/data')
-train <- read_csv('./bronze_data/train.csv')
-test_X <- read_csv('./bronze_data/test.csv')
+train <- read_csv('./data/bronze_data/train.csv')
+test_X <- read_csv('./data/bronze_data/test.csv')
 
 # for Viktor:
 # setwd(dir = 'C:/Users/vikto/OneDrive - UGent/TweedeMaster/MachineLearning/ML_Team10/data/bronze_data')
@@ -368,9 +367,8 @@ test_data_after_data_cleaning <- test_X_outlier
 str(training_data_after_data_cleaning)
 str(test_data_after_data_cleaning)
 
-setwd(dir = '/Users/Artur/Desktop/uni jaar 6 sem 1/machine learning/ml22-team10/data/silver_data')
-write.csv(training_data_after_data_cleaning,"/train.csv", row.names = FALSE)
-write.csv(test_data_after_data_cleaning,"/test.csv", row.names = FALSE)
+write.csv(training_data_after_data_cleaning,"./data/silver_data/train.csv", row.names = FALSE)
+write.csv(test_data_after_data_cleaning,"./data/silver_data/test.csv", row.names = FALSE)
 
 
 
