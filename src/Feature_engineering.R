@@ -21,14 +21,18 @@ library(caret)
 
 # import data
 train <- read.csv('./data/silver_data/train.csv')
+val <- read.csv('./data/silver_data/val.csv')
 test_X <- read.csv('./data/silver_data/test.csv')
 
 # separate dependent and independent variables
 train_X <- subset(train, select = -c(average_daily_rate))
 train_y <- train$average_daily_rate
+val_X <- subset(val, select = -c(average_daily_rate))
+val_y <- val$average_daily_rate
 
 # inspect
 str(train_X)
+str(val_X)
 str(test_X)
 
 
@@ -39,6 +43,7 @@ str(test_X)
 ##############################################################
 ##############################################################
 train_X_encode <- train_X
+val_X_encode <- val_X
 test_X_encode <- test_X
 
 ##############################################################
@@ -54,6 +59,7 @@ test_X_encode <- test_X
 
 # First we make a categorical feature arrival_date_weekday
 train_X_encode$arrival_date_weekday <- wday(train_X_encode$posix_arrival, label = T)
+val_X_encode$arrival_date_weekday <- wday(val_X_encode$posix_arrival, label = T)
 test_X_encode$arrival_date_weekday <- wday(test_X_encode$posix_arrival, label = T)
 
 
@@ -72,7 +78,7 @@ cats <- append(cats, categories(train_X_encode['month_arrival']))
 
 
 # apply on train set (exclude reference categories)
-dummies_train <- dummy(train_X_encode[,c('assigned_room_type', 'booking_distribution_channel', 
+dummies_train <- dummy(train_X_encode[, c('assigned_room_type', 'booking_distribution_channel', 
                                          'canceled', 'country', 'customer_type', 'deposit',
                                          'hotel_type', 'is_repeated_guest', 'last_status',
                                          'market_segment', 'meal_booked', 'reserved_room_type',
@@ -87,6 +93,21 @@ dummies_train <- subset(dummies_train,
                                     last_status_Check.Out, market_segment_Online.travel.agent,
                                     meal_booked_meal.package.NOT.booked, reserved_room_type_A, month_arrival_January,
                                     arrival_date_weekday_Mon))
+
+# apply on val set (exclude reference categories)
+# excluded no.canceled so it becomes one when it was canceled
+dummies_val <- dummy(val_X_encode[, c('assigned_room_type', 'booking_distribution_channel', 
+                                        'canceled', 'country', 'customer_type', 'deposit',
+                                        'hotel_type', 'is_repeated_guest', 'last_status',
+                                        'market_segment', 'meal_booked', 'reserved_room_type',
+                                        'month_arrival', 'arrival_date_weekday')], object = cats)
+
+dummies_val <- subset(dummies_val, select = -c(assigned_room_type_A, booking_distribution_channel_TA.TO,
+                                                 country_Belgium, canceled_no.cancellation, customer_type_Transient,
+                                                 deposit_nodeposit, hotel_type_City.Hotel, is_repeated_guest_no,
+                                                 last_status_Check.Out, market_segment_Online.travel.agent,
+                                                 meal_booked_meal.package.NOT.booked, reserved_room_type_A, month_arrival_January,
+                                                 arrival_date_weekday_Mon))
 
 # apply on test set (exclude reference categories)
 # excluded no.canceled so it becomes one when it was canceled
@@ -112,6 +133,14 @@ train_X_encode <- subset(train_X_encode, select = -c(assigned_room_type, booking
                                                      month_arrival, arrival_date_weekday))
 train_X_encode <- cbind(train_X_encode, dummies_train)
 
+## merge with overall val set
+val_X_encode <- subset(val_X_encode, select = -c(assigned_room_type, booking_distribution_channel,
+                                                   canceled, country, customer_type, deposit,
+                                                   hotel_type, is_repeated_guest, last_status,
+                                                   market_segment, meal_booked, reserved_room_type,
+                                                   month_arrival, arrival_date_weekday))
+val_X_encode <- cbind(val_X_encode, dummies_val)
+
 ## merge with overall test set
 test_X_encode <- subset(test_X_encode, select = -c(assigned_room_type, booking_distribution_channel,
                                                    canceled, country, customer_type, deposit,
@@ -120,7 +149,6 @@ test_X_encode <- subset(test_X_encode, select = -c(assigned_room_type, booking_d
                                                    month_arrival, arrival_date_weekday))
 test_X_encode <- cbind(test_X_encode, dummies_test)
 
-train_X_encode
 
 ##############################################################
 # 1.3 Special data: create a indicator variable
@@ -134,10 +162,12 @@ train_X_encode
 null.cols <- c('booking_agent', 'booking_company')
 new.cols_names <- c('booking_agent_present', 'booking_company_present')
 train_X_encode[, new.cols_names] <- ifelse(train_X[, null.cols] == 'NULL', 0, 1)
+val_X_encode[, new.cols_names] <- ifelse(val_X[, null.cols] == 'NULL', 0, 1)
 test_X_encode[, new.cols_names] <- ifelse(test_X[, null.cols] == 'NULL', 0, 1)
 
 # remove original columns
 train_X_encode <- subset(train_X_encode, select = -c(booking_agent, booking_company))
+val_X_encode <- subset(val_X_encode, select = -c(booking_agent, booking_company))
 test_X_encode <- subset(test_X_encode, select = -c(booking_agent, booking_company))
 
 
@@ -163,6 +193,15 @@ time_between_arrival_cancel[time_between_arrival_cancel<0] <- 0
 
 train_X_encode <- cbind(train_X_encode, time_between_arrival_checkout, time_between_arrival_cancel)
 
+# val
+time_between_last_status_arrival <- as.numeric(round(difftime(val_X_encode$posix_last_status, val_X_encode$posix_arrival)/(60*60*24)))
+time_between_arrival_checkout <- time_between_last_status_arrival
+time_between_arrival_checkout[time_between_arrival_checkout<0] <- 0
+time_between_arrival_cancel <- -time_between_last_status_arrival
+time_between_arrival_cancel[time_between_arrival_cancel<0] <- 0
+
+val_X_encode <- cbind(val_X_encode, time_between_arrival_checkout, time_between_arrival_cancel)
+
 # test
 time_between_last_status_arrival <- as.numeric(round(difftime(test_X_encode$posix_last_status, test_X_encode$posix_arrival)/(60*60*24)))
 time_between_arrival_checkout <- time_between_last_status_arrival
@@ -183,6 +222,7 @@ ind.cols <- c('nr_babies', 'nr_children', 'car_parking_spaces')
 
 # apply
 train_X_encode[, ind.cols] <- ifelse(train_X_encode[, ind.cols] == 0, 0, 1)
+val_X_encode[, ind.cols] <- ifelse(val_X_encode[, ind.cols] == 0, 0, 1)
 test_X_encode[, ind.cols] <- ifelse(test_X_encode[, ind.cols] == 0, 0, 1)
 
 
@@ -192,6 +232,7 @@ test_X_encode[, ind.cols] <- ifelse(test_X_encode[, ind.cols] == 0, 0, 1)
 # for three variables, we perform a log transformation as we want to make the distribution
 # less skewed and reduce the range of the variables
 train_X_scale <- train_X_encode
+val_X_scale <- val_X_encode
 test_X_scale <- test_X_encode
 
 trans.cols <- c('lead_time', 'days_in_waiting_list', 'time_between_arrival_checkout')
@@ -213,6 +254,7 @@ norm.cols <- c('nr_adults', 'nr_nights', 'lead_time', 'days_in_waiting_list','pr
 process <- preProcess(train_X_scale[, norm.cols], method=c("range")) # transformation from training set
 
 train_X_scale[, norm.cols] <- predict(process, train_X_scale[, norm.cols])
+val_X_scale[, norm.cols] <- predict(process, val_X_scale[, norm.cols])
 test_X_scale[, norm.cols] <- predict(process, test_X_scale[, norm.cols])
 
 
@@ -233,11 +275,15 @@ cor(train_X_encode$nr_previous_bookings, train_X_encode$previous_cancellations)
 ##############################################################
 
 train_X_final <- train_X_scale
+val_X_final <- val_X_scale
 test_X_final <- test_X_scale
 
 train_X_final <- subset(train_X_scale, select = -c(id, arrival_date, last_status_date,
                                           nr_previous_bookings, posix_arrival,
                                           day_of_month_arrival, posix_last_status))
+val_X_final <- subset(val_X_scale, select = -c(id, arrival_date, last_status_date,
+                                                 nr_previous_bookings, posix_arrival,
+                                                 day_of_month_arrival, posix_last_status))
 test_X_final <- subset(test_X_scale, select = -c(id, arrival_date, last_status_date,
                                                    nr_previous_bookings, posix_arrival,
                                                    day_of_month_arrival, posix_last_status))
@@ -252,11 +298,12 @@ test_X_final <- subset(test_X_scale, select = -c(id, arrival_date, last_status_d
 training_data_after_FE <- train_X_final
 training_data_after_FE$average_daily_rate <- train_y
 
+val_data_after_FE <- val_X_final
+val_data_after_FE$average_daily_rate <- val_y
+
 test_data_after_FE <- test_X_final
 
 # Write
 write.csv(training_data_after_FE,"./data/gold_data/train.csv", row.names = FALSE)
+write.csv(val_data_after_FE,"./data/gold_data/val.csv", row.names = FALSE)
 write.csv(test_data_after_FE,"./data/gold_data/test.csv", row.names = FALSE)
-
-
-
