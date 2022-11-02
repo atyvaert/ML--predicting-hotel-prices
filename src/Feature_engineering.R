@@ -282,7 +282,7 @@ test_X_final <- test_X_scale
 train_X_final <- subset(train_X_scale, select = -c(id, arrival_date, last_status_date,
                                           nr_previous_bookings, posix_arrival,
                                           day_of_month_arrival, posix_last_status, year_arrival))
-val_X_final <- subset(val_X_scale, select = -c(arrival_date, last_status_date,
+val_X_final <- subset(val_X_scale, select = -c(id, arrival_date, last_status_date,
                                                  nr_previous_bookings, posix_arrival,
                                                  day_of_month_arrival, posix_last_status, year_arrival))
 test_X_final <- subset(test_X_scale, select = -c(arrival_date, last_status_date,
