@@ -236,7 +236,8 @@ test_X_scale <- test_X_encode
 
 scale_cols <- c("nr_adults", "nr_nights", "lead_time",
                 "previous_bookings_not_canceled", "previous_cancellations",
-                "special_requests", "time_between_arrival_checkout", "time_between_arrival_cancel")
+                "special_requests", "time_between_arrival_checkout", "time_between_arrival_cancel",
+                "year_arrival")
 
 # apply on training set
 mean_train <- colMeans(train_X_scale[, scale_cols])
