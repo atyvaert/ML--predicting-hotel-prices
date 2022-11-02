@@ -314,13 +314,13 @@ boxplot(train_X_outlier$days_in_waiting_list)
 train_X_outlier$posix_arrival <- as.POSIXct(train_X_outlier$arrival_date, format="%B  %d  %Y")
 train_X_outlier$day_of_month_arrival <- format(train_X_outlier$posix_arrival, format = '%d')
 train_X_outlier$month_arrival <- format(train_X_outlier$posix_arrival, format = '%B')
-train_X_outlier$year_arrival <- format(train_X_outlier$posix_arrival, format = '%Y')
+train_X_outlier$year_arrival <- as.factor(format(train_X_outlier$posix_arrival, format = '%Y'))
 
 # for test set:
 test_X_outlier$posix_arrival <- as.POSIXct(test_X_outlier$arrival_date, format="%B  %d  %Y")
 test_X_outlier$day_of_month_arrival <- format(test_X_outlier$posix_arrival, format = '%d')
 test_X_outlier$month_arrival <- format(test_X_outlier$posix_arrival, format = '%B')
-test_X_outlier$year_arrival <- format(test_X_outlier$posix_arrival, format = '%Y')
+test_X_outlier$year_arrival <- as.factor(format(test_X_outlier$posix_arrival, format = '%Y'))
 
 
 # last_status_date
