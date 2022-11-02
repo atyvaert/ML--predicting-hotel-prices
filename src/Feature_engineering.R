@@ -168,20 +168,11 @@ test_X_encode <- cbind(test_X_encode, time_between_arrival_checkout, time_betwee
 ##############################################################
 # Make indicators variables for several variables as more than 90% is equal to zero and each time,
 # there are very few values with 1 or somewhat higher
-ind.cols <- c('nr_babies', 'nr_children')
-
-# After handling the outliers in car_parking_spaces, we see that all values higher than zero
-# have been brought back to 0.78 (including the ones). Therefore, we just make an indicator
-# variable for this variable to indicate if a car parking space was required:
-ind.cols <- append(ind.cols, 'car_parking_spaces')
+ind.cols <- c('nr_babies', 'nr_children', 'car_parking_spaces')
 
 # apply
 train_X_encode[, ind.cols] <- ifelse(train_X_encode[, ind.cols] == 0, 0, 1)
 test_X_encode[, ind.cols] <- ifelse(test_X_encode[, ind.cols] == 0, 0, 1)
-
-
-cor(train_X_encode$nr_previous_bookings, train_X_encode$previous_bookings_not_canceled)
-cor(train_X_encode$nr_previous_bookings, train_X_encode$previous_cancellations)
 
 
 ##############################################################
@@ -230,6 +221,12 @@ pcor(test_cor, method = "pearson")
 cor2pcor(cov(test_cor))
 # Glauber test for multicollinearity 
 omcdiag(test_cor, train_y)
+
+
+cor(train_X_encode$nr_previous_bookings, train_X_encode$previous_bookings_not_canceled)
+cor(train_X_encode$nr_previous_bookings, train_X_encode$previous_cancellations)
+
+
 
 
 

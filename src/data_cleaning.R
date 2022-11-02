@@ -13,11 +13,6 @@ library(miscTools)
 train <- read_csv('./data/bronze_data/train.csv')
 test_X <- read_csv('./data/bronze_data/test.csv')
 
-# for Viktor:
-# setwd(dir = 'C:/Users/vikto/OneDrive - UGent/TweedeMaster/MachineLearning/ML_Team10/data/bronze_data')
-# train <- read.csv("/train.csv", fileEncoding = 'latin1')
-# test_X <- read.csv('./test.csv')
-
 # separate dependent and independent variables
 train_X <- subset(train, select = -c(average_daily_rate))
 train_y <- train$average_daily_rate
@@ -29,8 +24,6 @@ train_y <- as.numeric(word(train_y, 1))
 # 1. Adjust structure
 ##############################################################
 ##############################################################
-# VRAAG: MOET DIT OOK VOOR TEST SET
-
 
 #lead_time to integer number of days for training set
 train_X$lead_time <- substr(train_X$lead_time, start = 1, stop = (nchar(train_X$lead_time)-7))
@@ -39,10 +32,6 @@ train_X$lead_time <- as.numeric(train_X$lead_time)
 # for test set
 test_X$lead_time <- substr(test_X$lead_time, start = 1, stop = (nchar(test_X$lead_time)-7))
 test_X$lead_time <- as.numeric(test_X$lead_time)
-
-
-# convert the necessary characters to numeric
-
 
 
 ##############################################################
@@ -171,13 +160,15 @@ test_X_outlier <- test_X_impute
 
 # make a vector of all the variables of which valid outliers need to be handled
 outlier.cols <- c()
-#outlier.cols <- append(outlier.cols, '')
+# outlier.cols <- append(outlier.cols, '')
+
+# We inspected the outlier with the help of the following function, that we will not repeat
+# all the time:
+# boxplot(train_X_impute$X)
+# quantile(train_X_impute$X, na.rm = T, probs = seq(0, 1, 0.001))
 
 # look at all the numeric variables and detect valid and invalid outliers:
 # 1) car_parking_spaces
-# boxplot(train_X_impute$car_parking_spaces)
-# quantile(train_X_impute$car_parking_spaces, na.rm = T, probs = seq(0, 1, 0.01))
-
 # All the car parking spaces have a value between 0 and 3, with the majority being 0
 # as 1, 2 and 3 are seen as outliers, we bring back these values to one as these are 
 # valid outliers. However, these values are converted to 0.78. Therefore, we create an
@@ -193,37 +184,25 @@ outlier.cols <- append(outlier.cols, 'lead_time')
 outlier.cols <- append(outlier.cols, 'nr_adults')
 
 # 20) nr_babies
-# 1 invalid outlier: "9" treat as NA -> "0"
-train_X_outlier$nr_babies[train_X$nr_babies==9] <- 0
+# 1 invalid outlier: "9" treat as NA -> "impute with median 0"
+train_X_outlier$nr_babies[train_X$nr_babies==9] <- NA
+train_X_outlier$nr_babies <- impute(train_X_outlier$nr_babies, method = median)
 #FE: dummy variable babies: 0 = No, 1 = Yes
 
+
 # 21) nr_booking_changes  
-nr_booking_changes_z <- scale(train_X_impute$nr_booking_changes)
-quantile(nr_booking_changes_z, na.rm = T, probs = seq(0, 1, 0.01))
-quantile(train_X_impute$nr_booking_changes, na.rm = T, probs = seq(0, 1, 0.01))
-boxplot(train_X_impute$nr_booking_changes)
-
-
-#########  NOG AAN TE PASSEN
-# moeilijk idd
 # >3  are outliers, however valid? like lots of travel insecurities => change number of rooms depending on people
 train_X_outlier$nr_booking_changes[train_X_outlier$nr_booking_changes>3] <- NA
 train_X_outlier$nr_booking_changes <- impute(train_X_outlier$nr_booking_changes, method = median)
 outlier.cols <- append(outlier.cols, 'nr_booking_changes')
 
 
-#########  NOG AAN TE PASSEN
-# 22) nr_children  
-train_X_impute$nr_children
-nr_children_z <- scale(train_X_impute$nr_children)
-quantile(nr_children_z, na.rm = T, probs = seq(0, 1, 0.01))
-quantile(train_X_impute$nr_children, na.rm = T, probs = seq(0, 1, 0.01))
 
-# starting from 98% outliers => from 2 (and 10) but valid
+# 22) nr_children  
+# starting from 98% outliers => from 2 (=valid) to 10 (= invalid)
 train_X_outlier$nr_children[train_X$nr_children==10] <- NA
 train_X_outlier$nr_children <- impute(train_X_outlier$nr_children, method = median)
 outlier.cols <- append(outlier.cols, 'nr_children')
-
 
 # 23) nr_nights
 train_X_impute$nr_nights
@@ -232,51 +211,29 @@ quantile(nr_nights_z, na.rm = T, probs = seq(0, 1, 0.01))
 quantile(train_X_impute$nr_nights, na.rm = T, probs = seq(0, 1, 0.01))
 
 #########  NOG AAN TE PASSEN
-# starting from 99% outliers => from 14 but valid I suppose? ALso 69 days is about two months, perhaps business trips for consultants can last that long?
+# starting from 99% outliers => until 30 but valid I suppose (= a whole month)?
+# ALso 69 days is about two months, perhaps business trips for consultants can last that long?
 train_X_outlier$nr_nights[train_X$nr_nights>30] <- NA
 train_X_outlier$nr_nights <- impute(train_X_outlier$nr_nights, method = median)
 outlier.cols <- append(outlier.cols, 'nr_nights')
 
 # 24) nr_previous_bookings  
-train_X_impute$nr_previous_bookings
-nr_previous_bookings_z <- scale(train_X_impute$nr_previous_bookings)
-quantile(nr_previous_bookings_z, na.rm = T, probs = seq(0, 1, 0.01))
-quantile(train_X_impute$nr_previous_bookings, na.rm = T, probs = seq(0, 1, 0.01))
-
 #starting from 100% (78!!) trips, we have an outlier.
 outlier.cols <- append(outlier.cols, 'nr_previous_bookings')
 
-# drop or handle? ALSO what about 75,72,70????
-# function compares every value to three right? SO it should be more detailed than the quantile
-
 
 # 25) previous_bookings_not_canceled  
-train_X_impute$previous_bookings_not_canceled
-previous_bookings_not_canceled_z <- scale(train_X_impute$previous_bookings_not_canceled)
-quantile(previous_bookings_not_canceled_z, na.rm = T, probs = seq(0, 1, 0.01))
-quantile(train_X_impute$previous_bookings_not_canceled, na.rm = T, probs = seq(0, 1, 0.01))
-
 #starting from 100% (72!!), we have an outlier. Same comment as before
 outlier.cols <- append(outlier.cols, 'previous_bookings_not_canceled')
 
 
 # 26) previous_cancellations  
-train_X_impute$previous_cancellations
-previous_cancellations_z <- scale(train_X_impute$previous_cancellations)
-quantile(previous_cancellations_z, na.rm = T, probs = seq(0, 1, 0.01))
-quantile(train_X_impute$previous_cancellations, na.rm = T, probs = seq(0, 1, 0.01))
-
 #starting from 100% (26!!), we have an outlier. Same comment as before
 outlier.cols <- append(outlier.cols, 'previous_cancellations')
 
 
 
 # 28) special_requests  
-train_X_impute$special_requests
-special_requests_z <- scale(train_X_impute$special_requests)
-quantile(special_requests_z, na.rm = T, probs = seq(0, 1, 0.01))
-quantile(train_X_impute$special_requests, na.rm = T, probs = seq(0, 1, 0.01))
-
 #starting from 98% (3), we have outliers
 outlier.cols <- append(outlier.cols, 'special_requests')
 
