@@ -24,9 +24,10 @@ train <- read.csv('./data/silver_data/train.csv')
 val <- read.csv('./data/silver_data/val.csv')
 test_X <- read.csv('./data/silver_data/test.csv')
 
-# separate dependent and independent variables
+# separate dependent and independent variables for training and validation set
 train_X <- subset(train, select = -c(average_daily_rate))
 train_y <- train$average_daily_rate
+
 val_X <- subset(val, select = -c(average_daily_rate))
 val_y <- val$average_daily_rate
 
@@ -307,3 +308,6 @@ test_data_after_FE <- test_X_final
 write.csv(training_data_after_FE,"./data/gold_data/train.csv", row.names = FALSE)
 write.csv(val_data_after_FE,"./data/gold_data/val.csv", row.names = FALSE)
 write.csv(test_data_after_FE,"./data/gold_data/test.csv", row.names = FALSE)
+
+
+

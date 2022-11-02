@@ -13,14 +13,17 @@ library(miscTools)
 train <- read_csv('./data/bronze_data/train.csv')
 test_X <- read_csv('./data/bronze_data/test.csv')
 
-# separate dependent and independent variables
+# create training and validation set
 set.seed(100)
 valvector <- sample(nrow(train), size=nrow(train)*0.2)
 val <- train[valvector, ]
 train <- train[-valvector, ]
+
+# separate dependent and independent variables
 train_X <- subset(train, select = -c(average_daily_rate))
 train_y <- train$average_daily_rate
 train_y <- as.numeric(word(train_y, 1))
+
 val_X <- subset(val, select = -c(average_daily_rate))
 val_y <- val$average_daily_rate
 val_y <- as.numeric(word(val_y, 1))
@@ -275,7 +278,7 @@ train_X_outlier[, outlier.cols] <-  sapply(train_X_impute[, outlier.cols], FUN =
 
 # We cannot use the previous method to handle outliers of the number of days in waiting list 
 # This is because this variable has a lot of 0 values, and if we would use the z score, a lot of outliers would be identified
-quantile(train_X_impute$days_in_waiting_list, na.rm = T, probs = seq(0, 1, 0.001))
+# quantile(train_X_impute$days_in_waiting_list, na.rm = T, probs = seq(0, 1, 0.01))
 # When we look at the distribution of the days in waiting list variable, we see that less than 1 % has a value higher than 125 days 
 # We arbitrary set the boundary to be an outlier to 125
 train_X_outlier$days_in_waiting_list <- ifelse(train_X_impute$days_in_waiting_list >= 125, 125, train_X_impute$days_in_waiting_list)
@@ -363,3 +366,6 @@ test_data_after_data_cleaning <- test_X_outlier
 write.csv(training_data_after_data_cleaning,"./data/silver_data/train.csv", row.names = FALSE)
 write.csv(val_data_after_data_cleaning,"./data/silver_data/val.csv", row.names = FALSE)
 write.csv(test_data_after_data_cleaning,"./data/silver_data/test.csv", row.names = FALSE)
+
+
+
