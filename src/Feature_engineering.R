@@ -189,47 +189,31 @@ test_X_encode[, ind.cols] <- ifelse(test_X_encode[, ind.cols] == 0, 0, 1)
 ##############################################################
 # 2.2 Transformations
 ##############################################################
+# for three variables, we perform a log transformation as we want to make the distribution
+# less skewed and reduce the range of the variables
+train_X_scale <- train_X_encode
+test_X_scale <- test_X_encode
 
+trans.cols <- c('lead_time', 'days_in_waiting_list', 'time_between_arrival_checkout')
+train_X_encode[, trans.cols] <- log(train_X_encode[, trans.cols])
 
 
 ##############################################################
 # 2.3 Scaling
 ##############################################################
-train_X_scale <- train_X_encode
-test_X_scale <- test_X_encode
-
-# scale_cols <- c("nr_adults", "nr_nights", "lead_time", 'days_in_waiting_list',
-#                "previous_bookings_not_canceled", "previous_cancellations", 'nr_booking_changes',
-#                "special_requests", "time_between_arrival_checkout", "time_between_arrival_cancel")
-
 # check if variable is normally distributed or not to see if we need to apply normalization 
 # or standardization with the following code
-hist(train_X_scale$days_in_waiting_list)
-hist(log(train_X_scale$time_between_arrival_cancel))
-
-# idee log transform:
-# lead_time, days_in_waiting_list, time_between_arrival_checkout
-# zou zeer goed zijn bij time_between_arrival_cancel maar gaat niet door negatieve values
-
-# LET OP: time_between_arrival_cancel NOG NIET BIJ NORMALIZATION ALS ENIGSTE
+hist(train_X_scale$time_between_arrival_checkout)
 
 # normalization:
 norm.cols <- c('nr_adults', 'nr_nights', 'lead_time', 'days_in_waiting_list','previous_bookings_not_canceled',
-               'previous_cancellations', 'nr_booking_changes', 'special_requests', 'time_between_arrival_checkout')
+               'previous_cancellations', 'nr_booking_changes', 'special_requests', 'time_between_arrival_checkout',
+               'time_between_arrival_cancel')
 
 process <- preProcess(train_X_scale[, norm.cols], method=c("range")) # transformation from training set
 
 train_X_scale[, norm.cols] <- predict(process, train_X_scale[, norm.cols])
 test_X_scale[, norm.cols] <- predict(process, test_X_scale[, norm.cols])
-
-
-# apply on training set
-#mean_train <- colMeans(train_X_scale[, scale_cols])
-#sd_train <- sapply(train_X_scale[, scale_cols], sd)
-#train_X_scale[, scale_cols] <- scale(train_X_scale[, scale_cols], center = TRUE, scale = TRUE)
-
-# apply on test set
-#test_X_scale[, scale_cols] <- scale(test_X_scale[, scale_cols], center = mean_train, scale = sd_train)
 
 
 ##############################################################
