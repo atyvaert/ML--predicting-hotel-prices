@@ -242,8 +242,8 @@ training_data_after_FE$average_daily_rate <- train_y
 test_data_after_FE <- test_X_final
 
 # Write
-write.csv(training_data_after_data_cleaning,"./data/gold_data/train.csv", row.names = FALSE)
-write.csv(test_data_after_data_cleaning,"./data/gold_data/test.csv", row.names = FALSE)
+write.csv(training_data_after_FE,"./data/gold_data/train.csv", row.names = FALSE)
+write.csv(test_data_after_FE,"./data/gold_data/test.csv", row.names = FALSE)
 
 
 
