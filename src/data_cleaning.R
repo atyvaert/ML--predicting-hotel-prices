@@ -10,9 +10,9 @@ library(stringr)
 library(miscTools)
 
 # import the data
-# setwd(dir = '/Users/Artur/Desktop/uni jaar 6 sem 1/machine learning/ml22-team10/data/bronze_data')
-train <- read_csv('./data/bronze_data/train.csv')
-test_X <- read_csv('./data/bronze_data/test.csv')
+setwd(dir = '/Users/Artur/Desktop/uni jaar 6 sem 1/machine learning/ml22-team10/data')
+train <- read_csv('./bronze_data/train.csv')
+test_X <- read_csv('./bronze_data/test.csv')
 
 # for Viktor:
 # setwd(dir = 'C:/Users/vikto/OneDrive - UGent/TweedeMaster/MachineLearning/ML_Team10/data/bronze_data')
@@ -100,23 +100,11 @@ impute <- function(x, method = mean, val = NULL){
 }
 
 
-# impute numerical variables with the mean
-num.cols <- c('days_in_waiting_list', 'lead_time')
-train_X_impute[, num.cols] <- lapply(train_X_impute[, num.cols], 
-                                     FUN = impute,
-                                     method = mean)
-
-test_X_impute[, num.cols] <- mapply(test_X_impute[, num.cols],
-                                    FUN = impute,
-                                    val = colMeans(train_X[, num.cols], na.rm = T))
-
-
-
-
-
-# impute categorical variables with the median
+# impute numerical variables with the median as we thought this was most accurate for 
+# these variables
 median.cols <- c('car_parking_spaces', 'nr_adults', 'nr_children', 'nr_previous_bookings',
-                 'previous_bookings_not_canceled', 'previous_cancellations')
+                 'previous_bookings_not_canceled', 'previous_cancellations', 'days_in_waiting_list',
+                 'lead_time')
 train_X_impute[, median.cols] <- lapply(train_X_impute[, median.cols], 
                                      FUN = impute,
                                      method = median)
@@ -390,6 +378,7 @@ write.csv(test_data_after_data_cleaning,"/test.csv", row.names = FALSE)
 ##########@
 # HOORT BIJ FE EN NIET HIER
 ###########
+
 
 
 #ENCODING 

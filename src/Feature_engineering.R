@@ -7,9 +7,9 @@ library(readr)
 library(dummy)
 
 # import data
-setwd(dir = '/Users/Artur/Desktop/uni jaar 6 sem 1/machine learning/ml22-team10/data/silver_data')
-train <- read.csv('./train.csv')
-test_X <- read.csv('./test.csv')
+setwd(dir = '/Users/Artur/Desktop/uni jaar 6 sem 1/machine learning/ml22-team10/data')
+train <- read.csv('./silver_data/train.csv')
+test_X <- read.csv('./silver_data/test.csv')
 
 #for Viktor
 setwd(dir = 'C:/Users/vikto/OneDrive - UGent/TweedeMaster/MachineLearning/ML_Team10/data/silver_data')
