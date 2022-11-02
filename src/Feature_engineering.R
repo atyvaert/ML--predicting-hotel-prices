@@ -66,7 +66,7 @@ cats <- categories(train_X_encode[, c('assigned_room_type', 'booking_distributio
                                       'canceled', 'country', 'customer_type', 'deposit',
                                       'hotel_type', 'is_repeated_guest', 'last_status',
                                       'market_segment', 'meal_booked', 'reserved_room_type',
-                                      'arrival_date_weekday')], p = 10)
+                                      'arrival_date_weekday', 'year_arrival')], p = 10)
 
 
 # month_arrival seperate because we want all 12 categories here
@@ -78,7 +78,7 @@ dummies_train <- dummy(train_X_encode[,c('assigned_room_type', 'booking_distribu
                                          'canceled', 'country', 'customer_type', 'deposit',
                                          'hotel_type', 'is_repeated_guest', 'last_status',
                                          'market_segment', 'meal_booked', 'reserved_room_type',
-                                         'month_arrival', 'arrival_date_weekday')], object = cats)
+                                         'month_arrival', 'arrival_date_weekday', 'year_arrival')], object = cats)
 
 # exclude the reference category: take the first one of the variable you added
 names(dummies_train)
@@ -173,30 +173,6 @@ time_between_arrival_cancel[time_between_arrival_cancel>0] <- 0
 test_X_encode <- cbind(test_X_encode, time_between_arrival_checkout, time_between_arrival_cancel)
 
 
-##DEZE BINNING CODE WEG?##
-# binning of the days in waiting list variable 
-# write a function to calculate the bin frequency
-bin_data_frequency <- function(x_train, x_val, bins = 5) {
-  cut(x_val, breaks = quantile(x_train, seq(0, 1, 1 / bins)), include.lowest = TRUE)
-}
-# apply the function to the days in waiting list variable 
-train_X_encode$days_in_waiting_list <- bin_data_frequency(x_train = train_X_encode$days_in_waiting_list, x_val = train_X_encode$days_in_waiting_list, bins = 5)
-test_X_encode$days_in_waiting_list <- bin_data_frequency(x_train = train_X_encode$days_in_waiting_list, x_val = test_X_encode$days_in_waiting_list, bins = 5)
-# observe the frequencies 
-train_X_encode$days_in_waiting_list
-test_X_encode$days_in_waiting_list
-# perform integer encoding because the levels have a logical order between them 
-train_X_encode$days_in_waiting_list <- as.numeric(train_X_encode$days_in_waiting_list)
-test_X_encode$days_in_waiting_list <- as.numeric(test_X_encode$days_in_waiting_list)
-
-
-
-
-
-
-
-
-
 # create indicators for nr_babies & nr_children
 train_X_encode$nr_babies[train_X_encode$nr_babies>=1] <- 1
 train_X_encode$nr_children[train_X_encode$nr_children>=1] <- 1
@@ -222,9 +198,14 @@ cor(train_X_encode$nr_previous_bookings, train_X_encode$previous_cancellations)
 # create indicator variables for nr_booking_changes
 train_X_encode$nr_booking_changes[train_X_encode$nr_booking_changes > 0] <- 1
 test_X_encode$nr_booking_changes[test_X_encode$nr_booking_changes > 0] <- 1
-# create indicator variables for car_parking_spaces
-train_X_encode$car_parking_spaces[train_X_encode$car_parking_spaces > 0] <- 1
-test_X_encode$car_parking_spaces[test_X_encode$car_parking_spaces > 0] <- 1
+##############################################################
+# 2.2 Numerical data: special cases
+##############################################################
+# After handling the outliers in car_parking_spaces, we see that all values higher than zero
+# have been brought back to 0.78 (including the ones). Therefore, we just make an indicator
+# variable for this variable to indicate if a car parking space was required:
+train_X_encode$car_parking_spaces <- ifelse(train_X_encode$car_parking_spaces == 0, 0, 1)
+test_X_encode$car_parking_spaces <- ifelse(test_X_encode$car_parking_spaces == 0, 0, 1)
 
 
 ##############################################################
@@ -236,8 +217,7 @@ test_X_scale <- test_X_encode
 
 scale_cols <- c("nr_adults", "nr_nights", "lead_time",
                 "previous_bookings_not_canceled", "previous_cancellations",
-                "special_requests", "time_between_arrival_checkout", "time_between_arrival_cancel",
-                "year_arrival")
+                "special_requests", "time_between_arrival_checkout", "time_between_arrival_cancel")
 
 # apply on training set
 mean_train <- colMeans(train_X_scale[, scale_cols])
@@ -260,13 +240,3 @@ train_X_final <- subset(train_X_scale, select = -c(id, arrival_date, last_status
 test_X_final <- subset(train_X_scale, select = -c(id, arrival_date, last_status_date,
                                                    nr_previous_bookings, posix_arrival,
                                                    day_of_month_arrival, posix_last_status))
-
-#wat doen met year_arrival?
-
-
-
-
-
-
-
-
