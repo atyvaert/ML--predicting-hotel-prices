@@ -187,7 +187,13 @@ test_X_encode[, ind.cols] <- ifelse(test_X_encode[, ind.cols] == 0, 0, 1)
 
 
 ##############################################################
-# 2.2 Scaling
+# 2.2 Transformations
+##############################################################
+
+
+
+##############################################################
+# 2.3 Scaling
 ##############################################################
 train_X_scale <- train_X_encode
 test_X_scale <- test_X_encode
@@ -198,7 +204,7 @@ test_X_scale <- test_X_encode
 
 # check if variable is normally distributed or not to see if we need to apply normalization 
 # or standardization with the following code
-hist(train_X_scale$nr_adults)
+hist(train_X_scale$days_in_waiting_list)
 hist(log(train_X_scale$time_between_arrival_cancel))
 
 # idee log transform:
@@ -227,7 +233,7 @@ test_X_scale[, norm.cols] <- predict(process, test_X_scale[, norm.cols])
 
 
 ##############################################################
-# 2.3 Check correlations
+# 2.4 Check correlations
 ##############################################################
 
 # we tested correlations with the following code that we do not repeat all the time
@@ -239,7 +245,7 @@ cor(train_X_encode$nr_previous_bookings, train_X_encode$previous_cancellations)
 # This happens in the next section
 
 ##############################################################
-# 2.4 Column deleting
+# 2.5 Column deleting
 ##############################################################
 
 train_X_final <- train_X_scale
