@@ -153,6 +153,8 @@ test_X_encode <- subset(test_X_encode, select = -c(booking_agent, booking_compan
 #  arrival (often when customer checks out)
 # time_between_arrival_cancel gives a negative difference when last status date is before
 #  arrival (often when customer cancels stay)
+
+# train
 time_between_last_status_arrival <- as.numeric(round(difftime(train_X_encode$posix_last_status, train_X_encode$posix_arrival)/(60*60*24)))
 time_between_arrival_checkout <- time_between_last_status_arrival
 time_between_arrival_checkout[time_between_arrival_checkout<0] <- 0
@@ -161,6 +163,14 @@ time_between_arrival_cancel[time_between_arrival_cancel>0] <- 0
 
 train_X_encode <- cbind(train_X_encode, time_between_arrival_checkout, time_between_arrival_cancel)
 
+# test
+time_between_last_status_arrival <- as.numeric(round(difftime(test_X_encode$posix_last_status, test_X_encode$posix_arrival)/(60*60*24)))
+time_between_arrival_checkout <- time_between_last_status_arrival
+time_between_arrival_checkout[time_between_arrival_checkout<0] <- 0
+time_between_arrival_cancel <- time_between_last_status_arrival
+time_between_arrival_cancel[time_between_arrival_cancel>0] <- 0
+
+test_X_encode <- cbind(test_X_encode, time_between_arrival_checkout, time_between_arrival_cancel)
 
 
 ##DEZE BINNING CODE WEG?##
@@ -194,6 +204,7 @@ test_X_encode$nr_babies[test_X_encode$nr_babies>=1] <- 1
 test_X_encode$nr_children[test_X_encode$nr_children>=1] <- 1
 # create indicator variables for days in waiting list
 train_X_encode$days_in_waiting_list[train_X_encode$days_in_waiting_list > 0] <- 1
+test_X_encode$days_in_waiting_list[test_X_encode$days_in_waiting_list > 0] <- 1
 
 
 #check multicolinearity 
@@ -208,7 +219,6 @@ omcdiag(test_cor, train_y)
 cor(train_X_encode$nr_previous_bookings, train_X_encode$previous_bookings_not_canceled)
 cor(train_X_encode$nr_previous_bookings, train_X_encode$previous_cancellations)
 
-test_X_encode$days_in_waiting_list[test_X_encode$days_in_waiting_list > 0] <- 1
 # create indicator variables for nr_booking_changes
 train_X_encode$nr_booking_changes[train_X_encode$nr_booking_changes > 0] <- 1
 test_X_encode$nr_booking_changes[test_X_encode$nr_booking_changes > 0] <- 1
@@ -220,12 +230,21 @@ test_X_encode$car_parking_spaces[test_X_encode$car_parking_spaces > 0] <- 1
 ##############################################################
 # 2.2 Scaling
 ##############################################################
+train_X_scale <- train_X_encode
+test_X_scale <- test_X_encode
+
 
 scale_cols <- c("nr_adults", "nr_nights", "lead_time",
                 "previous_bookings_not_canceled", "previous_cancellations",
                 "special_requests", "time_between_arrival_checkout", "time_between_arrival_cancel")
 
+# apply on training set
+mean_train <- colMeans(train_X_scale[, scale_cols])
+sd_train <- sapply(train_X_scale[, scale_cols], sd)
+train_X_scale[, scale_cols] <- scale(train_X_scale[, scale_cols], center = TRUE, scale = TRUE)
 
+# apply on test set
+test_X_scale[, scale_cols] <- scale(test_X_scale[, scale_cols], center = mean_train, scale = sd_train)
 
 
 #datums kolommen en previous bookings verwijderen!
