@@ -24,9 +24,9 @@ val_X <- subset(val, select = -c(average_daily_rate))
 val_y <- val$average_daily_rate
 
 # inspect
-#str(train)
-#str(val)
-#str(test_X)
+str(train)
+str(val)
+str(test_X)
 
 
 ##############################################################
@@ -66,7 +66,7 @@ write.csv(ridge_preds_df, file = "./data/sample_submission_ridge.csv", row.names
 
 
 ##############################################################
-# 2. Lasso Regression
+# 3. Lasso Regression
 ##############################################################
 # transform the variables
 x_train <- model.matrix(average_daily_rate ~., train)[,-1]
