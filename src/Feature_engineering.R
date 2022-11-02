@@ -26,7 +26,7 @@ train_y <- train$average_daily_rate
 str(train_X)
 str(test_X)
 
-
+train_X$year_arrival <- as.factor(train_X$year_arrival)
 
 
 ##############################################################
@@ -88,7 +88,7 @@ dummies_train <- subset(dummies_train,
                                     deposit_nodeposit, hotel_type_City.Hotel, is_repeated_guest_no,
                                     last_status_Check.Out, market_segment_Online.travel.agent,
                                     meal_booked_meal.package.NOT.booked, reserved_room_type_A, month_arrival_January,
-                                    arrival_date_weekday_Mon))
+                                    arrival_date_weekday_Mon, year_arrival_2015))
 
 # apply on test set (exclude reference categories)
 # excluded no.canceled so it becomes one when it was canceled
@@ -96,13 +96,13 @@ dummies_test <- dummy(test_X_encode[, c('assigned_room_type', 'booking_distribut
                                         'canceled', 'country', 'customer_type', 'deposit',
                                         'hotel_type', 'is_repeated_guest', 'last_status',
                                         'market_segment', 'meal_booked', 'reserved_room_type',
-                                        'month_arrival', 'arrival_date_weekday')], object = cats)
+                                        'month_arrival', 'arrival_date_weekday', 'year_arrival')], object = cats)
 dummies_test <- subset(dummies_test, select = -c(assigned_room_type_A, booking_distribution_channel_TA.TO,
                                                  country_Belgium, canceled_no.cancellation, customer_type_Transient,
                                                  deposit_nodeposit, hotel_type_City.Hotel, is_repeated_guest_no,
                                                  last_status_Check.Out, market_segment_Online.travel.agent,
                                                  meal_booked_meal.package.NOT.booked, reserved_room_type_A, month_arrival_January,
-                                                 arrival_date_weekday_Mon))
+                                                 arrival_date_weekday_Mon, year_arrival_2015))
 
 # we remove the original predictors and merge them with the other predictors
 ## merge with overall training set
@@ -110,14 +110,14 @@ train_X_encode <- subset(train_X_encode, select = -c(assigned_room_type, booking
                                                      canceled, country, customer_type, deposit,
                                                      hotel_type, is_repeated_guest, last_status,
                                                      market_segment, meal_booked, reserved_room_type,
-                                                     month_arrival, arrival_date_weekday))
+                                                     month_arrival, arrival_date_weekday, year_arrival))
 train_X_encode <- cbind(train_X_encode, dummies_train)
 ## merge with overall test set
 test_X_encode <- subset(test_X_encode, select = -c(assigned_room_type, booking_distribution_channel,
                                                    canceled, country, customer_type, deposit,
                                                    hotel_type, is_repeated_guest, last_status,
                                                    market_segment, meal_booked, reserved_room_type,
-                                                   month_arrival, arrival_date_weekday))
+                                                   month_arrival, arrival_date_weekday, year_arrival))
 test_X_encode <- cbind(test_X_encode, dummies_test)
 
 train_X_encode
@@ -240,3 +240,4 @@ train_X_final <- subset(train_X_scale, select = -c(id, arrival_date, last_status
 test_X_final <- subset(train_X_scale, select = -c(id, arrival_date, last_status_date,
                                                    nr_previous_bookings, posix_arrival,
                                                    day_of_month_arrival, posix_last_status))
+
