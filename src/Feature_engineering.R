@@ -14,9 +14,9 @@ train <- read.csv('./data/silver_data/train.csv')
 test_X <- read.csv('./data/silver_data/test.csv')
 
 #for Viktor
-#setwd(dir = 'C:/Users/vikto/OneDrive - UGent/TweedeMaster/MachineLearning/ML_Team10/data/silver_data')
-#train <- read.csv('./train.csv', fileEncoding = 'latin1')
-#test_X <- read.csv('./test.csv')
+setwd(dir = 'C:/Users/vikto/OneDrive/Documenten/GroepswerkMachineLearning/ml22-team10/data/silver_data')
+train <- read.csv('./train.csv')
+test_X <- read.csv('./test.csv')
 
 # separate dependent and independent variables
 train_X <- subset(train, select = -c(average_daily_rate))
@@ -147,20 +147,6 @@ test_X_encode <- subset(test_X_encode, select = -c(booking_agent, booking_compan
 # 2. Numerical data
 ##############################################################
 ##############################################################
-# binning of the days in waiting list variable 
-# write a function to calculate the bin frequency
-bin_data_frequency <- function(x_train, x_val, bins = 5) {
-  cut(x_val, breaks = quantile(x_train, seq(0, 1, 1 / bins)), include.lowest = TRUE)
-}
-# apply the function to the days in waiting list variable 
-train_X_encode$days_in_waiting_list <- bin_data_frequency(x_train = train_X_encode$days_in_waiting_list, x_val = train_X_encode$days_in_waiting_list, bins = 5)
-test_X_encode$days_in_waiting_list <- bin_data_frequency(x_train = train_X_encode$days_in_waiting_list, x_val = test_X_encode$days_in_waiting_list, bins = 5)
-# observe the frequencies 
-train_X_encode$days_in_waiting_list
-test_X_encode$days_in_waiting_list
-# perform integer encoding because the levels have a logical order between them 
-train_X_encode$days_in_waiting_list <- as.numeric(train_X_encode$days_in_waiting_list)
-test_X_encode$days_in_waiting_list <- as.numeric(test_X_encode$days_in_waiting_list)
 
 
 # create indicators from nr_babies & nr_children
@@ -168,6 +154,9 @@ train_X_encode$nr_babies[train_X_encode$nr_babies>=1] <- 1
 train_X_encode$nr_children[train_X_encode$nr_children>=1] <- 1
 test_X_encode$nr_babies[test_X_encode$nr_babies>=1] <- 1
 test_X_encode$nr_children[test_X_encode$nr_children>=1] <- 1
+# create indicator variables for days in waiting list
+train_X_encode$days_in_waiting_list[train_X_encode$days_in_waiting_list == 0] <- 0
+train_X_encode$days_in_waiting_list[train_X_encode$days_in_waiting_list > 0] <- 1
 
 
 
