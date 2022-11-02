@@ -30,6 +30,45 @@ val_y <- val$average_daily_rate
 
 
 ##############################################################
+# 1 Forward Stepwise selection
+##############################################################
+
+regfit.full_for <- regsubsets(train$average_daily_rate ~ ., data = train, nvmax = 99, really.big = T, method = "forward")
+regF.summary <- summary(regfit.full_for)
+regF.summary
+regF.summary$rsq
+regF.summary$adjr2
+regF.summary$rss
+
+par(mfrow = c(2, 1))
+plot(regF.summary$rss, xlab = "Number of Variables", ylab = "RSS", type = "l")
+plot(regF.summary$adjr2, xlab = "Number of Variables", ylab = "Adjusted Rsq", type = "l")
+
+max_r_squared_forward = max(regF.summary$adjr2) # 0.5593856
+optimal_nr_predictors_forward =  which.max(regF.summary$adjr2) #82
+optimal_nr_predictors_forward
+
+coef(regfit.full_for, optimal_nr_predictors_forward)
+lm.cols <- names(coef(regfit.full_for, optimal_nr_predictors_forward))[-1]
+
+modeltrainmatrix <- cbind(train_X[lm.cols], train_y)
+
+best_model_forward = lm(train_y ~ ., data = modeltrainmatrix)
+forward_pred <- predict(best_model_forward, val_X)
+
+# calculate the RMSE
+sqrt(mean((forward_pred - val_y)^2))
+
+# predictions
+forward_pred_test <- predict(best_model_forward, test_X)
+forward_preds_df <- data.frame(id = test_X$id,
+                               average_daily_rate= forward_pred_test)
+forward_preds_df$id <- as.integer(forward_preds_df$id)
+# save submission file
+write.csv(forward_preds_df, file = "./data/sample_submission_forwardsel.csv", row.names = F)
+
+
+##############################################################
 # 2. Ridge Regression
 ##############################################################
 # transform the variables
