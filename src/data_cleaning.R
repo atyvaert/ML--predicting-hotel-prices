@@ -14,9 +14,16 @@ train <- read_csv('./data/bronze_data/train.csv')
 test_X <- read_csv('./data/bronze_data/test.csv')
 
 # separate dependent and independent variables
+set.seed(100)
+valvector <- sample(nrow(train), size=nrow(train)*0.2)
+val <- train[valvector, ]
+train <- train[-valvector, ]
 train_X <- subset(train, select = -c(average_daily_rate))
 train_y <- train$average_daily_rate
 train_y <- as.numeric(word(train_y, 1))
+val_X <- subset(val, select = -c(average_daily_rate))
+val_y <- val$average_daily_rate
+val_y <- as.numeric(word(val_y, 1))
 
 
 ##############################################################
@@ -28,6 +35,10 @@ train_y <- as.numeric(word(train_y, 1))
 #lead_time to integer number of days for training set
 train_X$lead_time <- substr(train_X$lead_time, start = 1, stop = (nchar(train_X$lead_time)-7))
 train_X$lead_time <- as.numeric(train_X$lead_time)
+
+# for val set
+val_X$lead_time <- substr(val_X$lead_time, start = 1, stop = (nchar(val_X$lead_time)-7))
+val_X$lead_time <- as.numeric(val_X$lead_time)
 
 # for test set
 test_X$lead_time <- substr(test_X$lead_time, start = 1, stop = (nchar(test_X$lead_time)-7))
@@ -42,6 +53,7 @@ test_X$lead_time <- as.numeric(test_X$lead_time)
 
 # overwrite existing dataframes
 train_X_impute <- train_X
+val_X_impute <- val_X
 test_X_impute <- test_X
 
 ##############################################################
@@ -49,6 +61,8 @@ test_X_impute <- test_X
 ##############################################################
 # training data
 colMeans(is.na(train_X_impute))
+# val data
+colMeans(is.na(val_X_impute))
 # test data
 colMeans(is.na(test_X_impute))
 
@@ -70,10 +84,12 @@ naFlag <- function(df, df_val = NULL) {
 
 # Flag the missing values
 train_X_impute <- cbind(train_X_impute, naFlag(df = train_X))
+val_X_impute <- cbind(val_X_impute,naFlag(df = val_X, df_val = train_X))
 test_X_impute <- cbind(test_X_impute,naFlag(df = test_X, df_val = train_X))
 
 # inspect
 str(train_X_impute)
+str(val_X_impute)
 str(test_X_impute)
 
 # 2.2.1 Impute NUMERIC variables with information from the training set
@@ -96,7 +112,9 @@ median.cols <- c('car_parking_spaces', 'nr_adults', 'nr_children', 'nr_previous_
 train_X_impute[, median.cols] <- lapply(train_X_impute[, median.cols], 
                                         FUN = impute,
                                         method = median)
-
+val_X_impute[, median.cols] <- mapply(val_X_impute[, median.cols],
+                                       FUN = impute,
+                                       val = colMedians(train_X[, median.cols], na.rm = T))
 test_X_impute[, median.cols] <- mapply(test_X_impute[, median.cols],
                                        FUN = impute,
                                        val = colMedians(train_X[, median.cols], na.rm = T))
@@ -117,6 +135,9 @@ cat.cols <- c('booking_distribution_channel', 'country', 'customer_type', 'depos
 train_X_impute[, cat.cols] <- lapply(train_X_impute[, cat.cols],
                                      FUN = impute,
                                      method = modus)
+val_X_impute[, cat.cols] <- mapply(val_X_impute[, cat.cols],
+                                    FUN = impute,
+                                    val = sapply(train_X[, cat.cols], modus, na.rm = T))
 test_X_impute[, cat.cols] <- mapply(test_X_impute[, cat.cols],
                                     FUN = impute,
                                     val = sapply(train_X[, cat.cols], modus, na.rm = T))
@@ -126,15 +147,18 @@ test_X_impute[, cat.cols] <- mapply(test_X_impute[, cat.cols],
 # a value of zero
 # for 'n/a':
 train_X_impute$nr_babies <- as.numeric(str_replace_all(train_X$nr_babies, "n/a", "0"))
+val_X_impute$nr_babies <- as.numeric(str_replace_all(val_X_impute$nr_babies, "n/a", "0"))
 test_X_impute$nr_babies <- as.numeric(str_replace_all(test_X_impute$nr_babies, "n/a", "0"))
 
 # for Na values
 train_X_impute$nr_booking_changes[is.na(train_X_impute$nr_booking_changes)] <- 0
+val_X_impute$nr_booking_changes[is.na(val_X_impute$nr_booking_changes)] <- 0
 test_X_impute$nr_booking_changes[is.na(test_X_impute$nr_booking_changes)] <- 0
 
 
 # inspect
 colMeans(is.na(train_X_impute))
+colMeans(is.na(val_X_impute))
 colMeans(is.na(test_X_impute))
 
 ##############################################################
@@ -156,6 +180,8 @@ train_X_impute$previous_cancellations[train_X_impute$previous_cancellations==0] 
 ##############################################################
 ##############################################################
 train_X_outlier <- train_X_impute
+val_X_outlier <- val_X_impute #We make this column for uniformity reasons, no outliers are deleted
+test_X_outlier <- test_X_impute #uniformity reasons
 
 
 # make a vector of all the variables of which valid outliers need to be handled
@@ -268,6 +294,12 @@ train_X_outlier$day_of_month_arrival <- format(train_X_outlier$posix_arrival, fo
 train_X_outlier$month_arrival <- format(train_X_outlier$posix_arrival, format = '%B')
 train_X_outlier$year_arrival <- as.factor(format(train_X_outlier$posix_arrival, format = '%Y'))
 
+# for val set:
+val_X_outlier$posix_arrival <- as.POSIXct(val_X_outlier$arrival_date, format="%B  %d  %Y")
+val_X_outlier$day_of_month_arrival <- format(val_X_outlier$posix_arrival, format = '%d')
+val_X_outlier$month_arrival <- format(val_X_outlier$posix_arrival, format = '%B')
+val_X_outlier$year_arrival <- as.factor(format(val_X_outlier$posix_arrival, format = '%Y'))
+
 # for test set:
 test_X_outlier$posix_arrival <- as.POSIXct(test_X_outlier$arrival_date, format="%B  %d  %Y")
 test_X_outlier$day_of_month_arrival <- format(test_X_outlier$posix_arrival, format = '%d')
@@ -293,6 +325,15 @@ train_X_outlier$posix_last_status[is.na(train_X_outlier$posix_last_status) & (tr
 
 train_X_outlier$posix_last_status <- format(as.POSIXct(train_X_outlier$posix_last_status, format="%Y-%m-%d"), format="%Y-%m-%d")
 
+#val
+val_X_outlier$posix_last_status <- as.POSIXlt(val_X_outlier$last_status_date, format='%Y-%m-%dT %H:%M:%S')
+
+val_X_outlier$posix_last_status[is.na(val_X_outlier$posix_last_status) & (val_X_outlier$last_status=="Canceled")] <- val_X_outlier$posix_arrival[is.na(val_X_outlier$posix_last_status) & (val_X_outlier$last_status=="Canceled")] + mean_diff_canceled
+val_X_outlier$posix_last_status[is.na(val_X_outlier$posix_last_status) & (val_X_outlier$last_status=="Check-Out")] <- val_X_outlier$posix_arrival[is.na(val_X_outlier$posix_last_status) & (val_X_outlier$last_status=="Check-Out")] + mean_diff_check_out
+val_X_outlier$posix_last_status[is.na(val_X_outlier$posix_last_status) & (val_X_outlier$last_status=="No-Show")] <- val_X_outlier$posix_arrival[is.na(val_X_outlier$posix_last_status) & (val_X_outlier$last_status=="No-Show")] + mean_diff_canceled
+
+val_X_outlier$posix_last_status <- format(as.POSIXct(val_X_outlier$posix_last_status, format="%Y-%m-%d"), format="%Y-%m-%d")
+
 #test
 test_X_outlier$posix_last_status <- as.POSIXlt(test_X_outlier$last_status_date, format='%Y-%m-%dT %H:%M:%S')
 
@@ -311,7 +352,8 @@ test_X_outlier$posix_last_status <- format(as.POSIXct(test_X_outlier$posix_last_
 
 training_data_after_data_cleaning <- train_X_outlier
 training_data_after_data_cleaning$average_daily_rate <- train_y
-
+val_data_after_data_cleaning <- val_X_outlier
+val_data_after_data_cleaning$average_daily_rate <- val_y
 test_data_after_data_cleaning <- test_X_outlier
 
 # inspect:
@@ -319,9 +361,5 @@ test_data_after_data_cleaning <- test_X_outlier
 #str(test_data_after_data_cleaning)
 
 write.csv(training_data_after_data_cleaning,"./data/silver_data/train.csv", row.names = FALSE)
+write.csv(val_data_after_data_cleaning,"./data/silver_data/val.csv", row.names = FALSE)
 write.csv(test_data_after_data_cleaning,"./data/silver_data/test.csv", row.names = FALSE)
-
-
-
-
-
