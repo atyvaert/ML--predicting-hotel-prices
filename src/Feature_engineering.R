@@ -9,14 +9,8 @@ library(readr)
 library(dummy)
 
 # import data
-#setwd(dir = '/Users/Artur/Desktop/uni jaar 6 sem 1/machine learning/ml22-team10/data/silver_data')
 train <- read.csv('./data/silver_data/train.csv')
 test_X <- read.csv('./data/silver_data/test.csv')
-
-#for Viktor
-setwd(dir = 'C:/Users/vikto/OneDrive/Documenten/GroepswerkMachineLearning/ml22-team10/data/silver_data')
-train <- read.csv('./train.csv')
-test_X <- read.csv('./test.csv')
 
 # separate dependent and independent variables
 train_X <- subset(train, select = -c(average_daily_rate))
@@ -25,7 +19,6 @@ train_y <- train$average_daily_rate
 # inspect
 str(train_X)
 str(test_X)
-
 
 
 
@@ -49,14 +42,8 @@ test_X_encode <- test_X
 # and we have a lot of variables with a lot of levels
 
 # First we make a categorical feature arrival_date_weekday
-arrival_date_weekday_train <- wday(train_X_encode$posix_arrival, label = T)
-arrival_date_weekday_test <- wday(test_X_encode$posix_arrival, label = T)
-
-train_X_encode <- cbind(train_X_encode, arrival_date_weekday_train)
-test_X_encode <- cbind(test_X_encode, arrival_date_weekday_test)
-
-names(train_X_encode)[names(train_X_encode) == "arrival_date_weekday_train"] <- "arrival_date_weekday"
-names(test_X_encode)[names(test_X_encode) == "arrival_date_weekday_test"] <- "arrival_date_weekday"
+train_X_encode$arrival_date_weekday <- wday(train_X_encode$posix_arrival, label = T)
+test_X_encode$arrival_date_weekday <- wday(test_X_encode$posix_arrival, label = T)
 
 
 # get categories and dummies
@@ -97,6 +84,7 @@ dummies_test <- dummy(test_X_encode[, c('assigned_room_type', 'booking_distribut
                                         'hotel_type', 'is_repeated_guest', 'last_status',
                                         'market_segment', 'meal_booked', 'reserved_room_type',
                                         'month_arrival', 'arrival_date_weekday')], object = cats)
+
 dummies_test <- subset(dummies_test, select = -c(assigned_room_type_A, booking_distribution_channel_TA.TO,
                                                  country_Belgium, canceled_no.cancellation, customer_type_Transient,
                                                  deposit_nodeposit, hotel_type_City.Hotel, is_repeated_guest_no,
@@ -112,6 +100,7 @@ train_X_encode <- subset(train_X_encode, select = -c(assigned_room_type, booking
                                                      market_segment, meal_booked, reserved_room_type,
                                                      month_arrival, arrival_date_weekday))
 train_X_encode <- cbind(train_X_encode, dummies_train)
+
 ## merge with overall test set
 test_X_encode <- subset(test_X_encode, select = -c(assigned_room_type, booking_distribution_channel,
                                                    canceled, country, customer_type, deposit,
@@ -150,9 +139,9 @@ test_X_encode <- subset(test_X_encode, select = -c(booking_agent, booking_compan
 
 # Create feature time_between_last_status_arrival
 # time_between_arrival_checkout gives a positive difference when last status date is after
-#  arrival (often when customer checks out)
+# arrival (often when customer checks out)
 # time_between_arrival_cancel gives a negative difference when last status date is before
-#  arrival (often when customer cancels stay)
+# arrival (often when customer cancels stay)
 
 # train
 time_between_last_status_arrival <- as.numeric(round(difftime(train_X_encode$posix_last_status, train_X_encode$posix_arrival)/(60*60*24)))
@@ -173,39 +162,26 @@ time_between_arrival_cancel[time_between_arrival_cancel>0] <- 0
 test_X_encode <- cbind(test_X_encode, time_between_arrival_checkout, time_between_arrival_cancel)
 
 
-# create indicators for nr_babies & nr_children
-train_X_encode$nr_babies[train_X_encode$nr_babies>=1] <- 1
-train_X_encode$nr_children[train_X_encode$nr_children>=1] <- 1
-test_X_encode$nr_babies[test_X_encode$nr_babies>=1] <- 1
-test_X_encode$nr_children[test_X_encode$nr_children>=1] <- 1
-# create indicator variables for days in waiting list
-train_X_encode$days_in_waiting_list[train_X_encode$days_in_waiting_list > 0] <- 1
-test_X_encode$days_in_waiting_list[test_X_encode$days_in_waiting_list > 0] <- 1
 
-
-#check multicolinearity 
-test_cor <- subset(train_X_encode, select = -c(arrival_date, last_status_date, posix_arrival, year_arrival, posix_last_status, arrival_date_weekday))
-# pearson correlation 
-pcor(test_cor, method = "pearson")
-# correlation matrix 
-cor2pcor(cov(test_cor))
-# Glauber test for multicollinearity 
-omcdiag(test_cor, train_y)
-
-cor(train_X_encode$nr_previous_bookings, train_X_encode$previous_bookings_not_canceled)
-cor(train_X_encode$nr_previous_bookings, train_X_encode$previous_cancellations)
-
-# create indicator variables for nr_booking_changes
-train_X_encode$nr_booking_changes[train_X_encode$nr_booking_changes > 0] <- 1
-test_X_encode$nr_booking_changes[test_X_encode$nr_booking_changes > 0] <- 1
 ##############################################################
-# 2.2 Numerical data: special cases
+# 2.1 Numerical data
 ##############################################################
+# Make indicators variables for several variables as more than 90% is equal to zero and each time,
+# there are very few values with 1 or somewhat higher
+ind.cols <- c('nr_babies', 'nr_children')
+
 # After handling the outliers in car_parking_spaces, we see that all values higher than zero
 # have been brought back to 0.78 (including the ones). Therefore, we just make an indicator
 # variable for this variable to indicate if a car parking space was required:
-train_X_encode$car_parking_spaces <- ifelse(train_X_encode$car_parking_spaces == 0, 0, 1)
-test_X_encode$car_parking_spaces <- ifelse(test_X_encode$car_parking_spaces == 0, 0, 1)
+ind.cols <- append(ind.cols, 'car_parking_spaces')
+
+# apply
+train_X_encode[, ind.cols] <- ifelse(train_X_encode[, ind.cols] == 0, 0, 1)
+test_X_encode[, ind.cols] <- ifelse(test_X_encode[, ind.cols] == 0, 0, 1)
+
+
+cor(train_X_encode$nr_previous_bookings, train_X_encode$previous_bookings_not_canceled)
+cor(train_X_encode$nr_previous_bookings, train_X_encode$previous_cancellations)
 
 
 ##############################################################
@@ -215,8 +191,8 @@ train_X_scale <- train_X_encode
 test_X_scale <- test_X_encode
 
 
-scale_cols <- c("nr_adults", "nr_nights", "lead_time",
-                "previous_bookings_not_canceled", "previous_cancellations",
+scale_cols <- c("nr_adults", "nr_nights", "lead_time", 'days_in_waiting_list',
+                "previous_bookings_not_canceled", "previous_cancellations", 'nr_booking_changes',
                 "special_requests", "time_between_arrival_checkout", "time_between_arrival_cancel")
 
 # apply on training set
@@ -237,6 +213,25 @@ test_X_final <- test_X_scale
 train_X_final <- subset(train_X_scale, select = -c(id, arrival_date, last_status_date,
                                           nr_previous_bookings, posix_arrival,
                                           day_of_month_arrival, posix_last_status))
-test_X_final <- subset(train_X_scale, select = -c(id, arrival_date, last_status_date,
+test_X_final <- subset(test_X_scale, select = -c(id, arrival_date, last_status_date,
                                                    nr_previous_bookings, posix_arrival,
                                                    day_of_month_arrival, posix_last_status))
+
+
+##############################################################
+# 2.3 Check correlations
+##############################################################
+
+#check multicolinearity 
+test_cor <- subset(train_X_encode, select = -c(arrival_date, last_status_date, posix_arrival, year_arrival, posix_last_status, arrival_date_weekday))
+# pearson correlation 
+pcor(test_cor, method = "pearson")
+# correlation matrix 
+cor2pcor(cov(test_cor))
+# Glauber test for multicollinearity 
+omcdiag(test_cor, train_y)
+
+
+
+
+
