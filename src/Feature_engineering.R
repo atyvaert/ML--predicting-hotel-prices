@@ -159,6 +159,11 @@ time_between_arrival_checkout[time_between_arrival_checkout<0] <- 0
 time_between_arrival_cancel <- time_between_last_status_arrival
 time_between_arrival_cancel[time_between_arrival_cancel>0] <- 0
 
+train_X_encode <- cbind(train_X_encode, time_between_arrival_checkout, time_between_arrival_cancel)
+
+
+
+##DEZE BINNING CODE WEG?##
 # binning of the days in waiting list variable 
 # write a function to calculate the bin frequency
 bin_data_frequency <- function(x_train, x_val, bins = 5) {
@@ -175,6 +180,13 @@ train_X_encode$days_in_waiting_list <- as.numeric(train_X_encode$days_in_waiting
 test_X_encode$days_in_waiting_list <- as.numeric(test_X_encode$days_in_waiting_list)
 
 
+
+
+
+
+
+
+
 # create indicators for nr_babies & nr_children
 train_X_encode$nr_babies[train_X_encode$nr_babies>=1] <- 1
 train_X_encode$nr_children[train_X_encode$nr_children>=1] <- 1
@@ -186,17 +198,23 @@ test_X_encode$days_in_waiting_list[test_X_encode$days_in_waiting_list > 0] <- 1
 # create indicator variables for nr_booking_changes
 train_X_encode$nr_booking_changes[train_X_encode$nr_booking_changes > 0] <- 1
 test_X_encode$nr_booking_changes[test_X_encode$nr_booking_changes > 0] <- 1
+# create indicator variables for car_parking_spaces
+train_X_encode$car_parking_spaces[train_X_encode$car_parking_spaces > 0] <- 1
+test_X_encode$car_parking_spaces[test_X_encode$car_parking_spaces > 0] <- 1
+
 
 ##############################################################
 # 2.2 Scaling
 ##############################################################
 
-scale_cols <- c("nr_adults", "")
+scale_cols <- c("nr_adults", "nr_nights", "lead_time",
+                "previous_bookings_not_canceled", "previous_cancellations",
+                "special_requests", "time_between_arrival_checkout", "time_between_arrival_cancel")
 
 
 
 
-
+#datums kolommen en previous bookings verwijderen!
 
 
 
