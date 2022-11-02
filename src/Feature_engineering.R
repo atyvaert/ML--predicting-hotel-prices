@@ -175,18 +175,23 @@ train_X_encode$days_in_waiting_list <- as.numeric(train_X_encode$days_in_waiting
 test_X_encode$days_in_waiting_list <- as.numeric(test_X_encode$days_in_waiting_list)
 
 
-# create indicators from nr_babies & nr_children
+# create indicators for nr_babies & nr_children
 train_X_encode$nr_babies[train_X_encode$nr_babies>=1] <- 1
 train_X_encode$nr_children[train_X_encode$nr_children>=1] <- 1
 test_X_encode$nr_babies[test_X_encode$nr_babies>=1] <- 1
 test_X_encode$nr_children[test_X_encode$nr_children>=1] <- 1
 # create indicator variables for days in waiting list
-train_X_encode$days_in_waiting_list[train_X_encode$days_in_waiting_list == 0] <- 0
 train_X_encode$days_in_waiting_list[train_X_encode$days_in_waiting_list > 0] <- 1
+test_X_encode$days_in_waiting_list[test_X_encode$days_in_waiting_list > 0] <- 1
+# create indicator variables for nr_booking_changes
+train_X_encode$nr_booking_changes[train_X_encode$nr_booking_changes > 0] <- 1
+test_X_encode$nr_booking_changes[test_X_encode$nr_booking_changes > 0] <- 1
 
+##############################################################
+# 2.2 Scaling
+##############################################################
 
-
-
+scale_cols <- c("nr_adults", "")
 
 
 
