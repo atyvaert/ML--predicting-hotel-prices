@@ -158,8 +158,8 @@ test_X_encode <- subset(test_X_encode, select = -c(booking_agent, booking_compan
 time_between_last_status_arrival <- as.numeric(round(difftime(train_X_encode$posix_last_status, train_X_encode$posix_arrival)/(60*60*24)))
 time_between_arrival_checkout <- time_between_last_status_arrival
 time_between_arrival_checkout[time_between_arrival_checkout<0] <- 0
-time_between_arrival_cancel <- time_between_last_status_arrival
-time_between_arrival_cancel[time_between_arrival_cancel>0] <- 0
+time_between_arrival_cancel <- -time_between_last_status_arrival
+time_between_arrival_cancel[time_between_arrival_cancel<0] <- 0
 
 train_X_encode <- cbind(train_X_encode, time_between_arrival_checkout, time_between_arrival_cancel)
 
@@ -167,8 +167,8 @@ train_X_encode <- cbind(train_X_encode, time_between_arrival_checkout, time_betw
 time_between_last_status_arrival <- as.numeric(round(difftime(test_X_encode$posix_last_status, test_X_encode$posix_arrival)/(60*60*24)))
 time_between_arrival_checkout <- time_between_last_status_arrival
 time_between_arrival_checkout[time_between_arrival_checkout<0] <- 0
-time_between_arrival_cancel <- time_between_last_status_arrival
-time_between_arrival_cancel[time_between_arrival_cancel>0] <- 0
+time_between_arrival_cancel <- -time_between_last_status_arrival
+time_between_arrival_cancel[time_between_arrival_cancel<0] <- 0
 
 test_X_encode <- cbind(test_X_encode, time_between_arrival_checkout, time_between_arrival_cancel)
 
