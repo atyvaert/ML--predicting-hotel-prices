@@ -246,8 +246,22 @@ train_X_scale[, scale_cols] <- scale(train_X_scale[, scale_cols], center = TRUE,
 # apply on test set
 test_X_scale[, scale_cols] <- scale(test_X_scale[, scale_cols], center = mean_train, scale = sd_train)
 
+##############################################################
+# 2.3 Column deleting
+##############################################################
 
-#datums kolommen en previous bookings verwijderen!
+train_X_final <- train_X_scale
+test_X_final <- test_X_scale
+
+train_X_final <- subset(train_X_scale, select = -c(id, arrival_date, last_status_date,
+                                          nr_previous_bookings, posix_arrival,
+                                          day_of_month_arrival, posix_last_status))
+test_X_final <- subset(train_X_scale, select = -c(id, arrival_date, last_status_date,
+                                                   nr_previous_bookings, posix_arrival,
+                                                   day_of_month_arrival, posix_last_status))
+
+#wat doen met year_arrival?
+
 
 
 
