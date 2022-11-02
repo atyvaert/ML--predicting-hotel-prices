@@ -49,8 +49,14 @@ test_X_encode <- test_X
 # and we have a lot of variables with a lot of levels
 
 # First we make a categorical feature arrival_date_weekday
-arrival_date_weekday <- wday(train_X_encode$posix_arrival, label = T)
-train_X_encode <- cbind(train_X_encode, arrival_date_weekday)
+arrival_date_weekday_train <- wday(train_X_encode$posix_arrival, label = T)
+arrival_date_weekday_test <- wday(test_X_encode$posix_arrival, label = T)
+
+train_X_encode <- cbind(train_X_encode, arrival_date_weekday_train)
+test_X_encode <- cbind(test_X_encode, arrival_date_weekday_test)
+
+names(train_X_encode)[names(train_X_encode) == "arrival_date_weekday_train"] <- "arrival_date_weekday"
+names(test_X_encode)[names(test_X_encode) == "arrival_date_weekday_test"] <- "arrival_date_weekday"
 
 
 # get categories and dummies
@@ -59,21 +65,12 @@ train_X_encode <- cbind(train_X_encode, arrival_date_weekday)
 cats <- categories(train_X_encode[, c('assigned_room_type', 'booking_distribution_channel',
                                       'canceled', 'country', 'customer_type', 'deposit',
                                       'hotel_type', 'is_repeated_guest', 'last_status',
-                                      'market_segment', 'meal_booked', 'reserved_room_type')], p = 10)
-
-
-
-
+                                      'market_segment', 'meal_booked', 'reserved_room_type',
+                                      'arrival_date_weekday')], p = 10)
 
 
 # month_arrival seperate because we want all 12 categories here
 cats <- append(cats, categories(train_X_encode['month_arrival']))
-
-
-
-
-
-
 
 
 # apply on train set (exclude reference categories)
@@ -81,7 +78,7 @@ dummies_train <- dummy(train_X_encode[,c('assigned_room_type', 'booking_distribu
                                          'canceled', 'country', 'customer_type', 'deposit',
                                          'hotel_type', 'is_repeated_guest', 'last_status',
                                          'market_segment', 'meal_booked', 'reserved_room_type',
-                                         'month_arrival')], object = cats)
+                                         'month_arrival', 'arrival_date_weekday')], object = cats)
 
 # exclude the reference category: take the first one of the variable you added
 names(dummies_train)
@@ -90,7 +87,8 @@ dummies_train <- subset(dummies_train,
                                     country_Belgium, canceled_no.cancellation, customer_type_Transient,
                                     deposit_nodeposit, hotel_type_City.Hotel, is_repeated_guest_no,
                                     last_status_Check.Out, market_segment_Online.travel.agent,
-                                    meal_booked_meal.package.NOT.booked, reserved_room_type_A, month_arrival_January))
+                                    meal_booked_meal.package.NOT.booked, reserved_room_type_A, month_arrival_January,
+                                    arrival_date_weekday_Mon))
 
 # apply on test set (exclude reference categories)
 # excluded no.canceled so it becomes one when it was canceled
@@ -98,12 +96,13 @@ dummies_test <- dummy(test_X_encode[, c('assigned_room_type', 'booking_distribut
                                         'canceled', 'country', 'customer_type', 'deposit',
                                         'hotel_type', 'is_repeated_guest', 'last_status',
                                         'market_segment', 'meal_booked', 'reserved_room_type',
-                                        'month_arrival')], object = cats)
+                                        'month_arrival', 'arrival_date_weekday')], object = cats)
 dummies_test <- subset(dummies_test, select = -c(assigned_room_type_A, booking_distribution_channel_TA.TO,
                                                  country_Belgium, canceled_no.cancellation, customer_type_Transient,
                                                  deposit_nodeposit, hotel_type_City.Hotel, is_repeated_guest_no,
                                                  last_status_Check.Out, market_segment_Online.travel.agent,
-                                                 meal_booked_meal.package.NOT.booked, reserved_room_type_A, month_arrival_January))
+                                                 meal_booked_meal.package.NOT.booked, reserved_room_type_A, month_arrival_January,
+                                                 arrival_date_weekday_Mon))
 
 # we remove the original predictors and merge them with the other predictors
 ## merge with overall training set
@@ -111,14 +110,14 @@ train_X_encode <- subset(train_X_encode, select = -c(assigned_room_type, booking
                                                      canceled, country, customer_type, deposit,
                                                      hotel_type, is_repeated_guest, last_status,
                                                      market_segment, meal_booked, reserved_room_type,
-                                                     month_arrival))
+                                                     month_arrival, arrival_date_weekday))
 train_X_encode <- cbind(train_X_encode, dummies_train)
 ## merge with overall test set
 test_X_encode <- subset(test_X_encode, select = -c(assigned_room_type, booking_distribution_channel,
                                                    canceled, country, customer_type, deposit,
                                                    hotel_type, is_repeated_guest, last_status,
                                                    market_segment, meal_booked, reserved_room_type,
-                                                   month_arrival))
+                                                   month_arrival, arrival_date_weekday))
 test_X_encode <- cbind(test_X_encode, dummies_test)
 
 train_X_encode
@@ -149,14 +148,41 @@ test_X_encode <- subset(test_X_encode, select = -c(booking_agent, booking_compan
 ##############################################################
 
 
-# create indicators from nr_babies & nr_children
+# Create feature time_between_last_status_arrival
+# time_between_arrival_checkout gives a positive difference when last status date is after
+#  arrival (often when customer checks out)
+# time_between_arrival_cancel gives a negative difference when last status date is before
+#  arrival (often when customer cancels stay)
+time_between_last_status_arrival <- as.numeric(round(difftime(train_X_encode$posix_last_status, train_X_encode$posix_arrival)/(60*60*24)))
+time_between_arrival_checkout <- time_between_last_status_arrival
+time_between_arrival_checkout[time_between_arrival_checkout<0] <- 0
+time_between_arrival_cancel <- time_between_last_status_arrival
+time_between_arrival_cancel[time_between_arrival_cancel>0] <- 0
+
+# binning of the days in waiting list variable 
+# write a function to calculate the bin frequency
+bin_data_frequency <- function(x_train, x_val, bins = 5) {
+  cut(x_val, breaks = quantile(x_train, seq(0, 1, 1 / bins)), include.lowest = TRUE)
+}
+# apply the function to the days in waiting list variable 
+train_X_encode$days_in_waiting_list <- bin_data_frequency(x_train = train_X_encode$days_in_waiting_list, x_val = train_X_encode$days_in_waiting_list, bins = 5)
+test_X_encode$days_in_waiting_list <- bin_data_frequency(x_train = train_X_encode$days_in_waiting_list, x_val = test_X_encode$days_in_waiting_list, bins = 5)
+# observe the frequencies 
+train_X_encode$days_in_waiting_list
+test_X_encode$days_in_waiting_list
+# perform integer encoding because the levels have a logical order between them 
+train_X_encode$days_in_waiting_list <- as.numeric(train_X_encode$days_in_waiting_list)
+test_X_encode$days_in_waiting_list <- as.numeric(test_X_encode$days_in_waiting_list)
+
+
+# create indicators for nr_babies & nr_children
 train_X_encode$nr_babies[train_X_encode$nr_babies>=1] <- 1
 train_X_encode$nr_children[train_X_encode$nr_children>=1] <- 1
 test_X_encode$nr_babies[test_X_encode$nr_babies>=1] <- 1
 test_X_encode$nr_children[test_X_encode$nr_children>=1] <- 1
 # create indicator variables for days in waiting list
-train_X_encode$days_in_waiting_list[train_X_encode$days_in_waiting_list == 0] <- 0
 train_X_encode$days_in_waiting_list[train_X_encode$days_in_waiting_list > 0] <- 1
+
 
 #check multicolinearity 
 test_cor <- subset(train_X_encode, select = -c(arrival_date, last_status_date, posix_arrival, year_arrival, posix_last_status, arrival_date_weekday))
@@ -169,6 +195,21 @@ omcdiag(test_cor, train_y)
 
 cor(train_X_encode$nr_previous_bookings, train_X_encode$previous_bookings_not_canceled)
 cor(train_X_encode$nr_previous_bookings, train_X_encode$previous_cancellations)
+
+test_X_encode$days_in_waiting_list[test_X_encode$days_in_waiting_list > 0] <- 1
+# create indicator variables for nr_booking_changes
+train_X_encode$nr_booking_changes[train_X_encode$nr_booking_changes > 0] <- 1
+test_X_encode$nr_booking_changes[test_X_encode$nr_booking_changes > 0] <- 1
+
+##############################################################
+# 2.2 Scaling
+##############################################################
+
+scale_cols <- c("nr_adults", "")
+
+
+
+
 
 
 
