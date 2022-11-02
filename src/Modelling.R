@@ -24,9 +24,9 @@ val_X <- subset(val, select = -c(average_daily_rate))
 val_y <- val$average_daily_rate
 
 # inspect
-str(train)
-str(val)
-str(test_X)
+#str(train)
+#str(val)
+#str(test_X)
 
 
 ##############################################################
@@ -56,11 +56,13 @@ ridge_pred = predict(ridge.mod, s = bestlam, newx = x_val)
 sqrt(mean((ridge_pred - val_y)^2))
 
 # make predictions for the test set with the optimal lambda
-rigde_pred_test = predict(ridge.mod, s = bestlam, newx = as.matrix(test_X))
+rigde_pred_test = predict(ridge.mod, s = bestlam, newx = as.matrix(test_X[, -1]))
 
 # predictions
-ridge_preds_df <- data.frame(id = test_X$id,
+ridge_preds_df <- data.frame(id = as.integer(test_X$id),
                               average_daily_rate= rigde_pred_test)
+colnames(ridge_preds_df)[2] <- 'average_daily_rate'
+ridge_preds_df
 # save submission file
 write.csv(ridge_preds_df, file = "./data/sample_submission_ridge.csv", row.names = F)
 
@@ -92,11 +94,14 @@ lasso_pred = predict(lasso.mod, s = bestlam, newx = x_val)
 sqrt(mean((lasso_pred - val_y)^2))
 
 # make predictions for the test set with the optimal lambda
-lasso_pred_test = predict(lasso.mod, s = bestlam, newx = as.matrix(test_X))
+lasso_pred_test = predict(lasso.mod, s = bestlam, newx = as.matrix(test_X[, -1]))
 
 # predictions
-lasso_preds_df <- data.frame(id = test_X$id,
-                             average_daily_rate= lasso_pred_test)
+lasso_preds_df <- data.frame(id = as.integer(test_X$id),
+                             average_daily_rate = lasso_pred_test)
+
+colnames(lasso_preds_df)[2] <- 'average_daily_rate'
+lasso_preds_df
 # save submission file
 write.csv(lasso_preds_df, file = "./data/sample_submission_lasso.csv", row.names = F)
 
