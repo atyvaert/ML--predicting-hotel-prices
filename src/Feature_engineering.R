@@ -3,18 +3,21 @@
 # Feature engineering
 ##############################################################
 ##############################################################
+# libraries
+library(lubridate)
 library(readr)
 library(dummy)
 
 # import data
-setwd(dir = '/Users/Artur/Desktop/uni jaar 6 sem 1/machine learning/ml22-team10/data/silver_data')
-train <- read.csv('./train.csv')
-test_X <- read.csv('./test.csv')
+#setwd(dir = '/Users/Artur/Desktop/uni jaar 6 sem 1/machine learning/ml22-team10/data/silver_data')
+train <- read.csv('./data/silver_data/train.csv')
+test_X <- read.csv('./data/silver_data/test.csv')
 
 #for Viktor
-setwd(dir = 'C:/Users/vikto/OneDrive - UGent/TweedeMaster/MachineLearning/ML_Team10/data/silver_data')
-train <- read.csv('./train.csv', fileEncoding = 'latin1')
-test_X <- read.csv('./test.csv')
+#setwd(dir = 'C:/Users/vikto/OneDrive - UGent/TweedeMaster/MachineLearning/ML_Team10/data/silver_data')
+#train <- read.csv('./train.csv', fileEncoding = 'latin1')
+#test_X <- read.csv('./test.csv')
+
 # separate dependent and independent variables
 train_X <- subset(train, select = -c(average_daily_rate))
 train_y <- train$average_daily_rate
@@ -23,7 +26,7 @@ train_y <- train$average_daily_rate
 str(train_X)
 str(test_X)
 
-# libraries
+
 
 
 ##############################################################
@@ -31,8 +34,8 @@ str(test_X)
 # 1. Categorical data
 ##############################################################
 ##############################################################
-train_X_encode <- train_X_outlier
-test_X_encode <- test_X_outlier
+train_X_encode <- train_X
+test_X_encode <- test_X
 
 ##############################################################
 # 1.1 Ordinal data: integer encoding
@@ -45,6 +48,11 @@ test_X_encode <- test_X_outlier
 # We use the dummmy package to treat nominal data as this is a more flexible approach
 # and we have a lot of variables with a lot of levels
 
+# First we make a categorical feature arrival_date_weekday
+arrival_date_weekday <- wday(train_X_encode$posix_arrival, label = T)
+train_X_encode <- cbind(train_X_encode, arrival_date_weekday)
+
+
 # get categories and dummies
 # we only select the top 10 levels with highest frequency so our model does not explode
 # For all cases, this includes most of the data: KIJKEN ALS DIT KLOPT BIJ DE REST
@@ -52,8 +60,21 @@ cats <- categories(train_X_encode[, c('assigned_room_type', 'booking_distributio
                                       'canceled', 'country', 'customer_type', 'deposit',
                                       'hotel_type', 'is_repeated_guest', 'last_status',
                                       'market_segment', 'meal_booked', 'reserved_room_type')], p = 10)
+
+
+
+
+
+
 # month_arrival seperate because we want all 12 categories here
 cats <- append(cats, categories(train_X_encode['month_arrival']))
+
+
+
+
+
+
+
 
 # apply on train set (exclude reference categories)
 dummies_train <- dummy(train_X_encode[,c('assigned_room_type', 'booking_distribution_channel', 
