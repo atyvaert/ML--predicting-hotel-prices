@@ -69,18 +69,8 @@ cats <- categories(train_X_encode[, c('assigned_room_type', 'booking_distributio
                                       'arrival_date_weekday')], p = 10)
 
 
-
-
-
-
 # month_arrival seperate because we want all 12 categories here
 cats <- append(cats, categories(train_X_encode['month_arrival']))
-
-
-
-
-
-
 
 
 # apply on train set (exclude reference categories)
