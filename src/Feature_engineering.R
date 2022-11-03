@@ -32,8 +32,8 @@ val_X <- subset(val, select = -c(average_daily_rate))
 val_y <- val$average_daily_rate
 
 # inspect
-str(train_X)
-str(val_X)
+#str(train_X)
+#str(val_X)
 str(test_X)
 
 
@@ -303,6 +303,8 @@ val_data_after_FE <- val_X_final
 val_data_after_FE$average_daily_rate <- val_y
 
 test_data_after_FE <- test_X_final
+
+# str(training_data_after_FE)
 
 # Write
 write.csv(training_data_after_FE,"./data/gold_data/train.csv", row.names = FALSE)

@@ -6,7 +6,8 @@
 
 # libraries
 library(glmnet)
-
+library(ISLR)
+library(leaps)
 
 # import data
 rm(list = ls())
@@ -33,37 +34,44 @@ val_y <- val$average_daily_rate
 # 1. Forward Stepwise selection
 ##############################################################
 
-regfit.full_for <- regsubsets(train$average_daily_rate ~ ., data = train, nvmax = 99, really.big = T, method = "forward")
+# perform forward stepwise selection and look at the results
+regfit.full_for <- regsubsets(train$average_daily_rate ~ ., data = train, nvmax = 96, really.big = T, method = "forward")
 regF.summary <- summary(regfit.full_for)
-regF.summary
-regF.summary$rsq
-regF.summary$adjr2
-regF.summary$rss
+#regF.summary
+#regF.summary$rsq
+#regF.summary$adjr2
+#regF.summary$rss
 
+# plot the results
 par(mfrow = c(2, 1))
 plot(regF.summary$rss, xlab = "Number of Variables", ylab = "RSS", type = "l")
 plot(regF.summary$adjr2, xlab = "Number of Variables", ylab = "Adjusted Rsq", type = "l")
 
+# look at the optimal parameters
 max_r_squared_forward = max(regF.summary$adjr2) # 0.5593856
-optimal_nr_predictors_forward =  which.max(regF.summary$adjr2) #82
-optimal_nr_predictors_forward
+optimal_nr_predictors_forward =  which.max(regF.summary$adjr2) #80
 
+# train the model with the optimal parameters with the training data
 coef(regfit.full_for, optimal_nr_predictors_forward)
 lm.cols.forward <- names(coef(regfit.full_for, optimal_nr_predictors_forward))[-1]
 
 modeltrainmatrixforward <- cbind(train_X[lm.cols.forward], train_y)
 
 best_model_forward = lm(train_y ~ ., data = modeltrainmatrixforward)
+
+# make predictions on the validation set
 forward_pred <- predict(best_model_forward, val_X)
 
 # calculate the RMSE
 sqrt(mean((forward_pred - val_y)^2))
 
-# predictions
+# predictions on the test set and save in submission folder
 forward_pred_test <- predict(best_model_forward, test_X)
-forward_preds_df <- data.frame(id = test_X$id,
+forward_preds_df <- data.frame(id = as.integer(test_X$id),
                                average_daily_rate= forward_pred_test)
-forward_preds_df$id <- as.integer(forward_preds_df$id)
+
+# str(forward_preds_df)
+
 # save submission file
 write.csv(forward_preds_df, file = "./data/sample_submission_forwardsel.csv", row.names = F)
 
@@ -72,36 +80,43 @@ write.csv(forward_preds_df, file = "./data/sample_submission_forwardsel.csv", ro
 # 2. Backward Stepwise selection 
 ##############################################################
 
-regfit.full_back <- regsubsets(average_daily_rate ~ ., data = train, nvmax = 99, really.big = T, method = "backward")
+# perform backwards stepwise selection and look at the results
+regfit.full_back <- regsubsets(average_daily_rate ~ ., data = train, nvmax = 96, really.big = T, method = "backward")
 regB.summary <- summary(regfit.full_back)
-regB.summary
-regB.summary$rsq
-regB.summary$adjr2
-regB.summary$rss
+#regB.summary
+#regB.summary$rsq
+#regB.summary$adjr2
+#regB.summary$rss
 
+# plot the results
 par(mfrow = c(2, 1))
 plot(regB.summary$rss, xlab = "Number of Variables", ylab = "RSS", type = "l")
 plot(regB.summary$adjr2, xlab = "Number of Variables", ylab = "Adjusted Rsq", type = "l")
 
-max_r_squared_backward = max(regB.summary$adjr2)
-optimal_nr_predictors_backward =  which.max(regB.summary$adjr2) 
+# look at the optimal parameters
+max_r_squared_backward = max(regB.summary$adjr2) # 0.4748556
+optimal_nr_predictors_backward =  which.max(regB.summary$adjr2) # 81
 
+# train the model with the optimal parameters with the training data
 coef(regfit.full_back, optimal_nr_predictors_backward)
 lm.cols.backward <- names(coef(regfit.full_back, optimal_nr_predictors_backward))[-1]
 
 modeltrainmatrixbackward <- cbind(train_X[lm.cols.backward], train_y)
 
-
 best_model_backward =  lm(train_y ~., data = modeltrainmatrixbackward)
+
+# make predictions on the validation set
 backward_pred <- predict(best_model_backward, val_X)
+
 # calculate the RMSE
 sqrt(mean((backward_pred - val_y)^2))
 
-# predictions
+# predictions on the test set and save in submission folder
 backward_pred_test <- predict(best_model_backward, test_X)
-backward_preds_df <- data.frame(id = test_X$id,
+backward_preds_df <- data.frame(id = as.integer(test_X$id),
                                 average_daily_rate= backward_pred_test)
-backward_preds_df$id <- as.integer(backward_preds_df$id)
+# str(backward_preds_df)
+
 # save submission file
 write.csv(backward_preds_df, file = "./data/sample_submission_backwardsel.csv", row.names = F)
 
@@ -111,7 +126,6 @@ write.csv(backward_preds_df, file = "./data/sample_submission_backwardsel.csv", 
 ##############################################################
 # transform the variables
 x_train <- model.matrix(average_daily_rate ~., train)[,-1]
-x_val <- model.matrix(average_daily_rate ~., train)[,-1]
 
 # look for the best lambda value to perform the ridge regression with 10- fold cross validation
 set.seed(1)
@@ -127,7 +141,7 @@ ridge.mod <- glmnet(x_train, train_y, alpha = 0, lambda = bestlam, standardize =
 # predict(ridge.mod, s = bestlam, type = 'coefficients')
 
 # make predictions for the validation set with the optimal lambda
-ridge_pred = predict(ridge.mod, s = bestlam, newx = x_val)
+ridge_pred = predict(ridge.mod, s = bestlam, newx = as.matrix(val_X))
 
 # calculate the RMSE
 sqrt(mean((ridge_pred - val_y)^2))
@@ -139,7 +153,7 @@ rigde_pred_test = predict(ridge.mod, s = bestlam, newx = as.matrix(test_X[, -1])
 ridge_preds_df <- data.frame(id = as.integer(test_X$id),
                               average_daily_rate= rigde_pred_test)
 colnames(ridge_preds_df)[2] <- 'average_daily_rate'
-ridge_preds_df
+str(ridge_preds_df)
 # save submission file
 write.csv(ridge_preds_df, file = "./data/sample_submission_ridge.csv", row.names = F)
 
@@ -149,7 +163,6 @@ write.csv(ridge_preds_df, file = "./data/sample_submission_ridge.csv", row.names
 ##############################################################
 # transform the variables
 x_train <- model.matrix(average_daily_rate ~., train)[,-1]
-x_val <- model.matrix(average_daily_rate ~., train)[,-1]
 
 # look for the best lambda value to perform the ridge regression with 10- fold cross validation
 set.seed(1)
@@ -165,7 +178,7 @@ lasso.mod <- glmnet(x_train, train_y, alpha = 1, lambda = bestlam, standardize =
 # predict(lasso.mod, s = bestlam, type = 'coefficients')
 
 # make predictions for the validation set with the optimal lambda
-lasso_pred = predict(lasso.mod, s = bestlam, newx = x_val)
+lasso_pred = predict(lasso.mod, s = bestlam, newx = as.matrix(val_X))
 
 # calculate the RMSE
 sqrt(mean((lasso_pred - val_y)^2))
@@ -178,7 +191,7 @@ lasso_preds_df <- data.frame(id = as.integer(test_X$id),
                              average_daily_rate = lasso_pred_test)
 
 colnames(lasso_preds_df)[2] <- 'average_daily_rate'
-lasso_preds_df
+str(lasso_preds_df)
 # save submission file
 write.csv(lasso_preds_df, file = "./data/sample_submission_lasso.csv", row.names = F)
 
