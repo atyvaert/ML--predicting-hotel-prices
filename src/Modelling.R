@@ -120,9 +120,46 @@ backward_preds_df <- data.frame(id = as.integer(test_X$id),
 # save submission file
 write.csv(backward_preds_df, file = "./data/sample_submission_backwardsel.csv", row.names = F)
 
+##############################################################
+# 3. Sequential replacement Stepwise selection 
+##############################################################
+
+regfit.full_seq <- regsubsets(average_daily_rate ~ ., data = train, nvmax = 99, really.big = T, method = "seqrep")
+regS.summary <- summary(regfit.full_seq)
+regS.summary
+regS.summary$rsq
+regS.summary$adjr2
+regS.summary$rss
+
+par(mfrow = c(2, 1))
+plot(regS.summary$rss, xlab = "Number of Variables", ylab = "RSS", type = "l")
+plot(regS.summary$adjr2, xlab = "Number of Variables", ylab = "Adjusted Rsq", type = "l")
+
+max_r_squared_seqrep = max(regS.summary$adjr2)
+optimal_nr_predictors_seqrep =  which.max(regS.summary$adjr2) 
+
+coef(regfit.full_seq, optimal_nr_predictors_seqrep)
+lm.cols.seqrep <- names(coef(regfit.full_seq, optimal_nr_predictors_seqrep))[-1]
+
+modeltrainmatrixseqrep <- cbind(train_X[lm.cols.seqrep], train_y)
+
+
+best_model_seqrep =  lm(train_y ~., data = modeltrainmatrixseqrep)
+seqrep_pred <- predict(best_model_seqrep, val_X)
+# calculate the RMSE
+sqrt(mean((seqrep_pred - val_y)^2))
+
+# predictions
+seqrep_pred_test <- predict(best_model_seqrep, test_X)
+seqrep_preds_df <- data.frame(id = test_X$id,
+                              average_daily_rate= seqrep_pred_test)
+seqrep_preds_df$id <- as.integer(seqrep_preds_df$id)
+# save submission file
+write.csv(seqrep_preds_df, file = "./data/sample_submission_seqrepsel.csv", row.names = F)
+
 
 ##############################################################
-# 3. Ridge Regression
+# 4. Ridge Regression
 ##############################################################
 # transform the variables
 x_train <- model.matrix(average_daily_rate ~., train)[,-1]
@@ -159,7 +196,7 @@ write.csv(ridge_preds_df, file = "./data/sample_submission_ridge.csv", row.names
 
 
 ##############################################################
-# 4. Lasso Regression
+# 5. Lasso Regression
 ##############################################################
 # transform the variables
 x_train <- model.matrix(average_daily_rate ~., train)[,-1]
