@@ -29,6 +29,19 @@ val_y <- val$average_daily_rate
 #str(val)
 #str(test_X)
 
+#This function returns how many features we should use based on RMSE on the validation set
+min_validation_error <- function(model) {
+  val.mat <- model.matrix(average_daily_rate ~ ., data = val)
+  
+  val.errors <- rep(NA, 96)
+  for (i in 1:96) {
+    coefi <- coef(model, id = i)
+    pred <- val.mat[, names(coefi)] %*% coefi
+    val.errors[i] <- sqrt(mean((val_y - pred)^2))
+  }
+  return(which.min(val.errors))
+}
+
 
 ##############################################################
 # 1. Forward Stepwise selection
@@ -47,9 +60,8 @@ par(mfrow = c(2, 1))
 plot(regF.summary$rss, xlab = "Number of Variables", ylab = "RSS", type = "l")
 plot(regF.summary$adjr2, xlab = "Number of Variables", ylab = "Adjusted Rsq", type = "l")
 
-# look at the optimal parameters
-max_r_squared_forward = max(regF.summary$adjr2) # 0.5593856
-optimal_nr_predictors_forward =  which.max(regF.summary$adjr2) #80
+# look at the optimal number of parameters
+optimal_nr_predictors_forward =  min_validation_error(regfit.full_for) #54
 
 # train the model with the optimal parameters with the training data
 coef(regfit.full_for, optimal_nr_predictors_forward)
@@ -93,9 +105,8 @@ par(mfrow = c(2, 1))
 plot(regB.summary$rss, xlab = "Number of Variables", ylab = "RSS", type = "l")
 plot(regB.summary$adjr2, xlab = "Number of Variables", ylab = "Adjusted Rsq", type = "l")
 
-# look at the optimal parameters
-max_r_squared_backward = max(regB.summary$adjr2) # 0.4748556
-optimal_nr_predictors_backward =  which.max(regB.summary$adjr2) # 81
+# look at the optimal number of parameters
+optimal_nr_predictors_backward =  min_validation_error(regfit.full_back) #54
 
 # train the model with the optimal parameters with the training data
 coef(regfit.full_back, optimal_nr_predictors_backward)
@@ -126,34 +137,38 @@ write.csv(backward_preds_df, file = "./data/sample_submission_backwardsel.csv", 
 
 regfit.full_seq <- regsubsets(average_daily_rate ~ ., data = train, nvmax = 99, really.big = T, method = "seqrep")
 regS.summary <- summary(regfit.full_seq)
-regS.summary
-regS.summary$rsq
-regS.summary$adjr2
-regS.summary$rss
+#regS.summary
+#regS.summary$rsq
+#regS.summary$adjr2
+#regS.summary$rss
 
+# plot the results
 par(mfrow = c(2, 1))
 plot(regS.summary$rss, xlab = "Number of Variables", ylab = "RSS", type = "l")
 plot(regS.summary$adjr2, xlab = "Number of Variables", ylab = "Adjusted Rsq", type = "l")
 
-max_r_squared_seqrep = max(regS.summary$adjr2)
-optimal_nr_predictors_seqrep =  which.max(regS.summary$adjr2) 
+# look at the optimal number of parameters
+optimal_nr_predictors_forward =  min_validation_error(regfit.full_for) #54
 
+# train the model with the optimal parameters with the training data
 coef(regfit.full_seq, optimal_nr_predictors_seqrep)
 lm.cols.seqrep <- names(coef(regfit.full_seq, optimal_nr_predictors_seqrep))[-1]
 
 modeltrainmatrixseqrep <- cbind(train_X[lm.cols.seqrep], train_y)
 
-
 best_model_seqrep =  lm(train_y ~., data = modeltrainmatrixseqrep)
+
+# make predictions on the validation set
 seqrep_pred <- predict(best_model_seqrep, val_X)
+
 # calculate the RMSE
 sqrt(mean((seqrep_pred - val_y)^2))
 
-# predictions
+# predictions on the test set and save in submission folder
 seqrep_pred_test <- predict(best_model_seqrep, test_X)
-seqrep_preds_df <- data.frame(id = test_X$id,
+seqrep_preds_df <- data.frame(id = as.integer(test_X$id),
                               average_daily_rate= seqrep_pred_test)
-seqrep_preds_df$id <- as.integer(seqrep_preds_df$id)
+
 # save submission file
 write.csv(seqrep_preds_df, file = "./data/sample_submission_seqrepsel.csv", row.names = F)
 
