@@ -30,7 +30,7 @@ val_y <- val$average_daily_rate
 
 
 ##############################################################
-# 1 Forward Stepwise selection
+# 1. Forward Stepwise selection
 ##############################################################
 
 regfit.full_for <- regsubsets(train$average_daily_rate ~ ., data = train, nvmax = 99, really.big = T, method = "forward")
@@ -49,11 +49,11 @@ optimal_nr_predictors_forward =  which.max(regF.summary$adjr2) #82
 optimal_nr_predictors_forward
 
 coef(regfit.full_for, optimal_nr_predictors_forward)
-lm.cols <- names(coef(regfit.full_for, optimal_nr_predictors_forward))[-1]
+lm.cols.forward <- names(coef(regfit.full_for, optimal_nr_predictors_forward))[-1]
 
-modeltrainmatrix <- cbind(train_X[lm.cols], train_y)
+modeltrainmatrixforward <- cbind(train_X[lm.cols.forward], train_y)
 
-best_model_forward = lm(train_y ~ ., data = modeltrainmatrix)
+best_model_forward = lm(train_y ~ ., data = modeltrainmatrixforward)
 forward_pred <- predict(best_model_forward, val_X)
 
 # calculate the RMSE
@@ -69,7 +69,45 @@ write.csv(forward_preds_df, file = "./data/sample_submission_forwardsel.csv", ro
 
 
 ##############################################################
-# 2. Ridge Regression
+# 2. Backward Stepwise selection 
+##############################################################
+
+regfit.full_back <- regsubsets(average_daily_rate ~ ., data = train, nvmax = 99, really.big = T, method = "backward")
+regB.summary <- summary(regfit.full_back)
+regB.summary
+regB.summary$rsq
+regB.summary$adjr2
+regB.summary$rss
+
+par(mfrow = c(2, 1))
+plot(regB.summary$rss, xlab = "Number of Variables", ylab = "RSS", type = "l")
+plot(regB.summary$adjr2, xlab = "Number of Variables", ylab = "Adjusted Rsq", type = "l")
+
+max_r_squared_backward = max(regB.summary$adjr2)
+optimal_nr_predictors_backward =  which.max(regB.summary$adjr2) 
+
+coef(regfit.full_back, optimal_nr_predictors_backward)
+lm.cols.backward <- names(coef(regfit.full_back, optimal_nr_predictors_backward))[-1]
+
+modeltrainmatrixbackward <- cbind(train_X[lm.cols.backward], train_y)
+
+
+best_model_backward =  lm(train_y ~., data = modeltrainmatrixbackward)
+backward_pred <- predict(best_model_backward, val_X)
+# calculate the RMSE
+sqrt(mean((backward_pred - val_y)^2))
+
+# predictions
+backward_pred_test <- predict(best_model_backward, test_X)
+backward_preds_df <- data.frame(id = test_X$id,
+                                average_daily_rate= backward_pred_test)
+backward_preds_df$id <- as.integer(backward_preds_df$id)
+# save submission file
+write.csv(backward_preds_df, file = "./data/sample_submission_backwardsel.csv", row.names = F)
+
+
+##############################################################
+# 3. Ridge Regression
 ##############################################################
 # transform the variables
 x_train <- model.matrix(average_daily_rate ~., train)[,-1]
@@ -107,7 +145,7 @@ write.csv(ridge_preds_df, file = "./data/sample_submission_ridge.csv", row.names
 
 
 ##############################################################
-# 3. Lasso Regression
+# 4. Lasso Regression
 ##############################################################
 # transform the variables
 x_train <- model.matrix(average_daily_rate ~., train)[,-1]
