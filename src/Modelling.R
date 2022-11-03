@@ -148,7 +148,7 @@ plot(regS.summary$rss, xlab = "Number of Variables", ylab = "RSS", type = "l")
 plot(regS.summary$adjr2, xlab = "Number of Variables", ylab = "Adjusted Rsq", type = "l")
 
 # look at the optimal number of parameters
-optimal_nr_predictors_forward =  min_validation_error(regfit.full_for) #54
+optimal_nr_predictors_seqrep =  min_validation_error(regfit.full_seq) #54
 
 # train the model with the optimal parameters with the training data
 coef(regfit.full_seq, optimal_nr_predictors_seqrep)
