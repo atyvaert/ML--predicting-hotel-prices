@@ -20,6 +20,7 @@ library(caret)
 
 
 # import data
+rm(list = ls())
 train <- read.csv('./data/silver_data/train.csv')
 val <- read.csv('./data/silver_data/val.csv')
 test_X <- read.csv('./data/silver_data/test.csv')
@@ -68,14 +69,19 @@ test_X_encode$arrival_date_weekday <- wday(test_X_encode$posix_arrival, label = 
 # we only select the top 10 levels with highest frequency so our model does not explode
 # For all cases, this includes most of the data: KIJKEN ALS DIT KLOPT BIJ DE REST
 cats <- categories(train_X_encode[, c('assigned_room_type', 'booking_distribution_channel',
-                                      'canceled', 'country', 'customer_type', 'deposit',
+                                      'canceled', 'customer_type', 'deposit',
                                       'hotel_type', 'is_repeated_guest', 'last_status',
                                       'market_segment', 'meal_booked', 'reserved_room_type',
                                       'arrival_date_weekday', 'year_arrival')], p = 10)
 
 
-# month_arrival seperate because we want all 12 categories here
+# for some variables with high cardinality, we use the specified amount of category levels
+# f.e.: month_arrival seperate because we want all 12 categories here
 cats <- append(cats, categories(train_X_encode['month_arrival']))
+cats <- append(cats, categories(train_X_encode['country'], p = 15))
+cats <- append(cats, categories(train_X_encode['booking_agent'], p = 3))
+cats <- append(cats, categories(train_X_encode['booking_company'], p = 2))
+
 
 
 # apply on train set (exclude reference categories)
@@ -83,32 +89,34 @@ dummies_train <- dummy(train_X_encode[, c('assigned_room_type', 'booking_distrib
                                          'canceled', 'country', 'customer_type', 'deposit',
                                          'hotel_type', 'is_repeated_guest', 'last_status',
                                          'market_segment', 'meal_booked', 'reserved_room_type',
-                                         'month_arrival', 'arrival_date_weekday', 'year_arrival')], object = cats)
+                                         'month_arrival', 'arrival_date_weekday', 'year_arrival',
+                                         'booking_agent', 'booking_company')], object = cats)
 
 # exclude the reference category: take the first one of the variable you added
 names(dummies_train)
 dummies_train <- subset(dummies_train, 
                         select = -c(assigned_room_type_A, booking_distribution_channel_TA.TO,
-                                    country_Belgium, canceled_no.cancellation, customer_type_Transient,
+                                    country_China, canceled_no.cancellation, customer_type_Transient,
                                     deposit_nodeposit, hotel_type_City.Hotel, is_repeated_guest_no,
                                     last_status_Check.Out, market_segment_Online.travel.agent,
                                     meal_booked_meal.package.NOT.booked, reserved_room_type_A, month_arrival_January,
-                                    arrival_date_weekday_Mon))
+                                    arrival_date_weekday_Mon, booking_company_40, booking_agent_240))
 
 # apply on val set (exclude reference categories)
 # excluded no.canceled so it becomes one when it was canceled
 dummies_val <- dummy(val_X_encode[, c('assigned_room_type', 'booking_distribution_channel', 
-                                        'canceled', 'country', 'customer_type', 'deposit',
-                                        'hotel_type', 'is_repeated_guest', 'last_status',
-                                        'market_segment', 'meal_booked', 'reserved_room_type',
-                                        'month_arrival', 'arrival_date_weekday')], object = cats)
+                                      'canceled', 'country', 'customer_type', 'deposit',
+                                      'hotel_type', 'is_repeated_guest', 'last_status',
+                                      'market_segment', 'meal_booked', 'reserved_room_type',
+                                      'month_arrival', 'arrival_date_weekday', 'year_arrival',
+                                      'booking_agent', 'booking_company')], object = cats)
 
 dummies_val <- subset(dummies_val, select = -c(assigned_room_type_A, booking_distribution_channel_TA.TO,
-                                                 country_Belgium, canceled_no.cancellation, customer_type_Transient,
-                                                 deposit_nodeposit, hotel_type_City.Hotel, is_repeated_guest_no,
-                                                 last_status_Check.Out, market_segment_Online.travel.agent,
-                                                 meal_booked_meal.package.NOT.booked, reserved_room_type_A, month_arrival_January,
-                                                 arrival_date_weekday_Mon))
+                                               country_China, canceled_no.cancellation, customer_type_Transient,
+                                               deposit_nodeposit, hotel_type_City.Hotel, is_repeated_guest_no,
+                                               last_status_Check.Out, market_segment_Online.travel.agent,
+                                               meal_booked_meal.package.NOT.booked, reserved_room_type_A, month_arrival_January,
+                                               arrival_date_weekday_Mon, booking_company_40, booking_agent_240))
 
 # apply on test set (exclude reference categories)
 # excluded no.canceled so it becomes one when it was canceled
@@ -116,14 +124,15 @@ dummies_test <- dummy(test_X_encode[, c('assigned_room_type', 'booking_distribut
                                         'canceled', 'country', 'customer_type', 'deposit',
                                         'hotel_type', 'is_repeated_guest', 'last_status',
                                         'market_segment', 'meal_booked', 'reserved_room_type',
-                                        'month_arrival', 'arrival_date_weekday')], object = cats)
+                                        'month_arrival', 'arrival_date_weekday', 'year_arrival',
+                                        'booking_agent', 'booking_company')], object = cats)
 
 dummies_test <- subset(dummies_test, select = -c(assigned_room_type_A, booking_distribution_channel_TA.TO,
-                                                 country_Belgium, canceled_no.cancellation, customer_type_Transient,
+                                                 country_China, canceled_no.cancellation, customer_type_Transient,
                                                  deposit_nodeposit, hotel_type_City.Hotel, is_repeated_guest_no,
                                                  last_status_Check.Out, market_segment_Online.travel.agent,
                                                  meal_booked_meal.package.NOT.booked, reserved_room_type_A, month_arrival_January,
-                                                 arrival_date_weekday_Mon))
+                                                 arrival_date_weekday_Mon, booking_company_40, booking_agent_240))
 
 # we remove the original predictors and merge them with the other predictors
 ## merge with overall training set
@@ -131,15 +140,17 @@ train_X_encode <- subset(train_X_encode, select = -c(assigned_room_type, booking
                                                      canceled, country, customer_type, deposit,
                                                      hotel_type, is_repeated_guest, last_status,
                                                      market_segment, meal_booked, reserved_room_type,
-                                                     month_arrival, arrival_date_weekday))
+                                                     month_arrival, arrival_date_weekday, booking_agent,
+                                                     booking_company))
 train_X_encode <- cbind(train_X_encode, dummies_train)
 
 ## merge with overall val set
 val_X_encode <- subset(val_X_encode, select = -c(assigned_room_type, booking_distribution_channel,
-                                                   canceled, country, customer_type, deposit,
-                                                   hotel_type, is_repeated_guest, last_status,
-                                                   market_segment, meal_booked, reserved_room_type,
-                                                   month_arrival, arrival_date_weekday))
+                                                 canceled, country, customer_type, deposit,
+                                                 hotel_type, is_repeated_guest, last_status,
+                                                 market_segment, meal_booked, reserved_room_type,
+                                                 month_arrival, arrival_date_weekday, booking_agent,
+                                                 booking_company))
 val_X_encode <- cbind(val_X_encode, dummies_val)
 
 ## merge with overall test set
@@ -147,7 +158,8 @@ test_X_encode <- subset(test_X_encode, select = -c(assigned_room_type, booking_d
                                                    canceled, country, customer_type, deposit,
                                                    hotel_type, is_repeated_guest, last_status,
                                                    market_segment, meal_booked, reserved_room_type,
-                                                   month_arrival, arrival_date_weekday))
+                                                   month_arrival, arrival_date_weekday, booking_agent,
+                                                   booking_company))
 test_X_encode <- cbind(test_X_encode, dummies_test)
 
 
@@ -160,16 +172,16 @@ test_X_encode <- cbind(test_X_encode, dummies_test)
 # was booked through the booking agency, therefore we create an indicator variable
 
 # 1. for columns with null values for training and test set
-null.cols <- c('booking_agent', 'booking_company')
-new.cols_names <- c('booking_agent_present', 'booking_company_present')
-train_X_encode[, new.cols_names] <- ifelse(train_X[, null.cols] == 'NULL', 0, 1)
-val_X_encode[, new.cols_names] <- ifelse(val_X[, null.cols] == 'NULL', 0, 1)
-test_X_encode[, new.cols_names] <- ifelse(test_X[, null.cols] == 'NULL', 0, 1)
+#null.cols <- c('booking_agent', 'booking_company')
+#new.cols_names <- c('booking_agent_present', 'booking_company_present')
+#train_X_encode[, new.cols_names] <- ifelse(train_X[, null.cols] == 'NULL', 0, 1)
+#val_X_encode[, new.cols_names] <- ifelse(val_X[, null.cols] == 'NULL', 0, 1)
+#test_X_encode[, new.cols_names] <- ifelse(test_X[, null.cols] == 'NULL', 0, 1)
 
 # remove original columns
-train_X_encode <- subset(train_X_encode, select = -c(booking_agent, booking_company))
-val_X_encode <- subset(val_X_encode, select = -c(booking_agent, booking_company))
-test_X_encode <- subset(test_X_encode, select = -c(booking_agent, booking_company))
+#train_X_encode <- subset(train_X_encode, select = -c(booking_agent, booking_company))
+#val_X_encode <- subset(val_X_encode, select = -c(booking_agent, booking_company))
+#test_X_encode <- subset(test_X_encode, select = -c(booking_agent, booking_company))
 
 
 ##############################################################
@@ -219,7 +231,7 @@ test_X_encode <- cbind(test_X_encode, time_between_arrival_checkout, time_betwee
 ##############################################################
 # Make indicators variables for several variables as more than 90% is equal to zero and each time,
 # there are very few values with 1 or somewhat higher
-ind.cols <- c('nr_babies', 'nr_children', 'car_parking_spaces')
+ind.cols <- c('nr_babies', 'nr_children')
 
 # apply
 train_X_encode[, ind.cols] <- ifelse(train_X_encode[, ind.cols] == 0, 0, 1)
@@ -250,7 +262,7 @@ hist(train_X_scale$time_between_arrival_checkout)
 # normalization:
 norm.cols <- c('nr_adults', 'nr_nights', 'lead_time', 'days_in_waiting_list','previous_bookings_not_canceled',
                'previous_cancellations', 'nr_booking_changes', 'special_requests', 'time_between_arrival_checkout',
-               'time_between_arrival_cancel')
+               'time_between_arrival_cancel', 'car_parking_spaces')
 
 process <- preProcess(train_X_scale[, norm.cols], method=c("range")) # transformation from training set
 

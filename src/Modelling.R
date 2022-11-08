@@ -15,14 +15,17 @@ train <- read.csv('./data/gold_data/train.csv')
 val <- read.csv('./data/gold_data/val.csv')
 test_X <- read.csv('./data/gold_data/test.csv')
 
-
-
 # separate dependent and independent variables for training and validation set
 train_X <- subset(train, select = -c(average_daily_rate))
 train_y <- train$average_daily_rate
 
 val_X <- subset(val, select = -c(average_daily_rate))
 val_y <- val$average_daily_rate
+
+# create a dataset to train the final model on with the train and validation set combined
+train_and_val <- rbind(train, val)
+train_and_val_X <- subset(train_and_val, select = -c(average_daily_rate))
+train_and_val_y <- train_and_val$average_daily_rate
 
 # inspect
 #str(train)
@@ -60,24 +63,19 @@ par(mfrow = c(2, 1))
 plot(regF.summary$rss, xlab = "Number of Variables", ylab = "RSS", type = "l")
 plot(regF.summary$adjr2, xlab = "Number of Variables", ylab = "Adjusted Rsq", type = "l")
 
-# look at the optimal number of parameters
+# look at the optimal number of parameters by applying the model on the validation set
+# and looking for the minimal RMSE
 optimal_nr_predictors_forward =  min_validation_error(regfit.full_for) #54
 
-# train the model with the optimal parameters with the training data
+# train the model with the optimal parameters to all available training data (train + val set)
 coef(regfit.full_for, optimal_nr_predictors_forward)
 lm.cols.forward <- names(coef(regfit.full_for, optimal_nr_predictors_forward))[-1]
 
-modeltrainmatrixforward <- cbind(train_X[lm.cols.forward], train_y)
+model_train_matrix_forward <- cbind(train_and_val_X[lm.cols.forward], train_and_val_y)
 
-best_model_forward = lm(train_y ~ ., data = modeltrainmatrixforward)
+best_model_forward = lm(train_and_val_y ~ ., data = model_train_matrix_forward)
 
-# make predictions on the validation set
-forward_pred <- predict(best_model_forward, val_X)
-
-# calculate the RMSE
-sqrt(mean((forward_pred - val_y)^2))
-
-# predictions on the test set and save in submission folder
+# make predictions on the test set and save in submission folder
 forward_pred_test <- predict(best_model_forward, test_X)
 forward_preds_df <- data.frame(id = as.integer(test_X$id),
                                average_daily_rate= forward_pred_test)
@@ -105,22 +103,17 @@ par(mfrow = c(2, 1))
 plot(regB.summary$rss, xlab = "Number of Variables", ylab = "RSS", type = "l")
 plot(regB.summary$adjr2, xlab = "Number of Variables", ylab = "Adjusted Rsq", type = "l")
 
-# look at the optimal number of parameters
-optimal_nr_predictors_backward =  min_validation_error(regfit.full_back) #54
+# look at the optimal number of parameters by applying the model on the validation set
+# and looking for the minimal RMSE
+optimal_nr_predictors_backward =  min_validation_error(regfit.full_back) # 54
 
-# train the model with the optimal parameters with the training data
-coef(regfit.full_back, optimal_nr_predictors_backward)
+# train the model with the optimal parameters to all available training data (train + val set)
+# coef(regfit.full_back, optimal_nr_predictors_backward)
 lm.cols.backward <- names(coef(regfit.full_back, optimal_nr_predictors_backward))[-1]
 
-modeltrainmatrixbackward <- cbind(train_X[lm.cols.backward], train_y)
+model_train_matrix_backward <- cbind(train_and_val_X[lm.cols.backward], train_and_val_y)
 
-best_model_backward =  lm(train_y ~., data = modeltrainmatrixbackward)
-
-# make predictions on the validation set
-backward_pred <- predict(best_model_backward, val_X)
-
-# calculate the RMSE
-sqrt(mean((backward_pred - val_y)^2))
+best_model_backward =  lm(train_and_val_y ~., data = model_train_matrix_backward)
 
 # predictions on the test set and save in submission folder
 backward_pred_test <- predict(best_model_backward, test_X)
@@ -147,22 +140,17 @@ par(mfrow = c(2, 1))
 plot(regS.summary$rss, xlab = "Number of Variables", ylab = "RSS", type = "l")
 plot(regS.summary$adjr2, xlab = "Number of Variables", ylab = "Adjusted Rsq", type = "l")
 
-# look at the optimal number of parameters
+# look at the optimal number of parameters by applying the model on the validation set
+# and looking for the minimal RMSE
 optimal_nr_predictors_seqrep =  min_validation_error(regfit.full_seq) #54
 
-# train the model with the optimal parameters with the training data
-coef(regfit.full_seq, optimal_nr_predictors_seqrep)
+# train the model with the optimal parameters to all available training data (train + val set)
+# coef(regfit.full_seq, optimal_nr_predictors_seqrep)
 lm.cols.seqrep <- names(coef(regfit.full_seq, optimal_nr_predictors_seqrep))[-1]
 
-modeltrainmatrixseqrep <- cbind(train_X[lm.cols.seqrep], train_y)
+modeltrainmatrixseqrep <- cbind(train_and_val_X[lm.cols.seqrep], train_and_val_y)
 
-best_model_seqrep =  lm(train_y ~., data = modeltrainmatrixseqrep)
-
-# make predictions on the validation set
-seqrep_pred <- predict(best_model_seqrep, val_X)
-
-# calculate the RMSE
-sqrt(mean((seqrep_pred - val_y)^2))
+best_model_seqrep =  lm(train_and_val_y ~., data = modeltrainmatrixseqrep)
 
 # predictions on the test set and save in submission folder
 seqrep_pred_test <- predict(best_model_seqrep, test_X)
@@ -176,27 +164,23 @@ write.csv(seqrep_preds_df, file = "./data/sample_submission_seqrepsel.csv", row.
 ##############################################################
 # 4. Ridge Regression
 ##############################################################
-# transform the variables
-x_train <- model.matrix(average_daily_rate ~., train)[,-1]
 
 # look for the best lambda value to perform the ridge regression with 10- fold cross validation
+# use all the available data as we perform cross validation
+# First, transform the variables
+x_train <- model.matrix(average_daily_rate ~., train_and_val)[,-1]
+
 set.seed(1)
-cv.out <- cv.glmnet(x_train, train_y, alpha = 0, standardize = F)
+cv.out <- cv.glmnet(x_train, train_and_val_y, alpha = 0, standardize = F)
 bestlam <- cv.out$lambda.min
 bestlam
 plot(cv.out) # Draw plot of training MSE as a function of lambda
 
-# train the model on the training data 
-ridge.mod <- glmnet(x_train, train_y, alpha = 0, lambda = bestlam, standardize = F)
+# train the model on all training data 
+ridge.mod <- glmnet(x_train, train_and_val_y, alpha = 0, lambda = bestlam, standardize = F)
 
 # look at the coefficients of the model
 # predict(ridge.mod, s = bestlam, type = 'coefficients')
-
-# make predictions for the validation set with the optimal lambda
-ridge_pred = predict(ridge.mod, s = bestlam, newx = as.matrix(val_X))
-
-# calculate the RMSE
-sqrt(mean((ridge_pred - val_y)^2))
 
 # make predictions for the test set with the optimal lambda
 rigde_pred_test = predict(ridge.mod, s = bestlam, newx = as.matrix(test_X[, -1]))
@@ -213,27 +197,22 @@ write.csv(ridge_preds_df, file = "./data/sample_submission_ridge.csv", row.names
 ##############################################################
 # 5. Lasso Regression
 ##############################################################
-# transform the variables
-x_train <- model.matrix(average_daily_rate ~., train)[,-1]
-
 # look for the best lambda value to perform the ridge regression with 10- fold cross validation
+# use all the available data as we perform cross validation
+# First, transform the variables
+x_train <- model.matrix(average_daily_rate ~., train_and_val)[,-1]
+
 set.seed(1)
-cv.out <- cv.glmnet(x_train, train_y, alpha = 1, standardize = F)
+cv.out <- cv.glmnet(x_train, train_and_val_y, alpha = 1, standardize = F)
 bestlam <- cv.out$lambda.min
 bestlam
 plot(cv.out) # Draw plot of training MSE as a function of lambda
 
 # train the model on the training data 
-lasso.mod <- glmnet(x_train, train_y, alpha = 1, lambda = bestlam, standardize = F)
+lasso.mod <- glmnet(x_train, train_and_val_y, alpha = 1, lambda = bestlam, standardize = F)
 
 # look at the coefficients of the model
 # predict(lasso.mod, s = bestlam, type = 'coefficients')
-
-# make predictions for the validation set with the optimal lambda
-lasso_pred = predict(lasso.mod, s = bestlam, newx = as.matrix(val_X))
-
-# calculate the RMSE
-sqrt(mean((lasso_pred - val_y)^2))
 
 # make predictions for the test set with the optimal lambda
 lasso_pred_test = predict(lasso.mod, s = bestlam, newx = as.matrix(test_X[, -1]))
