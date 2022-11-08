@@ -199,11 +199,7 @@ outlier.cols <- c()
 # look at all the numeric variables and detect valid and invalid outliers:
 # 1) car_parking_spaces
 # All the car parking spaces have a value between 0 and 3, with the majority being 0
-# as 1, 2 and 3 are seen as outliers, we bring back these values to one as these are 
-# valid outliers. However, these values are converted to 0.78. Therefore, we create an
-# indicator variable for car_parking_spaces in the feature engineering part
-# add car_parking_spaces to variables that need to be handled
-outlier.cols <- append(outlier.cols, 'car_parking_spaces')
+# We do not see the a value of 3 car parking spaces as an outlier
 
 # 16) lead_time
 outlier.cols <- append(outlier.cols, 'lead_time')
@@ -233,14 +229,7 @@ train_X_outlier$nr_children <- impute(train_X_outlier$nr_children, method = medi
 outlier.cols <- append(outlier.cols, 'nr_children')
 
 # 23) nr_nights
-train_X_impute$nr_nights
-nr_nights_z <- scale(train_X_impute$nr_nights)
-quantile(nr_nights_z, na.rm = T, probs = seq(0, 1, 0.01))
-quantile(train_X_impute$nr_nights, na.rm = T, probs = seq(0, 1, 0.01))
-
-#########  NOG AAN TE PASSEN
-# starting from 99% outliers => until 30 but valid I suppose (= a whole month)?
-# ALso 69 days is about two months, perhaps business trips for consultants can last that long?
+# starting from 99% outliers => until 30 but valid outliers I suppose (= a whole month)?
 train_X_outlier$nr_nights[train_X$nr_nights>30] <- NA
 train_X_outlier$nr_nights <- impute(train_X_outlier$nr_nights, method = median)
 outlier.cols <- append(outlier.cols, 'nr_nights')
@@ -260,11 +249,9 @@ outlier.cols <- append(outlier.cols, 'previous_bookings_not_canceled')
 outlier.cols <- append(outlier.cols, 'previous_cancellations')
 
 
-
 # 28) special_requests  
 #starting from 98% (3), we have outliers
 outlier.cols <- append(outlier.cols, 'special_requests')
-
 
 # use this function to handle valid outliers
 handle_outlier_z <- function(col){
