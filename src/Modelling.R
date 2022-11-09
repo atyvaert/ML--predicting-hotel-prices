@@ -67,10 +67,17 @@ plot(regF.summary$adjr2, xlab = "Number of Variables", ylab = "Adjusted Rsq", ty
 # and looking for the minimal RMSE
 optimal_nr_predictors_forward =  min_validation_error(regfit.full_for) #54
 
-# train the model with the optimal parameters to all available training data (train + val set)
-coef(regfit.full_for, optimal_nr_predictors_forward)
+# train the model on the training data and calculate the RMSE of the validation set
+# coef(regfit.full_for, optimal_nr_predictors_forward)
 lm.cols.forward <- names(coef(regfit.full_for, optimal_nr_predictors_forward))[-1]
+modeltrainmatrixforward <- cbind(train_X[lm.cols.forward], train_y)
+best_model_forward = lm(train_y ~ ., data = modeltrainmatrixforward)
 
+# make predictions on the validation set and calculate RMSE
+forward_pred <- predict(best_model_forward, val_X)
+sqrt(mean((forward_pred - val_y)^2))
+
+# train the model with the optimal parameters to all available training data (train + val set)
 model_train_matrix_forward <- cbind(train_and_val_X[lm.cols.forward], train_and_val_y)
 
 best_model_forward = lm(train_and_val_y ~ ., data = model_train_matrix_forward)
@@ -107,18 +114,25 @@ plot(regB.summary$adjr2, xlab = "Number of Variables", ylab = "Adjusted Rsq", ty
 # and looking for the minimal RMSE
 optimal_nr_predictors_backward =  min_validation_error(regfit.full_back) # 54
 
-# train the model with the optimal parameters to all available training data (train + val set)
+# train the model on the training data and calculate the RMSE of the validation set
 # coef(regfit.full_back, optimal_nr_predictors_backward)
 lm.cols.backward <- names(coef(regfit.full_back, optimal_nr_predictors_backward))[-1]
+modeltrainmatrixbackward <- cbind(train_X[lm.cols.backward], train_y)
+best_model_backward =  lm(train_y ~., data = modeltrainmatrixbackward)
 
+# make predictions on the validation set and calculate RMSE
+backward_pred <- predict(best_model_backward, val_X)
+sqrt(mean((backward_pred - val_y)^2))
+
+# train the model with the optimal parameters to all available training data (train + val set)
 model_train_matrix_backward <- cbind(train_and_val_X[lm.cols.backward], train_and_val_y)
-
 best_model_backward =  lm(train_and_val_y ~., data = model_train_matrix_backward)
 
 # predictions on the test set and save in submission folder
 backward_pred_test <- predict(best_model_backward, test_X)
 backward_preds_df <- data.frame(id = as.integer(test_X$id),
                                 average_daily_rate= backward_pred_test)
+
 # str(backward_preds_df)
 
 # save submission file
@@ -144,13 +158,22 @@ plot(regS.summary$adjr2, xlab = "Number of Variables", ylab = "Adjusted Rsq", ty
 # and looking for the minimal RMSE
 optimal_nr_predictors_seqrep =  min_validation_error(regfit.full_seq) #54
 
-# train the model with the optimal parameters to all available training data (train + val set)
+# train the model on the training data and calculate the RMSE of the validation set
 # coef(regfit.full_seq, optimal_nr_predictors_seqrep)
 lm.cols.seqrep <- names(coef(regfit.full_seq, optimal_nr_predictors_seqrep))[-1]
+modeltrainmatrixseqrep <- cbind(train_X[lm.cols.seqrep], train_y)
+best_model_seqrep =  lm(train_y ~., data = modeltrainmatrixseqrep)
 
-modeltrainmatrixseqrep <- cbind(train_and_val_X[lm.cols.seqrep], train_and_val_y)
+# make predictions on the validation set and calculate RMSE
+seqrep_pred <- predict(best_model_seqrep, val_X)
+sqrt(mean((seqrep_pred - val_y)^2))
 
-best_model_seqrep =  lm(train_and_val_y ~., data = modeltrainmatrixseqrep)
+
+# train the model with the optimal parameters to all available training data (train + val set)
+model_train_matrix_seqrep <- cbind(train_and_val_X[lm.cols.seqrep], train_and_val_y)
+best_model_seqrep =  lm(train_and_val_y ~., data = model_train_matrix_seqrep)
+
+
 
 # predictions on the test set and save in submission folder
 seqrep_pred_test <- predict(best_model_seqrep, test_X)
