@@ -53,7 +53,7 @@ linR_preds_df <- data.frame(id = as.integer(test_X$id),
 # str(forward_preds_df)
 
 # save submission file
-write.csv(forward_preds_df, file = "./data/sample_submission_linR.csv", row.names = F)
+write.csv(linR_pred_test, file = "./data/sample_submission_linR.csv", row.names = F)
 
 ##############################################################
 #This function returns how many features we should use based on RMSE on the validation set
@@ -223,6 +223,8 @@ cv.out <- cv.glmnet(x_train, train_and_val_y, alpha = 0, standardize = F)
 bestlam <- cv.out$lambda.min
 bestlam
 plot(cv.out) # Draw plot of training MSE as a function of lambda
+# look at smallest RMSE 
+sqrt(min(cv.out$cvm))
 
 # train the model on all training data 
 ridge.mod <- glmnet(x_train, train_and_val_y, alpha = 0, lambda = bestlam, standardize = F)
@@ -255,6 +257,8 @@ cv.out <- cv.glmnet(x_train, train_and_val_y, alpha = 1, standardize = F)
 bestlam <- cv.out$lambda.min
 bestlam
 plot(cv.out) # Draw plot of training MSE as a function of lambda
+# look at smallest RMSE (not sure if this is right)
+sqrt(min(cv.out$cvm))
 
 # train the model on the training data 
 lasso.mod <- glmnet(x_train, train_and_val_y, alpha = 1, lambda = bestlam, standardize = F)
