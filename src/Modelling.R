@@ -50,10 +50,10 @@ linR_pred_test <- predict(lm.fit, test_X)
 linR_preds_df <- data.frame(id = as.integer(test_X$id),
                                average_daily_rate= linR_pred_test)
 
-# str(forward_preds_df)
+#str(linR_preds_df)
 
 # save submission file
-write.csv(linR_pred_test, file = "./data/sample_submission_linR.csv", row.names = F)
+write.csv(linR_preds_df, file = "./data/sample_submission_linR.csv", row.names = F)
 
 ##############################################################
 #This function returns how many features we should use based on RMSE on the validation set
