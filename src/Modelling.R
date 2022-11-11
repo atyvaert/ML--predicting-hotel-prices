@@ -8,6 +8,11 @@
 library(glmnet)
 library(ISLR)
 library(leaps)
+library(tree)
+library(gbm)
+library(rpart) #for fitting decision trees
+
+
 
 # import data
 rm(list = ls())
@@ -281,36 +286,31 @@ write.csv(lasso_preds_df, file = "./data/sample_submission_lasso.csv", row.names
 
 
 
+##############################################################
+# 6. Regression Tree
+##############################################################
+
+# basic tree, no cv
+
+tree.rate <- tree(average_daily_rate ~ ., train_and_val, control=rpart.control(cp=.0001))
+
+
+summary(tree.rate)
+
+
+plot(tree.rate)
 
 
 
+tree_pred_test <- predict(tree.rate, newdata = test_X)
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+tree_preds_df <- data.frame(id = as.integer(test_X$id),
+                             average_daily_rate= tree_pred_test)
+colnames(tree_preds_df)[2] <- 'average_daily_rate'
+str(tree_preds_df)
+# save submission file
+write.csv(tree_preds_df, file = "./data/sample_submission_tree.csv", row.names = F)
 
 
 
