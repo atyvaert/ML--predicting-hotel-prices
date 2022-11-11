@@ -292,19 +292,12 @@ write.csv(lasso_preds_df, file = "./data/sample_submission_lasso.csv", row.names
 
 # basic tree, no cv
 
+# We fit the model
 tree.rate <- tree(average_daily_rate ~ ., train_and_val, control=rpart.control(cp=.0001))
-
-
 summary(tree.rate)
-
-
 plot(tree.rate)
-
-
-
+#We make predictions
 tree_pred_test <- predict(tree.rate, newdata = test_X)
-
-
 tree_preds_df <- data.frame(id = as.integer(test_X$id),
                              average_daily_rate= tree_pred_test)
 colnames(tree_preds_df)[2] <- 'average_daily_rate'
@@ -313,8 +306,23 @@ str(tree_preds_df)
 write.csv(tree_preds_df, file = "./data/sample_submission_tree.csv", row.names = F)
 
 
+##############################################################
+# 7. Regression Tree with CV
+##############################################################
 
 
+
+
+
+##############################################################
+# 8. Bagging
+##############################################################
+
+
+
+##############################################################
+# 9. Boosting
+##############################################################
 
 
 
