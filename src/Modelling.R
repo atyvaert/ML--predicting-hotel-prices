@@ -333,7 +333,7 @@ bagging_pred <- predict(baggingModel, newdata = test_X)
 
 #build rf model
 set.seed(1)
-rf.model <- randomForest(average_daily_rate ~ ., data = train_and_val, mtry = 10,  ntree = 110, importance = TRUE)
+rf.model <- randomForest(average_daily_rate ~ ., data = train_and_val, mtry = 33,  ntree = 110, importance = TRUE)
 
 #get predictions
 rf.pred <- predict(rf.model, newdata = test_X)
@@ -349,7 +349,7 @@ rf_preds_df <- data.frame(id = as.integer(test_X$id),
 colnames(rf_preds_df)[2] <- 'average_daily_rate'
 str(rf_preds_df)
 # save submission file
-write.csv(rf_preds_df, file = "./data/sample_submission_randomForest.csv", row.names = F)
+write.csv(rf_preds_df, file = "./data/sample_submission_randomForest2.csv", row.names = F)
 
 
 
