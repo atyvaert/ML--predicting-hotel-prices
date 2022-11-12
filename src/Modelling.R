@@ -11,7 +11,7 @@ library(leaps)
 library(tree)
 library(gbm)
 library(rpart) #for fitting decision trees
-
+library(randomForest)
 
 
 # import data
@@ -317,11 +317,46 @@ write.csv(tree_preds_df, file = "./data/sample_submission_tree.csv", row.names =
 ##############################################################
 # 8. Bagging
 ##############################################################
+set.seed(1)
+baggingModel <- randomForest(average_daily_rate ~ ., data = train_and_val, mtry = 99, importance = TRUE)
+bagging_pred <- predict(baggingModel, newdata = test_X)
+
+
+##############################################################
+# 9. random Forest
+##############################################################
+
+
+#score = 21
+# By default, randomForest() uses p/3 variables when building a random forest of regression trees
+
+
+#build rf model
+set.seed(1)
+rf.model <- randomForest(average_daily_rate ~ ., data = train_and_val, mtry = 10,  ntree = 110, importance = TRUE)
+
+#get predictions
+rf.pred <- predict(rf.model, newdata = test_X)
+
+rf.pred
+
+
+
+rf_preds_df <- data.frame(id = as.integer(test_X$id),
+                          average_daily_rate= rf.pred)
+
+
+colnames(rf_preds_df)[2] <- 'average_daily_rate'
+str(rf_preds_df)
+# save submission file
+write.csv(rf_preds_df, file = "./data/sample_submission_randomForest.csv", row.names = F)
+
+
 
 
 
 ##############################################################
-# 9. Boosting
+# 10. Boosting
 ##############################################################
 
 
