@@ -80,6 +80,10 @@ min_validation_error <- function(model) {
 # 1. Forward Stepwise selection
 ##############################################################
 
+
+
+#### DIT IS VAN VOOR DE DATA UPDATE DUS NU 102 EXPL VAR!!!
+
 # perform forward stepwise selection and look at the results
 regfit.full_for <- regsubsets(train$average_daily_rate ~ ., data = train, nvmax = 96, really.big = T, method = "forward")
 regF.summary <- summary(regfit.full_for)
@@ -126,6 +130,8 @@ write.csv(forward_preds_df, file = "./data/sample_submission_forwardsel.csv", ro
 ##############################################################
 # 2. Backward Stepwise selection 
 ##############################################################
+
+### same comment
 
 # perform backwards stepwise selection and look at the results
 regfit.full_back <- regsubsets(average_daily_rate ~ ., data = train, nvmax = 96, really.big = T, method = "backward")
@@ -317,23 +323,41 @@ write.csv(tree_preds_df, file = "./data/sample_submission_tree.csv", row.names =
 ##############################################################
 # 8. Bagging
 ##############################################################
+# score = 20.4
 set.seed(1)
-baggingModel <- randomForest(average_daily_rate ~ ., data = train_and_val, mtry = 99, importance = TRUE)
+baggingModel <- randomForest(average_daily_rate ~ ., data = train_and_val, mtry = 102,ntree = 110, importance = TRUE)
 bagging_pred <- predict(baggingModel, newdata = test_X)
+
+bagging_pred
+
+bagging_preds_df = data.frame(id = as.integer(test_X$id),
+                              average_daily_rate= bagging_pred)
+
+
+colnames(bagging_preds_df)[2] <- 'average_daily_rate'
+str(bagging_preds_df)
+# save submission file
+write.csv(bagging_preds_df, file = "./data/sample_submission_bagging.csv", row.names = F)
+
 
 
 ##############################################################
 # 9. random Forest
 ##############################################################
 
+###############################################
+#9.1 random Forest with suboptimal parameters 
+###############################################
 
 #score = 21
 # By default, randomForest() uses p/3 variables when building a random forest of regression trees
+# By default, randomForest() uses sqrt(p) variables when building a random forest of classification trees
+
 
 
 #build rf model
 set.seed(1)
-rf.model <- randomForest(average_daily_rate ~ ., data = train_and_val, mtry = 33,  ntree = 110, importance = TRUE)
+rf.model <- randomForest(average_daily_rate ~ ., data = train_and_val, mtry = 10,  ntree = 110, importance = TRUE)
 
 #get predictions
 rf.pred <- predict(rf.model, newdata = test_X)
@@ -349,7 +373,40 @@ rf_preds_df <- data.frame(id = as.integer(test_X$id),
 colnames(rf_preds_df)[2] <- 'average_daily_rate'
 str(rf_preds_df)
 # save submission file
-write.csv(rf_preds_df, file = "./data/sample_submission_randomForest2.csv", row.names = F)
+write.csv(rf_preds_df, file = "./data/sample_submission_randomForest.csv", row.names = F)
+
+
+
+
+
+###############################################
+#9.2 random Forest with optimal parameters 
+###############################################
+# kan 34 eens proberen, is eig 102 pred var nu
+
+#score = 19.5
+# By default, randomForest() uses p/3 variables when building a random forest of regression trees
+
+
+#build rf model
+set.seed(1)
+rf.model2 <- randomForest(average_daily_rate ~ ., data = train_and_val, mtry = 33,  ntree = 110, importance = TRUE)
+
+#get predictions
+rf.pred2 <- predict(rf.model2, newdata = test_X)
+
+rf.pred2
+
+
+
+rf_preds_df2 <- data.frame(id = as.integer(test_X$id),
+                          average_daily_rate= rf.pred2)
+
+
+colnames(rf_preds_df2)[2] <- 'average_daily_rate'
+str(rf_preds_df2)
+# save submission file
+write.csv(rf_preds_df2, file = "./data/sample_submission_randomForest2.csv", row.names = F)
 
 
 
@@ -359,9 +416,20 @@ write.csv(rf_preds_df, file = "./data/sample_submission_randomForest2.csv", row.
 # 10. Boosting
 ##############################################################
 
+boosting_model <- gbm(average_daily_rate ~ ., data = train_and_val, distribution = "gaussian", n.trees = 5000, interaction.depth = 4, shrinkage = 0.2, verbose = F)
+boosting.pred <- predict(boosting_model, newdata = test_X, n.trees = 5000)
+boosting_pred
+
+boosting_df <- data.frame(id = as.integer(test_X$id),
+                           average_daily_rate= boosting_pred)
 
 
 
+
+colnames(boosting_df)[2] <- 'average_daily_rate'
+str(boosting_df)
+# save submission file
+write.csv(boosting_df, file = "./data/sample_submission_boosting.csv", row.names = F)
 
 
 
