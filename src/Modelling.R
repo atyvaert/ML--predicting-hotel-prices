@@ -459,6 +459,7 @@ gbmGrid <-  expand.grid(interaction.depth = c(1, 4, 6),
                         shrinkage = 0.1,
                         n.minobsinnode = 20)
 
+set.seed(1)
 trainControl <- trainControl(method = 'cv', number = 3, verboseIter = TRUE, allowParallel = TRUE)
 gbm.model <- train(average_daily_rate ~ .,
                    data = train_and_val,
@@ -499,6 +500,7 @@ gbmGrid <-  expand.grid(interaction.depth = c(7, 9, 11),
                         shrinkage = 0.05,
                         n.minobsinnode = 20)
 
+set.seed(1)
 trainControl <- trainControl(method = 'cv', number = 4, verboseIter = TRUE, allowParallel = TRUE)
 gbm.model <- train(average_daily_rate ~ .,
                    data = train_and_val,
