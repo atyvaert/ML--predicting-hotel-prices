@@ -393,6 +393,8 @@ write.csv(rf_preds_df, file = "./data/sample_submission_randomForest.csv", row.n
 #build rf model
 set.seed(1)
 rf.model2 <- randomForest(average_daily_rate ~ ., data = train_and_val, mtry = 33,  ntree = 110, importance = TRUE)
+#rf.model2 <- randomForest(average_daily_rate ~ ., data = train_and_val, mtry = 34,  ntree = 110, importance = TRUE)
+
 
 #get predictions
 rf.pred2 <- predict(rf.model2, newdata = test_X)
@@ -403,6 +405,52 @@ rf.pred2
 
 rf_preds_df2 <- data.frame(id = as.integer(test_X$id),
                           average_daily_rate= rf.pred2)
+
+
+colnames(rf_preds_df2)[2] <- 'average_daily_rate'
+str(rf_preds_df2)
+# save submission file
+write.csv(rf_preds_df2, file = "./data/sample_submission_randomForest2.csv", row.names = F)
+
+###############################################
+#9.3 random Forest with CV 
+###############################################
+# kan 34 eens proberen, is eig 102 pred var nu
+
+#score = 19.5
+# By default, randomForest() uses p/3 variables when building a random forest of regression trees
+
+
+#We set up for parallel processing, change number of clusters according to CPU
+cluster <- makeCluster(detectCores()-1)
+registerDoParallel(cluster)
+
+#We tune over 3 values of interaction depth
+rfGrid <-  expand.grid(mtry = c(20, 34, 40))
+
+set.seed(1)
+trainControl <- trainControl(method = 'cv', number = 5, verboseIter = TRUE, allowParallel = TRUE)
+rf.model3 <- train(average_daily_rate ~ .,
+                   data = train_and_val,
+                   method = 'rf',
+                   trControl = trainControl,
+                   metric = 'RMSE',
+                   tuneGrid = rfGrid
+)
+
+#close parallel
+stopCluster(cluster)
+
+
+#get predictions
+rf.pred2 <- predict(rf.model2, newdata = test_X)
+
+rf.pred2
+
+
+
+rf_preds_df2 <- data.frame(id = as.integer(test_X$id),
+                           average_daily_rate= rf.pred2)
 
 
 colnames(rf_preds_df2)[2] <- 'average_daily_rate'
@@ -528,6 +576,46 @@ str(boosting_df)
 # save submission file
 write.csv(boosting_df, file = "./data/sample_submission_boosting2.csv", row.names = F)
 
+
+#Third hyperparameter grid
+
+#We set up for parallel processing, change number of clusters according to CPU cores
+cluster <- makeCluster(detectCores()-1)
+registerDoParallel(cluster)
+
+#We tune over 3 values of interaction depth
+gbmGrid <-  expand.grid(interaction.depth = c(11, 13, 15), 
+                        n.trees = 3000, 
+                        shrinkage = c(0.01, 0.001),
+                        n.minobsinnode = 20)
+
+set.seed(1)
+trainControl <- trainControl(method = 'cv', number = 4, verboseIter = TRUE, allowParallel = TRUE)
+gbm.model <- train(average_daily_rate ~ .,
+                   data = train_and_val,
+                   method = 'gbm',
+                   trControl = trainControl,
+                   metric = 'RMSE',
+                   tuneGrid = gbmGrid
+)
+
+#close parallel
+stopCluster(cluster)
+
+# save model
+save(gbm.model, file = "models/gbm_model3.Rdata")
+
+boosting.pred <- predict(gbm.model, newdata = test_X, n.trees = 3000)
+boosting.pred
+
+boosting_df <- data.frame(id = as.integer(test_X$id),
+                          average_daily_rate= boosting.pred)
+
+
+colnames(boosting_df)[2] <- 'average_daily_rate'
+str(boosting_df)
+# save submission file
+write.csv(boosting_df, file = "./data/sample_submission_boosting3.csv", row.names = F)
 
 
 
