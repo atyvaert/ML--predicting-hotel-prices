@@ -14,6 +14,7 @@ library(rpart) #for fitting decision trees
 library(randomForest)
 library(doParallel)
 library(caret)
+library(xgboost)
 
 
 # import data
@@ -618,6 +619,69 @@ str(boosting_df)
 write.csv(boosting_df, file = "./data/sample_submission_boosting3.csv", row.names = F)
 
 
+##############################################################
+# 10.1 XGBoost
+##############################################################
+
+#hyperparameters:
+#https://www.analyticsvidhya.com/blog/2016/03/complete-guide-parameter-tuning-xgboost-with-codes-python/  
+# lambda (regul) default, tree depth (default 6),
+# pruning param: gamma (compare with gain) 5?, 
+# nthreas = detectcores-11
+# eta 0.01-0.2
+
+#We set up for parallel processing, change number of clusters according to CPU cores
+cluster <- makeCluster(detectCores()-1)
+registerDoParallel(cluster)
+
+#grid 1
+XGBgrid1 <-  expand.grid(nrounds = c(500, 1000, 1500), 
+                        max_depth = 6, 
+                        eta = 0.05,
+                        gamma = 0,
+                        colsample_bytree = 1,
+                        min_child_weight = 1,
+                        subsample = 1)
+#result: 1500, 6
+
+
+#grid 2
+XGBgrid2 <-  expand.grid(nrounds = c(1500, 2000), 
+                        max_depth = c(6, 8), 
+                        eta = c(0.05, 0.01),
+                        gamma = 0,
+                        colsample_bytree = 1,
+                        min_child_weight = 1,
+                        subsample = 1)
+
+set.seed(1)
+trainControl <- trainControl(method = 'cv', number = 3, verboseIter = TRUE, allowParallel = TRUE)
+xgb_tune <- train(x = train_and_val_X,
+                  y = train_and_val_y,
+                  method = 'xgbTree',
+                  trControl = trainControl,
+                  metric = 'RMSE',
+                  tuneGrid = XGBgrid2,
+                  verbose = TRUE
+)
+
+#close parallel
+stopCluster(cluster)
+
+# save model
+save(xgb_tune, file = "models/xgb_model2.Rdata")
+
+xgb.pred <- predict(xgb_tune, newdata = test_X, n.trees = 1500)
+xgb.pred
+
+xgb_df <- data.frame(id = as.integer(test_X$id),
+                          average_daily_rate= xgb.pred)
+
+
+colnames(xgb_df)[2] <- 'average_daily_rate'
+str(xgb_df)
+# save submission file
+write.csv(xgb_df, file = "./data/sample_submission_xgb2.csv", row.names = F)
 
 
 
