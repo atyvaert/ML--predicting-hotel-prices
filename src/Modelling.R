@@ -665,13 +665,33 @@ xgb_tune <- train(x = train_and_val_X,
                   verbose = TRUE
 )
 
+#adaptive_cv + random search
+
+trainControl <- trainControl(method = 'adaptive_cv',
+                             number = 10,
+                             repeats = 10,
+                             adaptive = list(min = 5, alpha = 0.05, method = "gls", complete = TRUE),
+                             verboseIter = TRUE,
+                             search = 'random',
+                             allowParallel = TRUE)
+
+set.seed(1)
+xgb_tune <- train(x = train_and_val_X,
+                  y = train_and_val_y,
+                  method = 'xgbTree',
+                  trControl = trainControl,
+                  metric = 'RMSE',
+                  tuneLength = 25,
+                  verbose = TRUE
+)
+
 #close parallel
 stopCluster(cluster)
 
 # save model
-save(xgb_tune, file = "models/xgb_model2.Rdata")
+save(xgb_tune, file = "models/xgb_model4.Rdata")
 
-xgb.pred <- predict(xgb_tune, newdata = test_X, n.trees = 1500)
+xgb.pred <- predict(xgb_tune, newdata = test_X)
 xgb.pred
 
 xgb_df <- data.frame(id = as.integer(test_X$id),
@@ -681,7 +701,7 @@ xgb_df <- data.frame(id = as.integer(test_X$id),
 colnames(xgb_df)[2] <- 'average_daily_rate'
 str(xgb_df)
 # save submission file
-write.csv(xgb_df, file = "./data/sample_submission_xgb2.csv", row.names = F)
+write.csv(xgb_df, file = "./data/sample_submission_xgb4.csv", row.names = F)
 
 
 
