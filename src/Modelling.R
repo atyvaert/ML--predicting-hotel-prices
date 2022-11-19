@@ -15,6 +15,7 @@ library(randomForest)
 library(doParallel)
 library(caret)
 library(xgboost)
+library(e1071)
 
 
 # import data
@@ -383,9 +384,8 @@ write.csv(rf_preds_df, file = "./data/sample_submission_randomForest.csv", row.n
 
 
 ###############################################
-#9.2 random Forest with optimal parameters 
+#9.2 random Forest with almost optimal parameters
 ###############################################
-# kan 34 eens proberen, is eig 102 pred var nu
 
 #score = 19.5
 # By default, randomForest() uses p/3 variables when building a random forest of regression trees
@@ -394,7 +394,6 @@ write.csv(rf_preds_df, file = "./data/sample_submission_randomForest.csv", row.n
 #build rf model
 set.seed(1)
 rf.model2 <- randomForest(average_daily_rate ~ ., data = train_and_val, mtry = 33,  ntree = 110, importance = TRUE)
-#rf.model2 <- randomForest(average_daily_rate ~ ., data = train_and_val, mtry = 34,  ntree = 110, importance = TRUE)
 
 
 #get predictions
@@ -467,6 +466,53 @@ write.csv(rf_preds_df2, file = "./data/sample_submission_randomForest2.csv", row
 #Laten we deze weg?
 #
 #
+
+
+
+###############################################
+#9.4 random Forest with exactly optimal parameters
+###############################################
+
+
+#score = 20.02
+# By default, randomForest() uses p/3 variables when building a random forest of regression trees
+
+
+#build rf model
+set.seed(1)
+rf.modelOpt <- randomForest(average_daily_rate ~ ., data = train_and_val, mtry = 34,  ntree = 110, importance = TRUE)
+
+
+#get predictions
+rf.predOpt <- predict(rf.modelOpt, newdata = test_X)
+
+rf.predOpt
+
+
+
+rf_preds_dfOpt <- data.frame(id = as.integer(test_X$id),
+                           average_daily_rate= rf.predOpt)
+
+
+colnames(rf_preds_dfOpt)[2] <- 'average_daily_rate'
+str(rf_preds_dfOpt)
+# save submission file
+write.csv(rf_preds_dfOpt, file = "./data/sample_submission_randomForest_OptimalParameters.csv", row.names = F)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 ##############################################################
 # 10. Boosting
 ##############################################################
@@ -705,6 +751,27 @@ write.csv(xgb_df, file = "./data/sample_submission_xgb4.csv", row.names = F)
 
 
 
+##############################################################
+# 11. Support Vector Machines
+##############################################################
+
+#36 very bas
+
+#Regression with SVM
+set.seed(1)
+SVM_reg_model = svm(average_daily_rate ~ ., data = train_and_val, scale = FALSE)
+
+#Predict using SVM regression
+SVM_reg_pred = predict(SVM_reg_model, test_X)
 
 
 
+SVM_reg_pred_df <- data.frame(id = as.integer(test_X$id),
+                          average_daily_rate= SVM_reg_pred)
+
+
+colnames(SVM_reg_pred_df)[2] <- 'average_daily_rate'
+str(SVM_reg_pred_df)
+SVM_reg_pred_df
+# save submission file
+write.csv(SVM_reg_pred_df, file = "./data/sample_submission_SupportVectorRegression.csv", row.names = F)
