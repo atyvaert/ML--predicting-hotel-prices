@@ -293,7 +293,8 @@ str(lasso_preds_df)
 # save submission file
 write.csv(lasso_preds_df, file = "./data/sample_submission_lasso.csv", row.names = F)
 
-
+#save model
+save(lasso.mod, file = "models/lasso_model.Rdata")
 
 
 ##############################################################
@@ -411,6 +412,11 @@ colnames(rf_preds_df2)[2] <- 'average_daily_rate'
 str(rf_preds_df2)
 # save submission file
 write.csv(rf_preds_df2, file = "./data/sample_submission_randomForest2.csv", row.names = F)
+
+#save model
+save(rf.model2, file = "models/rf_model2.Rdata")
+
+
 
 ###############################################
 #9.3 random Forest with CV 
@@ -714,20 +720,20 @@ xgb_tune <- train(x = train_and_val_X,
 #adaptive_cv + random search
 
 trainControl <- trainControl(method = 'adaptive_cv',
-                             number = 10,
-                             repeats = 10,
+                             number = 5,
+                             repeats = 3,
                              adaptive = list(min = 5, alpha = 0.05, method = "gls", complete = TRUE),
                              verboseIter = TRUE,
                              search = 'random',
                              allowParallel = TRUE)
 
-set.seed(1)
+set.seed(2)
 xgb_tune <- train(x = train_and_val_X,
                   y = train_and_val_y,
                   method = 'xgbTree',
                   trControl = trainControl,
                   metric = 'RMSE',
-                  tuneLength = 25,
+                  tuneLength = 50,
                   verbose = TRUE
 )
 
@@ -735,7 +741,7 @@ xgb_tune <- train(x = train_and_val_X,
 stopCluster(cluster)
 
 # save model
-save(xgb_tune, file = "models/xgb_model4.Rdata")
+save(xgb_tune, file = "models/xgb_model5.Rdata")
 
 xgb.pred <- predict(xgb_tune, newdata = test_X)
 xgb.pred
@@ -747,7 +753,7 @@ xgb_df <- data.frame(id = as.integer(test_X$id),
 colnames(xgb_df)[2] <- 'average_daily_rate'
 str(xgb_df)
 # save submission file
-write.csv(xgb_df, file = "./data/sample_submission_xgb4.csv", row.names = F)
+write.csv(xgb_df, file = "./data/sample_submission_xgb5.csv", row.names = F)
 
 
 
@@ -761,9 +767,11 @@ write.csv(xgb_df, file = "./data/sample_submission_xgb4.csv", row.names = F)
 set.seed(1)
 SVM_reg_model = svm(average_daily_rate ~ ., data = train_and_val, scale = FALSE)
 
+# save model
+save(SVM_reg_model, file = "models/SVM_reg.RData")
+
 #Predict using SVM regression
 SVM_reg_pred = predict(SVM_reg_model, test_X)
-
 
 
 SVM_reg_pred_df <- data.frame(id = as.integer(test_X$id),
@@ -775,3 +783,101 @@ str(SVM_reg_pred_df)
 SVM_reg_pred_df
 # save submission file
 write.csv(SVM_reg_pred_df, file = "./data/sample_submission_SupportVectorRegression.csv", row.names = F)
+
+##############################################################
+# 11. Support Vector Machine (linear)
+##############################################################
+
+#36 very bas
+
+#Regression with SVM
+set.seed(1)
+SVM_reg_model = svm(average_daily_rate ~ ., data = train_and_val, scale = FALSE, kernel = 'linear')
+
+# save model
+save(SVM_reg_model, file = "models/SVM_reg_linear.RData")
+
+#Predict using SVM regression
+SVM_reg_pred = predict(SVM_reg_model, test_X)
+
+
+SVM_reg_pred_df <- data.frame(id = as.integer(test_X$id),
+                              average_daily_rate= SVM_reg_pred)
+
+
+colnames(SVM_reg_pred_df)[2] <- 'average_daily_rate'
+str(SVM_reg_pred_df)
+SVM_reg_pred_df
+# save submission file
+write.csv(SVM_reg_pred_df, file = "./data/sample_submission_SupportVectorRegression_linear.csv", row.names = F)
+
+
+##############################################################
+# 12. Stacking
+##############################################################
+
+#load models
+load("./models/lasso_model.RData")
+load("./models/rf_model2.RData")
+load("./models/xgb_model3.RData")
+load("./models/SVM_reg_linear.RData")
+
+#load predictions on test data
+lasso_pred_test <- read.csv("./data/sample_submission_lasso.csv")
+rf_pred_test <- read.csv("./data/sample_submission_randomForest2.csv")
+xgb_pred_test <- read.csv("./data/sample_submission_xgb3.csv")
+svr_pred_test <- read.csv("./data/sample_submission_SupportVectorRegression_linear.csv")
+
+#make predictions on train set
+#to find bestlam: run lasso cv above
+lasso_pred_train = predict(lasso.mod, s = bestlam, newx = as.matrix(train_and_val_X[,]))
+rf_pred_train = predict(rf.model2, newx = as.matrix(train_and_val_X[,]))
+xgb_pred_train = predict(xgb_tune, newx = train_and_val_X) #xgb_model3
+svr_pred_train = predict(SVM_reg_model, train_and_val_X)
+
+stack <- data.frame(lasso_pred_train, rf_pred_train, xgb_pred_train, svr_pred_train)
+
+#We set up for parallel processing, change number of clusters according to CPU cores
+cluster <- makeCluster(detectCores()-1)
+registerDoParallel(cluster)
+
+trainControl <- trainControl(method = 'adaptive_cv',
+                             number = 5,
+                             repeats = 3,
+                             adaptive = list(min = 5, alpha = 0.05, method = "gls", complete = TRUE),
+                             verboseIter = TRUE,
+                             search = 'random',
+                             allowParallel = TRUE)
+
+set.seed(1)
+xgb_tune <- train(x = stack,
+                  y = train_and_val_y,
+                  method = 'xgbTree',
+                  trControl = trainControl,
+                  metric = 'RMSE',
+                  tuneLength = 10,
+                  verbose = TRUE
+)
+
+#close parallel
+stopCluster(cluster)
+
+# save model
+save(xgb_tune, file = "models/stack1xgb.Rdata")
+
+#make predictions on test
+test_stack <- data.frame(lasso_pred_test$average_daily_rate, rf_pred_test$average_daily_rate, xgb_pred_test$average_daily_rate, svr_pred_test$average_daily_rate)
+names(test_stack) <- c("s1", "rf_pred_train", "xgb_pred_train", "svr_pred_train")
+xgb.pred <- predict(xgb_tune, test_stack)
+xgb.pred
+
+xgb_df <- data.frame(id = as.integer(lasso_pred_test$id),
+                     average_daily_rate= xgb.pred)
+
+
+colnames(xgb_df)[2] <- 'average_daily_rate'
+str(xgb_df)
+# save submission file
+write.csv(xgb_df, file = "./data/sample_submission_stack1xgb.csv", row.names = F)
+
+
