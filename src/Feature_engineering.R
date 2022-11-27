@@ -79,7 +79,7 @@ cats <- categories(train_X_encode[, c('assigned_room_type', 'booking_distributio
 # f.e.: month_arrival seperate because we want all 12 categories here
 cats <- append(cats, categories(train_X_encode['month_arrival']))
 cats <- append(cats, categories(train_X_encode['country'], p = 15))
-cats <- append(cats, categories(train_X_encode['booking_agent'], p = 3))
+cats <- append(cats, categories(train_X_encode['booking_agent'], p = 8)) #7 large agents (>1000) + null
 cats <- append(cats, categories(train_X_encode['booking_company'], p = 2))
 
 
