@@ -36,6 +36,9 @@ train_and_val <- rbind(train, val)
 train_and_val_X <- subset(train_and_val, select = -c(average_daily_rate))
 train_and_val_y <- train_and_val$average_daily_rate
 
+#check correlations
+#cor_df <- cor(train_and_val_X)
+
 # inspect
 #str(train)
 #str(val)
