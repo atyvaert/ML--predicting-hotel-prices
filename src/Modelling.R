@@ -229,12 +229,13 @@ write.csv(seqrep_preds_df, file = "./data/sample_submission_seqrepsel.csv", row.
 ##############################################################
 
 # look for the best lambda value to perform the ridge regression with 10- fold cross validation
-# use all the available data as we perform cross validation
+# use the training data to do tune the parameters with cross validation
 # First, transform the variables
-x_train <- model.matrix(average_daily_rate ~., train_and_val)[,-1]
+x_train <- model.matrix(average_daily_rate ~., train)[,-1]
+all_train <- model.matrix(average_daily_rate ~., train_and_val)[,-1]
 
 set.seed(1)
-cv.out <- cv.glmnet(x_train, train_and_val_y, alpha = 0, standardize = F)
+cv.out <- cv.glmnet(x_train, train_y, alpha = 0, standardize = F)
 bestlam <- cv.out$lambda.min
 bestlam
 plot(cv.out) # Draw plot of training MSE as a function of lambda
@@ -242,7 +243,7 @@ plot(cv.out) # Draw plot of training MSE as a function of lambda
 sqrt(min(cv.out$cvm))
 
 # train the model on all training data 
-ridge.mod <- glmnet(x_train, train_and_val_y, alpha = 0, lambda = bestlam, standardize = F)
+ridge.mod <- glmnet(all_train, train_and_val_y, alpha = 0, lambda = bestlam, standardize = F)
 
 # look at the coefficients of the model
 # predict(ridge.mod, s = bestlam, type = 'coefficients')
@@ -263,12 +264,13 @@ write.csv(ridge_preds_df, file = "./data/sample_submission_ridge.csv", row.names
 # 5. Lasso Regression
 ##############################################################
 # look for the best lambda value to perform the ridge regression with 10- fold cross validation
-# use all the available data as we perform cross validation
+# use the training data to do tune the parameters with cross validation
 # First, transform the variables
-x_train <- model.matrix(average_daily_rate ~., train_and_val)[,-1]
+x_train <- model.matrix(average_daily_rate ~., train)[,-1]
+all_train <- model.matrix(average_daily_rate ~., train_and_val)[,-1]
 
 set.seed(1)
-cv.out <- cv.glmnet(x_train, train_and_val_y, alpha = 1, standardize = F)
+cv.out <- cv.glmnet(x_train, train_y, alpha = 1, standardize = F)
 bestlam <- cv.out$lambda.min
 bestlam
 plot(cv.out) # Draw plot of training MSE as a function of lambda
@@ -276,7 +278,7 @@ plot(cv.out) # Draw plot of training MSE as a function of lambda
 sqrt(min(cv.out$cvm))
 
 # train the model on the training data 
-lasso.mod <- glmnet(x_train, train_and_val_y, alpha = 1, lambda = bestlam, standardize = F)
+lasso.mod <- glmnet(all_train, train_and_val_y, alpha = 1, lambda = bestlam, standardize = F)
 
 # look at the coefficients of the model
 # predict(lasso.mod, s = bestlam, type = 'coefficients')
@@ -294,7 +296,11 @@ str(lasso_preds_df)
 write.csv(lasso_preds_df, file = "./data/sample_submission_lasso.csv", row.names = F)
 
 
-
+#####@
+# AAN TE PASSEN:
+# 1) FOR EACH MODEL: DO HYPERPARAMETER TUNING ON TRAIN SET WITH CROSS VALIDATION
+# 2) RETRAIN ON TRAIN SET WITH OPTIMAL PARAMETERS AND PREDICT ON VALIDATION SET
+# 3) RETRAIN BEST-PERFORMING MODEL ON TRAIN + VAL SET TO PREDICT ON TEST SET
 
 ##############################################################
 # 6. Regression Tree

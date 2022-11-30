@@ -60,7 +60,7 @@ val_X_impute <- val_X
 test_X_impute <- test_X
 
 ##############################################################
-# 2.1 Detecting 
+# 2.1 Detecting missing values
 ##############################################################
 # training data
 colMeans(is.na(train_X_impute))
@@ -147,17 +147,23 @@ test_X_impute[, cat.cols] <- mapply(test_X_impute[, cat.cols],
 
 
 # impute 'n/a' or Na values with 0 for nr_babies and nr_booking_changes as 'n/a' suggests
-# a value of zero
+# a value of zero. Next we delete the flag column of nr_booking_changes as we do not interpret the 
+# Na values of this column as real missing values due to imputing them with zero.
 # for 'n/a':
 train_X_impute$nr_babies <- as.numeric(str_replace_all(train_X$nr_babies, "n/a", "0"))
 val_X_impute$nr_babies <- as.numeric(str_replace_all(val_X_impute$nr_babies, "n/a", "0"))
 test_X_impute$nr_babies <- as.numeric(str_replace_all(test_X_impute$nr_babies, "n/a", "0"))
 
 # for Na values
+train_X_impute$nr_
 train_X_impute$nr_booking_changes[is.na(train_X_impute$nr_booking_changes)] <- 0
 val_X_impute$nr_booking_changes[is.na(val_X_impute$nr_booking_changes)] <- 0
 test_X_impute$nr_booking_changes[is.na(test_X_impute$nr_booking_changes)] <- 0
 
+# drop the flag variables of nr_babies and nr_booking_changes
+train_X_impute = subset(train_X_impute, select = -c(nr_booking_changes_flag))
+val_X_impute = subset(val_X_impute, select = -c(nr_booking_changes_flag))
+test_X_impute = subset(test_X_impute, select = -c(nr_booking_changes_flag))
 
 # inspect
 colMeans(is.na(train_X_impute))
@@ -195,6 +201,7 @@ outlier.cols <- c()
 # all the time:
 # boxplot(train_X_impute$X)
 # quantile(train_X_impute$X, na.rm = T, probs = seq(0, 1, 0.001))
+# quantile(scale(train_X_impute$X), na.rm = T, probs = seq(0, 1, 0.001))
 
 # look at all the numeric variables and detect valid and invalid outliers:
 # 1) car_parking_spaces
@@ -205,18 +212,25 @@ outlier.cols <- c()
 outlier.cols <- append(outlier.cols, 'lead_time')
 
 # 19) nr_adults
+# Here, we see a value of more than 5 adults as an outlier. Especially, since no value is higher than 3 except for 
+# a one time booking of 40 adults
+train_X_outlier$nr_adults[train_X$nr_adults > 5] <- NA
+train_X_outlier$nr_adults <- impute(train_X_outlier$nr_adults, method = median)
 outlier.cols <- append(outlier.cols, 'nr_adults')
 
 # 20) nr_babies
 # 1 invalid outlier: "9" treat as NA -> "impute with median 0"
+quantile(train_X_impute$nr_babies, na.rm = T, probs = seq(0, 1, 0.001))
+quantile(scale(train_X_impute$nr_babies), na.rm = T, probs = seq(0, 1, 0.001))
 train_X_outlier$nr_babies[train_X$nr_babies==9] <- NA
 train_X_outlier$nr_babies <- impute(train_X_outlier$nr_babies, method = median)
 #FE: dummy variable babies: 0 = No, 1 = Yes
 
 
 # 21) nr_booking_changes  
-# >3  are outliers, however valid? like lots of travel insecurities => change number of rooms depending on people
-train_X_outlier$nr_booking_changes[train_X_outlier$nr_booking_changes>3] <- NA
+# >4  are outliers, however valid? like lots of travel insecurities => change number of rooms depending on people
+# Every value bigger than 4 has a z-value bigger than 3 so this is where we draw the line
+train_X_outlier$nr_booking_changes[train_X_outlier$nr_booking_changes>4] <- NA
 train_X_outlier$nr_booking_changes <- impute(train_X_outlier$nr_booking_changes, method = median)
 outlier.cols <- append(outlier.cols, 'nr_booking_changes')
 
@@ -230,22 +244,31 @@ outlier.cols <- append(outlier.cols, 'nr_children')
 
 # 23) nr_nights
 # starting from 99% outliers => until 30 but valid outliers I suppose (= a whole month)?
+# POSSIBLE CHANGE
+quantile(train_X_impute$nr_nights, na.rm = T, probs = seq(0, 1, 0.001))
+quantile(scale(train_X_impute$nr_nights), na.rm = T, probs = seq(0, 1, 0.001))
 train_X_outlier$nr_nights[train_X$nr_nights>30] <- NA
 train_X_outlier$nr_nights <- impute(train_X_outlier$nr_nights, method = median)
 outlier.cols <- append(outlier.cols, 'nr_nights')
 
 # 24) nr_previous_bookings  
 #starting from 100% (78!!) trips, we have an outlier.
+quantile(train_X_impute$nr_previous_bookings, na.rm = T, probs = seq(0, 1, 0.001))
+quantile(scale(train_X_impute$nr_previous_bookings), na.rm = T, probs = seq(0, 1, 0.001))
 outlier.cols <- append(outlier.cols, 'nr_previous_bookings')
 
 
 # 25) previous_bookings_not_canceled  
 #starting from 100% (72!!), we have an outlier. Same comment as before
+quantile(train_X_impute$previous_bookings_not_canceled, na.rm = T, probs = seq(0, 1, 0.001))
+quantile(scale(train_X_impute$previous_bookings_not_canceled), na.rm = T, probs = seq(0, 1, 0.001))
 outlier.cols <- append(outlier.cols, 'previous_bookings_not_canceled')
 
 
 # 26) previous_cancellations  
 #starting from 100% (26!!), we have an outlier. Same comment as before
+quantile(train_X_impute$previous_cancellations, na.rm = T, probs = seq(0, 1, 0.001))
+quantile(scale(train_X_impute$previous_cancellations), na.rm = T, probs = seq(0, 1, 0.001))
 outlier.cols <- append(outlier.cols, 'previous_cancellations')
 
 
@@ -265,7 +288,8 @@ train_X_outlier[, outlier.cols] <-  sapply(train_X_impute[, outlier.cols], FUN =
 
 # We cannot use the previous method to handle outliers of the number of days in waiting list 
 # This is because this variable has a lot of 0 values, and if we would use the z score, a lot of outliers would be identified
-# quantile(train_X_impute$days_in_waiting_list, na.rm = T, probs = seq(0, 1, 0.01))
+quantile(train_X_impute$days_in_waiting_list, na.rm = T, probs = seq(0, 1, 0.001))
+quantile(scale(train_X_impute$days_in_waiting_list), na.rm = T, probs = seq(0, 1, 0.01))
 # When we look at the distribution of the days in waiting list variable, we see that less than 1 % has a value higher than 125 days 
 # We arbitrary set the boundary to be an outlier to 125
 train_X_outlier$days_in_waiting_list <- ifelse(train_X_impute$days_in_waiting_list >= 125, 125, train_X_impute$days_in_waiting_list)
@@ -277,7 +301,7 @@ train_X_outlier$days_in_waiting_list <- ifelse(train_X_impute$days_in_waiting_li
 ##############################################################
 ##############################################################
 
-# Parse arrival_date to filter out the month, day of the month and year
+# Parse arrival_date to filter out the month, day of the month and year of arrival
 # for training set:
 train_X_outlier$posix_arrival <- as.POSIXct(train_X_outlier$arrival_date, format="%B  %d  %Y")
 train_X_outlier$day_of_month_arrival <- format(train_X_outlier$posix_arrival, format = '%d')
