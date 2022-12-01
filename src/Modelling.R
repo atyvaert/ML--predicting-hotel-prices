@@ -46,7 +46,28 @@ str(test_X)
 
 ##############################################################
 ##############################################################
-# 1. BASELINE MODELS
+# STRUCTURE OF OUR MODELS
+##############################################################
+##############################################################
+# For this assignment, we choose to have a clear structure in order to find the best model
+# First, we classify our models per category. Within each category, we predict the average daily rate
+# of our dataset using multiple models. 
+
+# Then, we assess the performance of our model by making predictions on the validation set. This way,
+# we get the RMSE of each model.
+
+# Then, at the end of the category, the best performing model is then retrained on the training and validation
+# set in order to predict the test set. If the RMSE is very close for multiple models, it is possible than we 
+# retrain more than 1 model.
+
+# NOTE: The baseline models are an exception on this rule and there each model is trained
+# on all data (train + validation set) after finding the best model.
+
+
+
+##############################################################
+##############################################################
+# BASELINE MODELS
 ##############################################################
 ##############################################################
 
@@ -316,7 +337,7 @@ write.csv(lasso_preds_df, file = "./data/sample_submission_lasso.csv", row.names
 
 ##############################################################
 ##############################################################
-# 2. MOVING BEYOND LINEARITY
+# MOVING BEYOND LINEARITY
 ##############################################################
 ##############################################################
 
@@ -333,15 +354,21 @@ write.csv(lasso_preds_df, file = "./data/sample_submission_lasso.csv", row.names
 
 ##############################################################
 ##############################################################
-# 3. TREE-BASED METHODES
+# TREE-BASED METHODES
 ##############################################################
 ##############################################################
 
 ##############################################################
-# 3.1 Fit a regression tree
+##############################################################
+# 1. FIT A REGRESSION TREE
+##############################################################
+##############################################################
+
+##############################################################
+# 1.1 Fit a standard regression tree
 ##############################################################
 # 1) We train the model on the training data, we see that the MSE is 1791 (RMSE = 42.3)
-# Besides, we have 13 terminal nodes
+# Besides, we see that have 13 terminal nodes
 tree.rate <- tree(average_daily_rate ~ ., train)
 summary(tree.rate)
 
@@ -353,22 +380,8 @@ plot(tree.rate)
 tree_pred_val <- predict(tree.rate, newdata = val_X)
 sqrt(mean((tree_pred_val - val_y)^2))
 
-# 3) train the model on all the data (train + val)
-tree.rate <- tree(average_daily_rate ~ ., train_and_val)
-
-# make prediction on the test set
-tree_pred_test <- predict(tree.rate, newdata = test_X)
-tree_preds_df <- data.frame(id = as.integer(test_X$id),
-                            average_daily_rate= tree_pred_test)
-colnames(tree_preds_df)[2] <- 'average_daily_rate'
-
-# save submission file
-write.csv(tree_preds_df, file = "./data/sample_submission_tree.csv", row.names = F)
-
-
-
 ##############################################################
-# 3.2 Fit a regression tree  with cross validation
+# 1.2 Fit a regression tree  with cross validation
 ##############################################################
 # fit a regression tree using cross validation
 cv.rate <- cv.tree(tree.rate)
@@ -380,362 +393,206 @@ plot(cv.rate$size, cv.rate$dev, type = 'b')
 # As the CV chooses 13 terminal nodes, this regression has the same results as 3.1
 
 
-
-
 ##############################################################
-# 3.3. Bagging
+# 2. BAGGING
 ##############################################################
+
 # score = 20.4
 
-# 1) train the model on the training data to do hyperparameter tuning
+# As these models become computationally very intensive, we set up parallel processing to speed
+# up the process. Change number of clusters according to CPU
+cluster <- makeCluster(detectCores()-1)
+registerDoParallel(cluster)
+
+# Besides, we also start saving our models so we do not have to run these models again
+
+# you can close the parellel processing with the following code:
+#stopCluster(cluster)
+
+# 1) train the bagging model on the training data to do hyperparameter tuning
 # WARNING: this takes some time to run
 set.seed(1)
-bagging.rate <- randomForest(average_daily_rate ~ ., data = train, mtry = 95,ntree = 110, importance = TRUE)
-
-# 2) We make predictions on the validation set, which results in an RMSE 
-bagging_pred <- predict(bagging.rate, newdata = val_X)
-sqrt(mean((tree_pred_val - val_y)^2))
-
-# 3) train the model on all the data (train + val)
 bagging.rate <- randomForest(average_daily_rate ~ ., data = train, mtry = 95, importance = TRUE)
 
-# make prediction on the test set and save
-bagging_pred <- predict(bagging_rate, newdata = test_X)
+# save the model
+save(bagging.rate, file = "models/bagging_model_training.Rdata")
 
-# save
-bagging_preds_df = data.frame(id = as.integer(test_X$id),
-                              average_daily_rate= bagging_pred)
-
-
-colnames(bagging_preds_df)[2] <- 'average_daily_rate'
-# str(bagging_preds_df)
-# save submission file
-write.csv(bagging_preds_df, file = "./data/sample_submission_bagging.csv", row.names = F)
+# 2) We make predictions on the validation set, which results in an RMSE 
+bagging_pred_val <- predict(bagging.rate, newdata = val_X)
+sqrt(mean((bagging_pred_val - val_y)^2))
 
 
 
 ##############################################################
-# 9. random Forest
+# 3. Random Forest
 ##############################################################
 
 ###############################################
-#9.1 random Forest with suboptimal parameters 
+# 3.1 random Forest with standard parameters
 ###############################################
-
-#score = 21
-# By default, randomForest() uses p/3 variables when building a random forest of regression trees
-# By default, randomForest() uses sqrt(p) variables when building a random forest of classification trees
-
-
-
-#build rf model
-set.seed(1)
-rf.model <- randomForest(average_daily_rate ~ ., data = train_and_val, mtry = 10,  ntree = 110, importance = TRUE)
-
-#get predictions
-rf.pred <- predict(rf.model, newdata = test_X)
-
-rf.pred
-
-
-
-rf_preds_df <- data.frame(id = as.integer(test_X$id),
-                          average_daily_rate= rf.pred)
-
-
-colnames(rf_preds_df)[2] <- 'average_daily_rate'
-str(rf_preds_df)
-# save submission file
-write.csv(rf_preds_df, file = "./data/sample_submission_randomForest.csv", row.names = F)
-
-
-
-
-
-###############################################
-#9.2 random Forest with almost optimal parameters
-###############################################
-
 #score = 19.5
 # By default, randomForest() uses p/3 variables when building a random forest of regression trees
 
 
-#build rf model
+# 1) train the bagging model on the training data to do hyperparameter tuning
 set.seed(1)
-rf.model2 <- randomForest(average_daily_rate ~ ., data = train_and_val, mtry = 33,  ntree = 110, importance = TRUE)
+rf.rate <- randomForest(average_daily_rate ~ ., data = train, mtry = 33,  ntree = 110, importance = TRUE)
 
+# save the model
+save(rf.rate, file = "models/rf_model_train.Rdata")
 
-#get predictions
-rf.pred2 <- predict(rf.model2, newdata = test_X)
-
-rf.pred2
-
-
-
-rf_preds_df2 <- data.frame(id = as.integer(test_X$id),
-                          average_daily_rate= rf.pred2)
-
-
-colnames(rf_preds_df2)[2] <- 'average_daily_rate'
-str(rf_preds_df2)
-# save submission file
-write.csv(rf_preds_df2, file = "./data/sample_submission_randomForest2.csv", row.names = F)
+# 2) We make predictions on the validation set, which results in an RMSE 
+rf_pred_val <- predict(rf.rate, newdata = val_X)
+sqrt(mean((rf_pred_val - val_y)^2))
 
 ###############################################
-#9.3 random Forest with CV 
+# 3.2 random Forest with CV 
 ###############################################
-# kan 34 eens proberen, is eig 102 pred var nu
-
 #score = 19.5
-# By default, randomForest() uses p/3 variables when building a random forest of regression trees
-
-
-#We set up for parallel processing, change number of clusters according to CPU
-cluster <- makeCluster(detectCores()-1)
-registerDoParallel(cluster)
 
 #We tune over 3 values of interaction depth
+# TO DO: KIJKEN NAAR BESTE VALUE EN ERROND EXTRA GRID OF RANDOM SEARCH @ Simon
 rfGrid <-  expand.grid(mtry = c(20, 34, 40))
 
+# 1) train the random forest model on the training data to do hyperparameter tuning
 set.seed(1)
 trainControl <- trainControl(method = 'cv', number = 5, verboseIter = TRUE, allowParallel = TRUE)
-rf.model3 <- train(average_daily_rate ~ .,
-                   data = train_and_val,
-                   method = 'rf',
-                   trControl = trainControl,
-                   metric = 'RMSE',
-                   tuneGrid = rfGrid
+cv.rf.rate <- train(average_daily_rate ~ .,
+                    data = train,
+                    method = 'rf',
+                    trControl = trainControl,
+                    metric = 'RMSE',
+                    tuneGrid = rfGrid
 )
 
-#close parallel
-stopCluster(cluster)
+# save the model
+save(cv.rf.rate, file = "models/cv_rf_model_train.Rdata")
+
+# 2) We make predictions on the validation set, which results in an RMSE 
+cv_rf_pred_val <- predict(cv.rf.rate, newdata = val_X)
+sqrt(mean((cv_rf_pred_val - val_y)^2))
 
 
-#get predictions
-rf.pred2 <- predict(rf.model2, newdata = test_X)
+##############################################################
+# 4. BOOSTING
+##############################################################
 
-rf.pred2
+##############################################################
+# 4.1 Boosting standard model
+##############################################################
 
+# 1) train the boosting model on the training data to do hyperparameter tuning
+boosting.rate <- gbm(average_daily_rate ~ ., data = train, distribution = "gaussian", n.trees = 5000, 
+                     interaction.depth = 4, shrinkage = 0.2, verbose = F)
 
+# save the model
+save(boosting.rate, file = "models/boosting_model_train.Rdata")
 
-rf_preds_df2 <- data.frame(id = as.integer(test_X$id),
-                           average_daily_rate= rf.pred2)
-
-
-colnames(rf_preds_df2)[2] <- 'average_daily_rate'
-str(rf_preds_df2)
-# save submission file
-write.csv(rf_preds_df2, file = "./data/sample_submission_randomForest2.csv", row.names = F)
-
-
-
-
-#
-#
-#Laten we deze weg?
-#
-#
-
-
-
-###############################################
-#9.4 random Forest with exactly optimal parameters
-###############################################
-
-
-#score = 20.02
-# By default, randomForest() uses p/3 variables when building a random forest of regression trees
-
-
-#build rf model
-set.seed(1)
-rf.modelOpt <- randomForest(average_daily_rate ~ ., data = train_and_val, mtry = 34,  ntree = 110, importance = TRUE)
-
-
-#get predictions
-rf.predOpt <- predict(rf.modelOpt, newdata = test_X)
-
-rf.predOpt
-
-
-
-rf_preds_dfOpt <- data.frame(id = as.integer(test_X$id),
-                           average_daily_rate= rf.predOpt)
-
-
-colnames(rf_preds_dfOpt)[2] <- 'average_daily_rate'
-str(rf_preds_dfOpt)
-# save submission file
-write.csv(rf_preds_dfOpt, file = "./data/sample_submission_randomForest_OptimalParameters.csv", row.names = F)
-
-
-
-
-
-
-
-
-
-
-
+# 2) We make predictions on the validation set, which results in an RMSE 
+boosting_pred_val <- predict(boosting.rate, newdata = val_X)
+sqrt(mean((boosting_pred_val - val_y)^2))
 
 
 
 
 ##############################################################
-# 10. Boosting
+# 4.2 Boosting with cross validation
 ##############################################################
 
-boosting_model <- gbm(average_daily_rate ~ ., data = train_and_val, distribution = "gaussian", n.trees = 5000, interaction.depth = 4, shrinkage = 0.2, verbose = F)
-boosting.pred <- predict(boosting_model, newdata = test_X, n.trees = 5000)
-boosting_pred
+# TO DO: BETTER USE OF RANDOM SEARCH INSTEAD OF ALL THESE GRID SEARCHES
+# IF GRID SEARCH: ALSO LOOK WHAT WAS BEST VALUE AND NEXT GRID SEARCH MUST
+# BE CLOSER TO THIS VALUE TO FIND VALUE AROUND OPTIMAL, WEET DAT JE DIT GEDAAN 
+# HEBT MAAR BEST OOK VERMELDEN IN DE CODE
 
-boosting_df <- data.frame(id = as.integer(test_X$id),
-                           average_daily_rate= boosting_pred)
+##########
+# A) First sequence of tuning parameters
+##########
 
-
-
-
-colnames(boosting_df)[2] <- 'average_daily_rate'
-str(boosting_df)
-# save submission file
-write.csv(boosting_df, file = "./data/sample_submission_boosting.csv", row.names = F)
-#
-#
-#
-#
-#
-
-
-##############################################################
-# 10. Boosting
-##############################################################
-
-#with CV
-
-#We set up for parallel processing, change number of clusters according to CPU
-cluster <- makeCluster(detectCores()-1)
-registerDoParallel(cluster)
-
-#We tune over 3 values of interaction depth
+# First, we tune over 3 values of interaction depth when building the model
 gbmGrid <-  expand.grid(interaction.depth = c(1, 4, 6), 
                         n.trees = c(1000, 1500, 2000), 
                         shrinkage = 0.1,
                         n.minobsinnode = 20)
 
+# 1) train the boosting model on the training data to do hyperparameter tuning
 set.seed(1)
 trainControl <- trainControl(method = 'cv', number = 3, verboseIter = TRUE, allowParallel = TRUE)
-gbm.model <- train(average_daily_rate ~ .,
-                   data = train_and_val,
-                   method = 'gbm',
-                   trControl = trainControl,
-                   metric = 'RMSE',
-                   tuneGrid = gbmGrid
+cv.boosting1.rate <- train(average_daily_rate ~ .,
+                           data = train_and_val,
+                           method = 'gbm',
+                           trControl = trainControl,
+                           metric = 'RMSE',
+                           tuneGrid = gbmGrid
 )
 
-#close parallel
-stopCluster(cluster)
+# save model so we do not have to run it time and time again 
+save(cv.boosting1.rate, file = "models/cv_boosting1_model_train.Rdata")
 
-# save model
-save(gbm.model, file = "models/gbm_model.Rdata")
-
-boosting.pred <- predict(gbm.model, newdata = test_X, n.trees = 1000)
-boosting.pred
-
-boosting_df <- data.frame(id = as.integer(test_X$id),
-                          average_daily_rate= boosting.pred)
+# 2) We make predictions on the validation set, which results in an RMSE 
+cv_boosting1_pred_val <- predict(cv.boosting1.rate, newdata = val_X)
+sqrt(mean((cv_boosting1_pred_val - val_y)^2))
 
 
-colnames(boosting_df)[2] <- 'average_daily_rate'
-str(boosting_df)
-# save submission file
-write.csv(boosting_df, file = "./data/sample_submission_boosting.csv", row.names = F)
+##########
+# B) Second sequence of tuning parameters
+##########
 
-
-#Second hyperparameter grid
-
-#We set up for parallel processing, change number of clusters according to CPU cores
-cluster <- makeCluster(detectCores()-1)
-registerDoParallel(cluster)
-
-#We tune over 3 values of interaction depth
+# Next, we tune over 3 values of interaction depth
 gbmGrid <-  expand.grid(interaction.depth = c(7, 9, 11), 
                         n.trees = c(1000, 1500, 2000), 
                         shrinkage = 0.05,
                         n.minobsinnode = 20)
 
+# 1) train the boosting model on the training data to do hyperparameter tuning
 set.seed(1)
 trainControl <- trainControl(method = 'cv', number = 4, verboseIter = TRUE, allowParallel = TRUE)
-gbm.model <- train(average_daily_rate ~ .,
-                   data = train_and_val,
-                   method = 'gbm',
-                   trControl = trainControl,
-                   metric = 'RMSE',
-                   tuneGrid = gbmGrid
+cv.boosting2.rate <- train(average_daily_rate ~ .,
+                           data = train,
+                           method = 'gbm',
+                           trControl = trainControl,
+                           metric = 'RMSE',
+                           tuneGrid = gbmGrid
 )
 
-#close parallel
-stopCluster(cluster)
+# save model 
+save(cv.boosting2.rate, file = "models/cv_boosting2_model_train.Rdata")
 
-# save model
-save(gbm.model, file = "models/gbm_model2.Rdata")
-
-boosting.pred <- predict(gbm.model, newdata = test_X, n.trees = 2000)
-boosting.pred
-
-boosting_df <- data.frame(id = as.integer(test_X$id),
-                          average_daily_rate= boosting.pred)
+# 2) We make predictions on the validation set, which results in an RMSE 
+cv_boosting2_pred_val <- predict(cv.boosting2.rate, newdata = val_X)
+sqrt(mean((cv_boosting2_pred_val - val_y)^2))
 
 
-colnames(boosting_df)[2] <- 'average_daily_rate'
-str(boosting_df)
-# save submission file
-write.csv(boosting_df, file = "./data/sample_submission_boosting2.csv", row.names = F)
+##########
+# C) Third sequence of tuning parameters
+##########
 
-
-#Third hyperparameter grid
-
-#We set up for parallel processing, change number of clusters according to CPU cores
-cluster <- makeCluster(detectCores()-1)
-registerDoParallel(cluster)
-
-#We tune over 3 values of interaction depth
+# Next, we tune over 3 values of interaction depth
 gbmGrid <-  expand.grid(interaction.depth = c(11, 13, 15), 
                         n.trees = 3000, 
                         shrinkage = c(0.01, 0.001),
                         n.minobsinnode = 20)
 
+# 1) train the boosting model on the training data to do hyperparameter tuning
 set.seed(1)
 trainControl <- trainControl(method = 'cv', number = 4, verboseIter = TRUE, allowParallel = TRUE)
-gbm.model <- train(average_daily_rate ~ .,
-                   data = train_and_val,
+cv.boosting3.rate <- train(average_daily_rate ~ .,
+                   data = train,
                    method = 'gbm',
                    trControl = trainControl,
                    metric = 'RMSE',
                    tuneGrid = gbmGrid
 )
 
-#close parallel
-stopCluster(cluster)
-
 # save model
-save(gbm.model, file = "models/gbm_model3.Rdata")
+save(cv.boosting3.rate, file = "models/cv_boosting3_model_train.Rdata")
 
-boosting.pred <- predict(gbm.model, newdata = test_X, n.trees = 3000)
-boosting.pred
-
-boosting_df <- data.frame(id = as.integer(test_X$id),
-                          average_daily_rate= boosting.pred)
-
-
-colnames(boosting_df)[2] <- 'average_daily_rate'
-str(boosting_df)
-# save submission file
-write.csv(boosting_df, file = "./data/sample_submission_boosting3.csv", row.names = F)
+# 2) We make predictions on the validation set, which results in an RMSE 
+cv_boosting3_pred_val <- predict(cv.boosting3.rate, newdata = val_X)
+sqrt(mean((cv_boosting3_pred_val - val_y)^2))
 
 
 ##############################################################
-# 10.1 XGBoost
+# 4.2 XGBoost
 ##############################################################
 
 #hyperparameters:
@@ -749,7 +606,9 @@ write.csv(boosting_df, file = "./data/sample_submission_boosting3.csv", row.name
 cluster <- makeCluster(detectCores()-1)
 registerDoParallel(cluster)
 
-#grid 1
+##########
+# A) First sequence of grid parameters
+##########
 XGBgrid1 <-  expand.grid(nrounds = c(500, 1000, 1500), 
                         max_depth = 6, 
                         eta = 0.05,
@@ -760,7 +619,9 @@ XGBgrid1 <-  expand.grid(nrounds = c(500, 1000, 1500),
 #result: 1500, 6
 
 
-#grid 2
+##########
+# B) Second sequence of grid parameters
+##########
 XGBgrid2 <-  expand.grid(nrounds = c(1500, 2000), 
                         max_depth = c(6, 8), 
                         eta = c(0.05, 0.01),
@@ -771,6 +632,8 @@ XGBgrid2 <-  expand.grid(nrounds = c(1500, 2000),
 
 set.seed(1)
 trainControl <- trainControl(method = 'cv', number = 3, verboseIter = TRUE, allowParallel = TRUE)
+
+
 xgb_tune <- train(x = train_and_val_X,
                   y = train_and_val_y,
                   method = 'xgbTree',
@@ -780,8 +643,9 @@ xgb_tune <- train(x = train_and_val_X,
                   verbose = TRUE
 )
 
-#adaptive_cv + random search
-
+##########
+# C) Adaptive_cv + random search
+##########
 trainControl <- trainControl(method = 'adaptive_cv',
                              number = 10,
                              repeats = 10,
@@ -790,9 +654,10 @@ trainControl <- trainControl(method = 'adaptive_cv',
                              search = 'random',
                              allowParallel = TRUE)
 
+# 1) train the XG boosting model on the training data to do hyperparameter tuning
 set.seed(1)
-xgb_tune <- train(x = train_and_val_X,
-                  y = train_and_val_y,
+xgb.tune.rate <- train(x = train_X,
+                  y = train_y,
                   method = 'xgbTree',
                   trControl = trainControl,
                   metric = 'RMSE',
@@ -804,39 +669,71 @@ xgb_tune <- train(x = train_and_val_X,
 stopCluster(cluster)
 
 # save model
-save(xgb_tune, file = "models/xgb_model4.Rdata")
+save(xgb_tune, file = "models/xgb_model4_train.Rdata")
 
-xgb.pred <- predict(xgb_tune, newdata = test_X)
-xgb.pred
-
-xgb_df <- data.frame(id = as.integer(test_X$id),
-                          average_daily_rate= xgb.pred)
+# 2) We make predictions on the validation set, which results in an RMSE 
+XGB_pred_val <- predict(xgb.tune.rate, newdata = val_X)
+sqrt(mean((XGB_pred_val - val_y)^2))
 
 
-colnames(xgb_df)[2] <- 'average_daily_rate'
-str(xgb_df)
+##############################################################
+# 4.3 Adaboost
+##############################################################
+
+##############################################################
+# 5. Retrain the best performing model(s) of the decision trees 
+# and make predictions on the test set
+##############################################################
+# Train the model X on all the data (train + val) 
+
+# make predictions, bv:
+# make prediction on the test set and save
+#cv_boosting1_pred_test <- predict(cv.boosting1.rate.all, newdata = test_X, n.trees = 1000)
+
+# VERGEET MODEL NIET TE SAVEN ZODAT JE NIET OPNIEUW MOET RUNNEN (NIET ENKEL PREDICTIONS)
+
+# save 
+#cv_boosting1_df <- data.frame(id = as.integer(test_X$id),
+#                              average_daily_rate= cv_boosting1_pred_test)
+
+
+#colnames(cv_boosting1_df)[2] <- 'average_daily_rate'
+#str(cv_boosting1_df)
 # save submission file
-write.csv(xgb_df, file = "./data/sample_submission_xgb4.csv", row.names = F)
+#write.csv(cv_boosting1_df, file = "./data/sample_submission_boosting.csv", row.names = F)
 
 
 
 ##############################################################
-# 11. Support Vector Machines
+# SUPPORT VECTOR MACHINES
 ##############################################################
 
 #36 very bas
 
-#Regression with SVM
+##############################################################
+# 1. Perform standard regression with SVM
+##############################################################
+
+# 1) train the SVM model on the training data to do hyperparameter tuning
 set.seed(1)
-SVM_reg_model = svm(average_daily_rate ~ ., data = train_and_val, scale = FALSE)
+svm.rate = svm(average_daily_rate ~ ., data = train, scale = FALSE)
 
-#Predict using SVM regression
-SVM_reg_pred = predict(SVM_reg_model, test_X)
+# save model
+save(svm.rate, file = "models/svm_model_train.Rdata")
 
+# 2) We make predictions on the validation set, which results in an RMSE 
+svm_pred_val <- predict(svm.rate, newdata = val_X)
+sqrt(mean((svm_pred_val - val_y)^2))
 
+# 3) As this is the only model we make for SVM, we immediately train the model on all the data
+set.seed(1)
+svm.rate.all = svm(average_daily_rate ~ ., data = train_and_val, scale = FALSE)
+
+# Make predictions on the test set
+svm_pred_test <- predict(svm.rate.all, newdata = val_X)
 
 SVM_reg_pred_df <- data.frame(id = as.integer(test_X$id),
-                          average_daily_rate= SVM_reg_pred)
+                          average_daily_rate= svm_pred_test)
 
 
 colnames(SVM_reg_pred_df)[2] <- 'average_daily_rate'
