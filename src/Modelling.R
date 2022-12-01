@@ -31,22 +31,23 @@ train_y <- train$average_daily_rate
 val_X <- subset(val, select = -c(average_daily_rate))
 val_y <- val$average_daily_rate
 
+
 # create a dataset to train the final model on with the train and validation set combined
 train_and_val <- rbind(train, val)
 train_and_val_X <- subset(train_and_val, select = -c(average_daily_rate))
 train_and_val_y <- train_and_val$average_daily_rate
 
 # inspect
-#str(train)
-#str(val)
-#str(test_X)
+str(train)
+str(val)
+str(test_X)
 
 ##############################################################
 # 0. Linear regression
 ##############################################################
 # train the model on the training data
 lm.fit <- lm(average_daily_rate ~ ., data = train)
-
+summary(lm.fit)
 # make predictions on the validation set and calculate RMSE
 linR_pred <- predict(lm.fit, val_X)
 sqrt(mean((val_y - linR_pred)^2))
@@ -103,11 +104,14 @@ plot(regF.summary$adjr2, xlab = "Number of Variables", ylab = "Adjusted Rsq", ty
 
 # look at the optimal number of parameters by applying the model on the validation set
 # and looking for the minimal RMSE
-optimal_nr_predictors_forward =  min_validation_error(regfit.full_for) #54
+optimal_nr_predictors_forward =  min_validation_error(regfit.full_for) #59
 
 # train the model on the training data and calculate the RMSE of the validation set
 # coef(regfit.full_for, optimal_nr_predictors_forward)
 lm.cols.forward <- names(coef(regfit.full_for, optimal_nr_predictors_forward))[-1]
+names(coef(regfit.full_for, optimal_nr_predictors_forward))
+lm.cols.forward %in% names(train_X)
+lm.cols.forward
 modeltrainmatrixforward <- cbind(train_X[lm.cols.forward], train_y)
 best_model_forward = lm(train_y ~ ., data = modeltrainmatrixforward)
 
@@ -308,8 +312,8 @@ write.csv(lasso_preds_df, file = "./data/sample_submission_lasso.csv", row.names
 
 # basic tree, no cv
 
-# We fit the model
-tree.rate <- tree(average_daily_rate ~ ., train_and_val, control=rpart.control(cp=.0001))
+# We train the model on the training data
+tree.rate <- tree(average_daily_rate ~ ., train, control=rpart.control(cp=.0001))
 summary(tree.rate)
 plot(tree.rate)
 #We make predictions

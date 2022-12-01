@@ -13,6 +13,7 @@ library(miscTools)
 train <- read_csv('./data/bronze_data/train.csv')
 test_X <- read_csv('./data/bronze_data/test.csv')
 
+
 # create training and validation set
 set.seed(100)
 valvector <- sample(nrow(train), size=nrow(train)*0.2)
@@ -155,7 +156,6 @@ val_X_impute$nr_babies <- as.numeric(str_replace_all(val_X_impute$nr_babies, "n/
 test_X_impute$nr_babies <- as.numeric(str_replace_all(test_X_impute$nr_babies, "n/a", "0"))
 
 # for Na values
-train_X_impute$nr_
 train_X_impute$nr_booking_changes[is.na(train_X_impute$nr_booking_changes)] <- 0
 val_X_impute$nr_booking_changes[is.na(val_X_impute$nr_booking_changes)] <- 0
 test_X_impute$nr_booking_changes[is.na(test_X_impute$nr_booking_changes)] <- 0
@@ -169,6 +169,8 @@ test_X_impute = subset(test_X_impute, select = -c(nr_booking_changes_flag))
 colMeans(is.na(train_X_impute))
 colMeans(is.na(val_X_impute))
 colMeans(is.na(test_X_impute))
+
+
 
 ##############################################################
 ##############################################################
@@ -192,7 +194,6 @@ train_X_outlier <- train_X_impute
 val_X_outlier <- val_X_impute #We make this column for uniformity reasons, no outliers are deleted
 test_X_outlier <- test_X_impute #uniformity reasons
 
-
 # make a vector of all the variables of which valid outliers need to be handled
 outlier.cols <- c()
 # outlier.cols <- append(outlier.cols, '')
@@ -212,69 +213,75 @@ outlier.cols <- c()
 outlier.cols <- append(outlier.cols, 'lead_time')
 
 # 19) nr_adults
-# Here, we see a value of more than 5 adults as an outlier. Especially, since no value is higher than 3 except for 
+# Here, we see a value of more than 10 adults as an outlier. Especially, since no value is higher than 3 except for 
 # a one time booking of 40 adults
-train_X_outlier$nr_adults[train_X$nr_adults > 5] <- NA
+train_X_outlier$nr_adults[train_X$nr_adults > 10] <- NA
 train_X_outlier$nr_adults <- impute(train_X_outlier$nr_adults, method = median)
 outlier.cols <- append(outlier.cols, 'nr_adults')
 
 # 20) nr_babies
-# 1 invalid outlier: "9" treat as NA -> "impute with median 0"
-quantile(train_X_impute$nr_babies, na.rm = T, probs = seq(0, 1, 0.001))
-quantile(scale(train_X_impute$nr_babies), na.rm = T, probs = seq(0, 1, 0.001))
-train_X_outlier$nr_babies[train_X$nr_babies==9] <- NA
-train_X_outlier$nr_babies <- impute(train_X_outlier$nr_babies, method = median)
-#FE: dummy variable babies: 0 = No, 1 = Yes
-
+# only values of 1 or 2 are present, even these have z-values higher than 3, these are not seen as outliers
 
 # 21) nr_booking_changes  
-# >4  are outliers, however valid? like lots of travel insecurities => change number of rooms depending on people
-# Every value bigger than 4 has a z-value bigger than 3 so this is where we draw the line
-train_X_outlier$nr_booking_changes[train_X_outlier$nr_booking_changes>4] <- NA
+# >4  are outliers, however valid? We see that most values are 0, 1 or 2. The values 4 and 5 are seen as valid outliers.
+# However, a value of 21 is seen as an unreasonable outlier.
+train_X_outlier$nr_booking_changes[train_X_outlier$nr_booking_changes> 20] <- NA
 train_X_outlier$nr_booking_changes <- impute(train_X_outlier$nr_booking_changes, method = median)
 outlier.cols <- append(outlier.cols, 'nr_booking_changes')
 
 
-
 # 22) nr_children  
-# starting from 98% outliers => from 2 (=valid) to 10 (= invalid)
-train_X_outlier$nr_children[train_X$nr_children==10] <- NA
+# starting from 98% outliers (based on z-values). We see two children as a valid outlier. However,
+# there is also a single observation with 10 children, which we see as an invalid outlier.
+train_X_outlier$nr_children[train_X$nr_children > 9] <- NA
 train_X_outlier$nr_children <- impute(train_X_outlier$nr_children, method = median)
 outlier.cols <- append(outlier.cols, 'nr_children')
 
 # 23) nr_nights
-# starting from 99% outliers => until 30 but valid outliers I suppose (= a whole month)?
-# POSSIBLE CHANGE
-quantile(train_X_impute$nr_nights, na.rm = T, probs = seq(0, 1, 0.001))
-quantile(scale(train_X_impute$nr_nights), na.rm = T, probs = seq(0, 1, 0.001))
+# starting from 98.6% we have outliers based on z-values
+# This a value of 10 nights, which is reasonable. However, there is also a value of 69. A stay of longer 
+# than one month (= 30 days) we interprete as an invalid outlier
 train_X_outlier$nr_nights[train_X$nr_nights>30] <- NA
 train_X_outlier$nr_nights <- impute(train_X_outlier$nr_nights, method = median)
 outlier.cols <- append(outlier.cols, 'nr_nights')
 
 # 24) nr_previous_bookings  
-#starting from 100% (78!!) trips, we have an outlier.
-quantile(train_X_impute$nr_previous_bookings, na.rm = T, probs = seq(0, 1, 0.001))
-quantile(scale(train_X_impute$nr_previous_bookings), na.rm = T, probs = seq(0, 1, 0.001))
+# Here, we see a lot of values of 1 until 5. Even some valid outliers up until 26 as well. Even this is already a lot of bookings.
+# However, we also have  a value of more than 70. We will see more than 30 bookings as an invalid outlier as you booked the hotel
+# more than once per month over a timespan of 2 years. This is highly unusual.
+train_X_outlier$nr_previous_bookings[train_X$nr_previous_bookings>30] <- NA
+train_X_outlier$nr_previous_bookings <- impute(train_X_outlier$nr_previous_bookings, method = median)
 outlier.cols <- append(outlier.cols, 'nr_previous_bookings')
 
 
 # 25) previous_bookings_not_canceled  
-#starting from 100% (72!!), we have an outlier. Same comment as before
-quantile(train_X_impute$previous_bookings_not_canceled, na.rm = T, probs = seq(0, 1, 0.001))
-quantile(scale(train_X_impute$previous_bookings_not_canceled), na.rm = T, probs = seq(0, 1, 0.001))
+#starting from 99.3% (=21!!), we have outliers. Again, we have a value higher than 70. This could be
+# due to solving our data inconsistencies in the previous step. Therefore, we will also see this as an invalid outlier.
+# Again we use a value of 30 as cut off point.
+train_X_outlier$previous_bookings_not_canceled[train_X$previous_bookings_not_canceled>30] <- NA
+train_X_outlier$previous_bookings_not_canceled <- impute(train_X_outlier$previous_bookings_not_canceled, method = median)
 outlier.cols <- append(outlier.cols, 'previous_bookings_not_canceled')
 
 
 # 26) previous_cancellations  
-#starting from 100% (26!!), we have an outlier. Same comment as before
-quantile(train_X_impute$previous_cancellations, na.rm = T, probs = seq(0, 1, 0.001))
-quantile(scale(train_X_impute$previous_cancellations), na.rm = T, probs = seq(0, 1, 0.001))
+#starting from 99.8% ( = 4!!), we have outliers. However, 4 is still a reasonable value.
+# However, when a person cancels his room more than 20 times, we will see this as an invalid outlier.
+train_X_outlier$previous_cancellations[train_X$previous_cancellations>20] <- NA
+train_X_outlier$previous_cancellations <- impute(train_X_outlier$previous_cancellations, method = median)
 outlier.cols <- append(outlier.cols, 'previous_cancellations')
 
 
 # 28) special_requests  
-#starting from 98% (3), we have outliers
+#starting from 97.6% (=3), we have outliers. However, we do not see any unusual values.
 outlier.cols <- append(outlier.cols, 'special_requests')
+
+# inspect
+str(train_X_outlier)
+str(val_X_outlier)
+str(test_X_outlier)
+
+
+
 
 # use this function to handle valid outliers
 handle_outlier_z <- function(col){
@@ -288,11 +295,11 @@ train_X_outlier[, outlier.cols] <-  sapply(train_X_impute[, outlier.cols], FUN =
 
 # We cannot use the previous method to handle outliers of the number of days in waiting list 
 # This is because this variable has a lot of 0 values, and if we would use the z score, a lot of outliers would be identified
-quantile(train_X_impute$days_in_waiting_list, na.rm = T, probs = seq(0, 1, 0.001))
-quantile(scale(train_X_impute$days_in_waiting_list), na.rm = T, probs = seq(0, 1, 0.01))
-# When we look at the distribution of the days in waiting list variable, we see that less than 1 % has a value higher than 125 days 
-# We arbitrary set the boundary to be an outlier to 125
-train_X_outlier$days_in_waiting_list <- ifelse(train_X_impute$days_in_waiting_list >= 125, 125, train_X_impute$days_in_waiting_list)
+#quantile(train_X_impute$days_in_waiting_list, na.rm = T, probs = seq(0, 1, 0.001))
+#quantile(scale(train_X_impute$days_in_waiting_list), na.rm = T, probs = seq(0, 1, 0.01))
+# When we look at the distribution of the days in waiting list variable, we see that less than 1 % has a value higher than 70 days 
+# We arbitrary set the boundary to be an outlier to 70
+train_X_outlier$days_in_waiting_list <- ifelse(train_X_impute$days_in_waiting_list >= 70, 70, train_X_impute$days_in_waiting_list)
 
 
 ##############################################################
@@ -363,7 +370,6 @@ test_X_outlier$posix_last_status <- format(as.POSIXct(test_X_outlier$posix_last_
 # 5. Write data away
 ##############################################################
 ##############################################################
-
 training_data_after_data_cleaning <- train_X_outlier
 training_data_after_data_cleaning$average_daily_rate <- train_y
 val_data_after_data_cleaning <- val_X_outlier

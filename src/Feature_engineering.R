@@ -42,7 +42,6 @@ val_y <- val$average_daily_rate
 str(test_X)
 
 
-
 ##############################################################
 ##############################################################
 # 1. Categorical data
@@ -51,6 +50,18 @@ str(test_X)
 train_X_encode <- train_X
 val_X_encode <- val_X
 test_X_encode <- test_X
+
+# First we make a categorical feature arrival_date_weekday
+train_X_encode$arrival_date_weekday <- wday(train_X_encode$posix_arrival, label = T)
+val_X_encode$arrival_date_weekday <- wday(val_X_encode$posix_arrival, label = T)
+test_X_encode$arrival_date_weekday <- wday(test_X_encode$posix_arrival, label = T)
+
+# WAAR DIT GEDAAN?
+# assigned_room_type_* and reserved_room_type_* -> delete 1st and add column flag if assigned != reserved
+# This column indicates if assigned and reserved room type are the same
+train_X_encode$room_type_conflict <- ifelse(train_X_encode[ ,'assigned_room_type'] == train_X_encode[ ,'reserved_room_type'], 0, 1)
+val_X_encode$room_type_conflict <- ifelse(val_X_encode[ ,'assigned_room_type'] == val_X_encode[ ,'reserved_room_type'], 0, 1)
+test_X_encode$room_type_conflict <- ifelse(test_X_encode[ ,'assigned_room_type'] == test_X_encode[ ,'reserved_room_type'], 0, 1)
 
 ##############################################################
 # 1.1 Ordinal data: integer encoding
@@ -63,21 +74,10 @@ test_X_encode <- test_X
 # We use the dummmy package to treat nominal data as this is a more flexible approach
 # and we have a lot of variables with a lot of levels
 
-# Explanation can be found in 2.4 on correlation
-# This column indicates if assigned and reserved room type are the same
-train_X_encode$room_type_conflict <- train_X_encode$assigned_room_type==train_X_encode$reserved_room_type
-val_X_encode$room_type_conflict <- val_X_encode$assigned_room_type==val_X_encode$reserved_room_type
-test_X_encode$room_type_conflict <- test_X_encode$assigned_room_type==test_X_encode$reserved_room_type
-
-# First we make a categorical feature arrival_date_weekday
-train_X_encode$arrival_date_weekday <- wday(train_X_encode$posix_arrival, label = T)
-val_X_encode$arrival_date_weekday <- wday(val_X_encode$posix_arrival, label = T)
-test_X_encode$arrival_date_weekday <- wday(test_X_encode$posix_arrival, label = T)
-
 
 # get categories and dummies
 # we only select the top 10 levels with highest frequency so our model does not explode
-# For all cases, this includes most of the data: KIJKEN ALS DIT KLOPT BIJ DE REST
+# For all cases, this includes most of the data
 cats <- categories(train_X_encode[, c('booking_distribution_channel',
                                       'canceled', 'customer_type', 'deposit',
                                       'hotel_type', 'is_repeated_guest', 'last_status',
@@ -95,7 +95,7 @@ cats <- append(cats, categories(train_X_encode['booking_company'], p = 2))
 
 
 # apply on train set (exclude reference categories)
-dummies_train <- dummy(train_X_encode[, c('booking_distribution_channel', 
+dummies_train <- dummy(train_X_encode[, c('booking_distribution_channel',
                                          'canceled', 'country', 'customer_type', 'deposit',
                                          'hotel_type', 'is_repeated_guest', 'last_status',
                                          'market_segment', 'meal_booked', 'reserved_room_type',
@@ -200,8 +200,7 @@ test_X_encode <- cbind(test_X_encode, dummies_test)
 ##############################################################
 ##############################################################
 
-
-# Create feature time_between_last_status_arrival
+# First create the feature time_between_last_status_arrival
 # time_between_arrival_checkout gives a positive difference when last status date is after
 # arrival (often when customer checks out)
 # time_between_arrival_cancel gives a negative difference when last status date is before
@@ -292,9 +291,7 @@ cor(train_X_encode$nr_previous_bookings, train_X_encode$previous_cancellations)
 
 #high correlations:
 ########################################################################################################
-#nr_booking_changes & nr_booking_changes_FLAG 0.89 -> delete 2nd -> below
 #nr_nights & time_between_arrival_checkout 0.58 -> delete 2nd -> below
-#assigned_room_type_* and reserved_room_type_* -> delete 1st and add column flag if assigned != reserved
 #booking_distribution_channel_Direct & market_segment_Direct -> leave (cor < 0.8)
 #booking_distribution_channel_Corporate & market_segment_Corporate -> like above
 #booking_distribution_channel_Corporate & booking_company_NULL -> like above
@@ -303,6 +300,7 @@ cor(train_X_encode$nr_previous_bookings, train_X_encode$previous_cancellations)
 # drop number of previous bookings as this contains the information of the columns
 # previous_cancellations and previous_bookings_not_canceled and this has high correlation
 # This happens in the next section
+
 
 ##############################################################
 # 2.5 Column deleting
@@ -315,15 +313,15 @@ test_X_final <- test_X_scale
 train_X_final <- subset(train_X_scale, select = -c(id, arrival_date, last_status_date,
                                           nr_previous_bookings, posix_arrival,
                                           day_of_month_arrival, posix_last_status, year_arrival,
-                                          nr_booking_changes, time_between_arrival_checkout))
+                                          time_between_arrival_checkout))
 val_X_final <- subset(val_X_scale, select = -c(id, arrival_date, last_status_date,
                                                nr_previous_bookings, posix_arrival,
                                                day_of_month_arrival, posix_last_status, year_arrival,
-                                               nr_booking_changes, time_between_arrival_checkout))
+                                               time_between_arrival_checkout))
 test_X_final <- subset(test_X_scale, select = -c(arrival_date, last_status_date,
                                                  nr_previous_bookings, posix_arrival,
                                                  day_of_month_arrival, posix_last_status, year_arrival,
-                                                 nr_booking_changes, time_between_arrival_checkout))
+                                                 time_between_arrival_checkout))
 
 
 
@@ -339,6 +337,7 @@ val_data_after_FE <- val_X_final
 val_data_after_FE$average_daily_rate <- val_y
 
 test_data_after_FE <- test_X_final
+
 
 # str(training_data_after_FE)
 
