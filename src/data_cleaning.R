@@ -10,6 +10,7 @@ library(stringr)
 library(miscTools)
 
 # import the data
+setwd(dir = '/Users/Artur/ml22-team10')
 train <- read_csv('./data/bronze_data/train.csv')
 test_X <- read_csv('./data/bronze_data/test.csv')
 

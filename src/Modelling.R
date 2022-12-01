@@ -42,8 +42,17 @@ str(train)
 str(val)
 str(test_X)
 
+
+
 ##############################################################
-# 0. Linear regression
+##############################################################
+# 1. BASELINE MODELS
+##############################################################
+##############################################################
+
+
+##############################################################
+# 1.1 Linear regression
 ##############################################################
 # train the model on the training data
 lm.fit <- lm(average_daily_rate ~ ., data = train)
@@ -71,8 +80,8 @@ write.csv(linR_preds_df, file = "./data/sample_submission_linR.csv", row.names =
 min_validation_error <- function(model) {
   val.mat <- model.matrix(average_daily_rate ~ ., data = val)
   
-  val.errors <- rep(NA, 96)
-  for (i in 1:96) {
+  val.errors <- rep(NA, 95)
+  for (i in 1:95) {
     coefi <- coef(model, id = i)
     pred <- val.mat[, names(coefi)] %*% coefi
     val.errors[i] <- sqrt(mean((val_y - pred)^2))
@@ -82,15 +91,15 @@ min_validation_error <- function(model) {
 
 
 ##############################################################
-# 1. Forward Stepwise selection
+# 1.2 Forward Stepwise selection
 ##############################################################
 
-
+str(train)
 
 #### DIT IS VAN VOOR DE DATA UPDATE DUS NU 102 EXPL VAR!!!
 
 # perform forward stepwise selection and look at the results
-regfit.full_for <- regsubsets(train$average_daily_rate ~ ., data = train, nvmax = 96, really.big = T, method = "forward")
+regfit.full_for <- regsubsets(train$average_daily_rate ~ ., data = train, nvmax = 95, really.big = T, method = "forward")
 regF.summary <- summary(regfit.full_for)
 #regF.summary
 #regF.summary$rsq
@@ -109,9 +118,6 @@ optimal_nr_predictors_forward =  min_validation_error(regfit.full_for) #59
 # train the model on the training data and calculate the RMSE of the validation set
 # coef(regfit.full_for, optimal_nr_predictors_forward)
 lm.cols.forward <- names(coef(regfit.full_for, optimal_nr_predictors_forward))[-1]
-names(coef(regfit.full_for, optimal_nr_predictors_forward))
-lm.cols.forward %in% names(train_X)
-lm.cols.forward
 modeltrainmatrixforward <- cbind(train_X[lm.cols.forward], train_y)
 best_model_forward = lm(train_y ~ ., data = modeltrainmatrixforward)
 
@@ -136,7 +142,7 @@ write.csv(forward_preds_df, file = "./data/sample_submission_forwardsel.csv", ro
 
 
 ##############################################################
-# 2. Backward Stepwise selection 
+# 1.3 Backward Stepwise selection 
 ##############################################################
 
 ### same comment
@@ -183,7 +189,7 @@ backward_preds_df <- data.frame(id = as.integer(test_X$id),
 write.csv(backward_preds_df, file = "./data/sample_submission_backwardsel.csv", row.names = F)
 
 ##############################################################
-# 3. Sequential replacement Stepwise selection 
+# 1.4 Sequential replacement Stepwise selection 
 ##############################################################
 
 regfit.full_seq <- regsubsets(average_daily_rate ~ ., data = train, nvmax = 99, really.big = T, method = "seqrep")
@@ -229,7 +235,7 @@ write.csv(seqrep_preds_df, file = "./data/sample_submission_seqrepsel.csv", row.
 
 
 ##############################################################
-# 4. Ridge Regression
+# 1.5 Ridge Regression
 ##############################################################
 
 # look for the best lambda value to perform the ridge regression with 10- fold cross validation
@@ -265,7 +271,7 @@ write.csv(ridge_preds_df, file = "./data/sample_submission_ridge.csv", row.names
 
 
 ##############################################################
-# 5. Lasso Regression
+# 1.6 Lasso Regression
 ##############################################################
 # look for the best lambda value to perform the ridge regression with 10- fold cross validation
 # use the training data to do tune the parameters with cross validation
@@ -306,50 +312,103 @@ write.csv(lasso_preds_df, file = "./data/sample_submission_lasso.csv", row.names
 # 2) RETRAIN ON TRAIN SET WITH OPTIMAL PARAMETERS AND PREDICT ON VALIDATION SET
 # 3) RETRAIN BEST-PERFORMING MODEL ON TRAIN + VAL SET TO PREDICT ON TEST SET
 
+
+
 ##############################################################
-# 6. Regression Tree
+##############################################################
+# 2. MOVING BEYOND LINEARITY
+##############################################################
 ##############################################################
 
-# basic tree, no cv
+##############################################################
+# EERST NOG POLYNOMIALS, SPLINES...: TELLEN DUS OOK AANPASSEN
 
-# We train the model on the training data
-tree.rate <- tree(average_daily_rate ~ ., train, control=rpart.control(cp=.0001))
+# @Viktor
+# 1) FOR EACH MODEL: DO HYPERPARAMETER TUNING ON TRAIN SET WITH CROSS VALIDATION
+# 2) RETRAIN ON TRAIN SET WITH OPTIMAL PARAMETERS AND PREDICT ON VALIDATION SET
+# 3) RETRAIN BEST-PERFORMING MODEL ON TRAIN + VAL SET TO PREDICT ON TEST SET
+##############################################################
+
+
+
+##############################################################
+##############################################################
+# 3. TREE-BASED METHODES
+##############################################################
+##############################################################
+
+##############################################################
+# 3.1 Fit a regression tree
+##############################################################
+# 1) We train the model on the training data, we see that the MSE is 1791 (RMSE = 42.3)
+# Besides, we have 13 terminal nodes
+tree.rate <- tree(average_daily_rate ~ ., train)
 summary(tree.rate)
+
+# visualize the tree
 plot(tree.rate)
-#We make predictions
+#text(tree.rate, pretty = 0)
+
+# 2) We make predictions on the validation set, which results in an RMSE of 36.4
+tree_pred_val <- predict(tree.rate, newdata = val_X)
+sqrt(mean((tree_pred_val - val_y)^2))
+
+# 3) train the model on all the data (train + val)
+tree.rate <- tree(average_daily_rate ~ ., train_and_val)
+
+# make prediction on the test set
 tree_pred_test <- predict(tree.rate, newdata = test_X)
 tree_preds_df <- data.frame(id = as.integer(test_X$id),
-                             average_daily_rate= tree_pred_test)
+                            average_daily_rate= tree_pred_test)
 colnames(tree_preds_df)[2] <- 'average_daily_rate'
-str(tree_preds_df)
+
 # save submission file
 write.csv(tree_preds_df, file = "./data/sample_submission_tree.csv", row.names = F)
 
 
-##############################################################
-# 7. Regression Tree with CV
-##############################################################
-
-
-
-
 
 ##############################################################
-# 8. Bagging
+# 3.2 Fit a regression tree  with cross validation
+##############################################################
+# fit a regression tree using cross validation
+cv.rate <- cv.tree(tree.rate)
+
+# plot the tree
+plot(cv.rate$size, cv.rate$dev, type = 'b')
+# We see that the most comlex tree is chosen by cross validation
+# We could prune the tree to make it less complex, but we do not think this is usefull here
+# As the CV chooses 13 terminal nodes, this regression has the same results as 3.1
+
+
+
+
+##############################################################
+# 3.3. Bagging
 ##############################################################
 # score = 20.4
+
+# 1) train the model on the training data to do hyperparameter tuning
+# WARNING: this takes some time to run
 set.seed(1)
-baggingModel <- randomForest(average_daily_rate ~ ., data = train_and_val, mtry = 102,ntree = 110, importance = TRUE)
-bagging_pred <- predict(baggingModel, newdata = test_X)
+bagging.rate <- randomForest(average_daily_rate ~ ., data = train, mtry = 95,ntree = 110, importance = TRUE)
 
-bagging_pred
+# 2) We make predictions on the validation set, which results in an RMSE 
+bagging_pred <- predict(bagging.rate, newdata = val_X)
+sqrt(mean((tree_pred_val - val_y)^2))
 
+# 3) train the model on all the data (train + val)
+bagging.rate <- randomForest(average_daily_rate ~ ., data = train, mtry = 95, importance = TRUE)
+
+# make prediction on the test set and save
+bagging_pred <- predict(bagging_rate, newdata = test_X)
+
+# save
 bagging_preds_df = data.frame(id = as.integer(test_X$id),
                               average_daily_rate= bagging_pred)
 
 
 colnames(bagging_preds_df)[2] <- 'average_daily_rate'
-str(bagging_preds_df)
+# str(bagging_preds_df)
 # save submission file
 write.csv(bagging_preds_df, file = "./data/sample_submission_bagging.csv", row.names = F)
 
