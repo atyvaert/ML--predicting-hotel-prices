@@ -21,6 +21,7 @@ library(mctest)
 if(!require('caret')) install.packages('caret')
 if(!require('rlang')) install.packages('rlang')
 library(caret)
+library(dplyr)
 
 
 
@@ -41,7 +42,6 @@ val_y <- val$average_daily_rate
 #str(train_X)
 #str(val_X)
 str(test_X)
-
 
 
 ##############################################################
@@ -83,6 +83,10 @@ train_X_encode$arrival_date_weekday <- wday(train_X_encode$posix_arrival, label 
 val_X_encode$arrival_date_weekday <- wday(val_X_encode$posix_arrival, label = T)
 test_X_encode$arrival_date_weekday <- wday(test_X_encode$posix_arrival, label = T)
 
+# Make year_arrival categorical
+train_X_encode$year_arrival <- as.factor(train_X_encode$year_arrival)
+val_X_encode$year_arrival <- as.factor(val_X_encode$year_arrival)
+test_X_encode$year_arrival <- as.factor(test_X_encode$year_arrival)
 
 # get categories and dummies
 # we only select the top 10 levels with highest frequency so our model does not explode
@@ -116,7 +120,7 @@ dummies_train <- subset(dummies_train,
                         select = -c(booking_distribution_channel_Direct,
                                     country_China, canceled_no.cancellation, customer_type_Transient,
                                     deposit_nodeposit, hotel_type_City.Hotel, is_repeated_guest_no,
-                                    last_status_Check.Out, market_segment_Online.travel.agent,
+                                    last_status_Check.Out, market_segment_Online.travel.agent, year_arrival_2015,
                                     meal_booked_meal.package.NOT.booked, reserved_room_type_A, month_arrival_January,
                                     arrival_date_weekday_Mon, booking_company_40, booking_agent_240, last_status_Canceled))
 
@@ -132,7 +136,7 @@ dummies_val <- dummy(val_X_encode[, c('booking_distribution_channel',
 dummies_val <- subset(dummies_val, select = -c(booking_distribution_channel_Direct,
                                                country_China, canceled_no.cancellation, customer_type_Transient,
                                                deposit_nodeposit, hotel_type_City.Hotel, is_repeated_guest_no,
-                                               last_status_Check.Out, market_segment_Online.travel.agent,
+                                               last_status_Check.Out, market_segment_Online.travel.agent, year_arrival_2015,
                                                meal_booked_meal.package.NOT.booked, reserved_room_type_A, month_arrival_January,
                                                arrival_date_weekday_Mon, booking_company_40, booking_agent_240, last_status_Canceled))
 
@@ -148,7 +152,7 @@ dummies_test <- dummy(test_X_encode[, c('booking_distribution_channel',
 dummies_test <- subset(dummies_test, select = -c(booking_distribution_channel_Direct,
                                                  country_China, canceled_no.cancellation, customer_type_Transient,
                                                  deposit_nodeposit, hotel_type_City.Hotel, is_repeated_guest_no,
-                                                 last_status_Check.Out, market_segment_Online.travel.agent,
+                                                 last_status_Check.Out, market_segment_Online.travel.agent, year_arrival_2015,
                                                  meal_booked_meal.package.NOT.booked, reserved_room_type_A, month_arrival_January,
                                                  arrival_date_weekday_Mon, booking_company_40, booking_agent_240, last_status_Canceled))
 
@@ -271,6 +275,7 @@ process <- preProcess(train_X_scale[, norm.cols], method=c("range")) # transform
 train_X_scale[, norm.cols] <- predict(process, train_X_scale[, norm.cols])
 val_X_scale[, norm.cols] <- predict(process, val_X_scale[, norm.cols])
 test_X_scale[, norm.cols] <- predict(process, test_X_scale[, norm.cols])
+
 
 
 ##############################################################
