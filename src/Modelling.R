@@ -336,6 +336,7 @@ write.csv(lasso_preds_df, file = "./data/sample_submission_lasso.csv", row.names
 
 
 ##############################################################
+
 ##############################################################
 # MOVING BEYOND LINEARITY
 ##############################################################
@@ -730,7 +731,7 @@ set.seed(1)
 svm.rate.all = svm(average_daily_rate ~ ., data = train_and_val, scale = FALSE)
 
 # Make predictions on the test set
-svm_pred_test <- predict(svm.rate.all, newdata = val_X)
+svm_pred_test <- predict(svm.rate.all, newdata = test_X)
 
 SVM_reg_pred_df <- data.frame(id = as.integer(test_X$id),
                           average_daily_rate= svm_pred_test)
