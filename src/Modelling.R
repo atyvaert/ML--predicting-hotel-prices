@@ -680,6 +680,7 @@ sqrt(mean((XGB_pred_val - val_y)^2))
 ##############################################################
 # 4.3 AdaBoost
 ##############################################################
+#impossible i guess
 
 ##########
 # Adaptive_cv + random search
@@ -737,6 +738,34 @@ stop - start
 #str(cv_boosting1_df)
 # save submission file
 #write.csv(cv_boosting1_df, file = "./data/sample_submission_boosting.csv", row.names = F)
+
+
+# Train the model X on all the data (train + val) 
+load(file = "models/xgb_model7_train.Rdata")
+xgb.tune.rate$bestTune
+xgb.rate.all <- xgboost(xgb.DMatrix(label = train_and_val_y, data = as.matrix(train_and_val_X)),
+                        nrounds = xgb.tune.rate$bestTune$nrounds,
+                        max_depth = xgb.tune.rate$bestTune$max_depth,
+                        eta = xgb.tune.rate$bestTune$eta,
+                        gamma = xgb.tune.rate$bestTune$gamma,
+                        colsample_bytree = xgb.tune.rate$bestTune$colsample_bytree,
+                        min_child_weight = xgb.tune.rate$bestTune$min_child_weight,
+                        subsample = xgb.tune.rate$bestTune$subsample
+)
+#save model
+save(xgb.rate.all, file="models/xgb_train_and_val.RData")
+
+# make predictions, bv:
+# make prediction on the test set and save
+xgb_pred_test <- predict(xgb.rate.all, newdata = xgb.DMatrix(as.matrix(test_X[, -1])))
+
+
+xgb_df <- data.frame(id = as.integer(test_X$id),
+                     average_daily_rate= xgb_pred_test)
+colnames(xgb_df)[2] <- 'average_daily_rate'
+str(xgb_df)
+# save submission file
+write.csv(xgb_df, file = "./data/sample_submission_xgb.csv", row.names = F)
 
 
 
