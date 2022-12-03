@@ -670,12 +670,12 @@ xgb.tune.rate <- train(x = train_X,
 stopCluster(cluster)
 
 # save model
-save(xgb.tune.rate, file = "models/xgb_model4_train.Rdata")
+save(xgb.tune.rate, file = "models/xgb_model7_train.Rdata")
 
 # 2) We make predictions on the validation set, which results in an RMSE 
 XGB_pred_val <- predict(xgb.tune.rate, newdata = val_X)
 sqrt(mean((XGB_pred_val - val_y)^2))
-
+#RMSE = 18.95107
 
 ##############################################################
 # 4.3 AdaBoost
@@ -684,6 +684,7 @@ sqrt(mean((XGB_pred_val - val_y)^2))
 ##########
 # Adaptive_cv + random search
 ##########
+start <- Sys.time()
 trainControl <- trainControl(method = 'adaptive_cv',
                              number = 5,
                              repeats = 3,
@@ -712,7 +713,8 @@ save(ada.tune.rate, file = "models/ada_model1_train.Rdata")
 # 2) We make predictions on the validation set, which results in an RMSE 
 ada_pred_val <- predict(ada.tune.rate, newdata = val_X)
 sqrt(mean((ada_pred_val - val_y)^2))
-
+stop <- Sys.time()
+stop - start
 
 ##############################################################
 # 5. Retrain the best performing model(s) of the decision trees 
