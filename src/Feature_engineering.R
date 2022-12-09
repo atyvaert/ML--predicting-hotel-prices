@@ -4,7 +4,7 @@
 ##############################################################
 ##############################################################
 
-#Might be needed for setting R language to english for weekdays
+# Might be needed for setting R language to english for weekdays
 #Sys.setlocale("LC_ALL","English")
 
 # libraries
