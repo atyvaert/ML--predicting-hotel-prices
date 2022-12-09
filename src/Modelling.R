@@ -16,7 +16,7 @@ library(doParallel)
 library(caret)
 library(xgboost)
 library(e1071)
-
+library(lightgbm)
 
 # import data
 rm(list = ls())
@@ -445,6 +445,7 @@ save(rf.rate, file = "models/rf_model_train.Rdata")
 # 2) We make predictions on the validation set, which results in an RMSE 
 rf_pred_val <- predict(rf.rate, newdata = val_X)
 sqrt(mean((rf_pred_val - val_y)^2))
+# 18.38
 
 ###############################################
 # 3.2 random Forest with CV 
@@ -597,11 +598,7 @@ sqrt(mean((cv_boosting3_pred_val - val_y)^2))
 ##############################################################
 
 #hyperparameters:
-#https://www.analyticsvidhya.com/blog/2016/03/complete-guide-parameter-tuning-xgboost-with-codes-python/  
-# lambda (regul) default, tree depth (default 6),
-# pruning param: gamma (compare with gain) 5?, 
-# nthreas = detectcores-11
-# eta 0.01-0.2
+#https://www.analyticsvidhya.com/blog/2016/03/complete-guide-parameter-tuning-xgboost-with-codes-python/
 
 #We set up for parallel processing, change number of clusters according to CPU cores
 cluster <- makeCluster(detectCores()-1)
@@ -676,6 +673,78 @@ save(xgb.tune.rate, file = "models/xgb_model7_train.Rdata")
 XGB_pred_val <- predict(xgb.tune.rate, newdata = val_X)
 sqrt(mean((XGB_pred_val - val_y)^2))
 #RMSE = 18.95107
+
+
+##############################################################
+# 4.3 LightGBM
+##############################################################
+
+#We set up for parallel processing, change number of clusters according to CPU cores
+cluster <- makeCluster(detectCores()-1)
+registerDoParallel(cluster)
+
+#grid search
+#create hyperparameter grid
+num_leaves <- seq(2, 100, 10)
+max_depth <- unique(round(log(num_leaves) / log(2),0))[-1]
+
+feature_fraction <- seq(0.1, 1, 0.1)
+bagging_fraction <- seq(0.1, 1, 0.1)
+min_data_in_leaf <- seq(100, 1000, 100)
+
+num_iterations <- seq(100,3000,200)
+early_stopping_rounds <- round(num_iterations * .1,0)
+
+hyper_grid <- expand.grid(max_depth = max_depth,
+                          num_leaves = num_leaves,
+                          num_iterations = num_iterations,
+                          feature_fraction = feature_fraction,
+                          bagging_fraction = bagging_fraction,
+                          min_data_in_leaf = min_data_in_leaf,
+                          early_stopping_rounds = early_stopping_rounds,
+                          learning_rate = seq(.001, .1, .02)
+)
+
+# We replicate a random search algorithm by sampling from the grid
+# parameter size determines how many models we test
+hyper_grid2 <- hyper_grid[sample(nrow(hyper_grid), size = 0.000001*nrow(hyper_grid)), ]
+
+rmse_fit = list()
+rmse_predict = list()
+
+dtrain <- lgb.Dataset(as.matrix(train_X), label = train_y, feature_pre_filter=FALSE)
+for (j in 1:nrow(hyper_grid2)) {
+  set.seed(1)
+  light_gbn_tuned <- lgb.train(
+    params = list(
+      objective = "regression", 
+      metric = "rmse",
+      max_depth = hyper_grid2$max_depth[j],
+      num_leaves =hyper_grid2$num_leaves[j],
+      num_iterations = hyper_grid2$num_iterations[j],
+      early_stopping_rounds=hyper_grid2$early_stopping_rounds[j],
+      learning_rate = hyper_grid2$learning_rate[j],
+      feature_fraction = hyper_grid2$feature_fraction[j],
+      bagging_fraction = hyper_grid2$bagging_fraction[j],
+      min_data_in_leaf = hyper_grid2$min_data_in_leaf[j],
+      early_stopping_rounds = hyper_grid2$early_stopping_rounds[j],
+      learning_rate = hyper_grid2$learning_rate[j]
+    ), 
+    valids = list(test = lgb.Dataset(as.matrix(val))),
+    data = dtrain
+  )
+  
+  yhat_fit_tuned <- predict(light_gbn_tuned, as.matrix(train_X))
+  yhat_predict_tuned <- predict(light_gbn_tuned,(as.matrix(val_X)))
+  
+  rmse_fit[j] <- RMSE(train_y,yhat_fit_tuned)
+  rmse_predict[j] <- RMSE(val_y,yhat_predict_tuned)
+  cat(j, "\n")
+}
+
+# Hyperparameters can be extracted from hyper_grid2 with index from rmse_predict
+
+stopCluster(cluster)
 
 ##############################################################
 # 4.3 AdaBoost
