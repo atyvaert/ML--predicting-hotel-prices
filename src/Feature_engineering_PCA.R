@@ -312,15 +312,15 @@ test_X_final <- test_X_scale
 train_X_final <- subset(train_X_scale, select = -c(id, arrival_date, last_status_date,
                                                    nr_previous_bookings, posix_arrival,
                                                    day_of_month_arrival, posix_last_status, year_arrival,
-                                                   nr_booking_changes_flag, time_between_arrival_checkout))
+                                                   time_between_arrival_checkout))
 val_X_final <- subset(val_X_scale, select = -c(id, arrival_date, last_status_date,
                                                nr_previous_bookings, posix_arrival,
                                                day_of_month_arrival, posix_last_status, year_arrival,
-                                               nr_booking_changes_flag, time_between_arrival_checkout))
+                                               time_between_arrival_checkout))
 test_X_final <- subset(test_X_scale, select = -c(arrival_date, last_status_date,
                                                  nr_previous_bookings, posix_arrival,
                                                  day_of_month_arrival, posix_last_status, year_arrival,
-                                                 nr_booking_changes, time_between_arrival_checkout))
+                                                 time_between_arrival_checkout))
 
 
 ##############################################################
@@ -343,10 +343,18 @@ val_X_final_numeric <- val_X_final[unlist(lapply(val_X_final, is.numeric))][, c(
                                                                                      'previous_cancellations', 'special_requests',
                                                                                      'time_between_arrival_cancel', 'car_parking_spaces')]
 pca_validation_full <- prcomp(val_X_final_numeric)
-summary(pca_validation_full)
-# 18 PCs -> explain > 90% of variance
-pca_validation_full <- prcomp(val_X_final_numeric, rank. = 18)
+pc.var <- pca_validation_full$sdev^2
+plot(cumsum(pc.var / sum(pc.var))) #nog mooi maken
+# 7 PCs -> explain ~ 97% of variance
+pca_validation_rank7 <- prcomp(val_X_final_numeric, rank. = 7)
 
+#Iets loopt hier nog fout bij de matrixvermenigvuldiging
+val_X_final_numeric_PC <- val_X_final_numeric*matrix(pca_validation_rank7$rotation, nrow = 9)
+val_X_final_delete <- val_X_final[, !names(val_X_final) %in% c('nr_adults', 'nr_nights', 'lead_time', 'days_in_waiting_list','previous_bookings_not_canceled',
+                 'previous_cancellations', 'special_requests',
+                 'time_between_arrival_cancel', 'car_parking_spaces')]
+val_X_final_with_PC <- cbind(val_X_final_delete, val_X_final_numeric_PC)
+str(val_X_final_with_PC)
 
 # Write
 write.csv(training_data_after_FE,"./data/gold_data_PCA/train.csv", row.names = FALSE)
