@@ -348,8 +348,10 @@ plot(cumsum(pc.var / sum(pc.var))) #nog mooi maken
 # 7 PCs -> explain ~ 97% of variance
 pca_validation_rank7 <- prcomp(val_X_final_numeric, rank. = 7)
 
-#Iets loopt hier nog fout bij de matrixvermenigvuldiging
+# Matrix multiplication of original features and PCs to become 7 reduce dimensionality by 2
 val_X_final_numeric_PC <- matrix(unlist(matrix(val_X_final_numeric)), nrow = nrow(val_X_final_numeric))%*%matrix(pca_validation_rank7$rotation, nrow = 9)
+
+# Delete original features and add 7 PCs
 val_X_final_delete <- val_X_final[, !names(val_X_final) %in% c('nr_adults', 'nr_nights', 'lead_time', 'days_in_waiting_list','previous_bookings_not_canceled',
                  'previous_cancellations', 'special_requests',
                  'time_between_arrival_cancel', 'car_parking_spaces')]
