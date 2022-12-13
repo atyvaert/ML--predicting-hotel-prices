@@ -343,7 +343,7 @@ train_X_final_numeric_PC <- matrix(unlist(matrix(train_X_final_numeric)), nrow =
 # Delete original features and add 7 PCs
 train_X_final_delete <- train_X_final[, !names(train_X_final) %in% c('nr_adults', 'nr_nights', 'lead_time', 'days_in_waiting_list','previous_bookings_not_canceled',
                                                                      'previous_cancellations', 'special_requests',
-                                                                     'time_between_arritrain_cancel', 'car_parking_spaces')]
+                                                                     'time_between_arrival_cancel', 'car_parking_spaces')]
 train_X_final_with_PC <- cbind(train_X_final_delete, train_X_final_numeric_PC)
 str(train_X_final_with_PC)
 
@@ -377,7 +377,7 @@ test_X_final_numeric_PC <- matrix(unlist(matrix(test_X_final_numeric)), nrow = n
 # Delete original features and add 7 PCs
 test_X_final_delete <- test_X_final[, !names(test_X_final) %in% c('nr_adults', 'nr_nights', 'lead_time', 'days_in_waiting_list','previous_bookings_not_canceled',
                                                                      'previous_cancellations', 'special_requests',
-                                                                     'time_between_arritest_cancel', 'car_parking_spaces')]
+                                                                     'time_between_arrival_cancel', 'car_parking_spaces')]
 test_X_final_with_PC <- cbind(test_X_final_delete, test_X_final_numeric_PC)
 str(test_X_final_with_PC)
 
