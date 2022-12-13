@@ -322,44 +322,83 @@ test_X_final <- subset(test_X_scale, select = -c(arrival_date, last_status_date,
                                                  day_of_month_arrival, posix_last_status, year_arrival,
                                                  time_between_arrival_checkout))
 
+##############################################################
+# PCA
+##############################################################
+
+#####
+# train
+#####
+train_X_final_numeric <- train_X_final[unlist(lapply(train_X_final, is.numeric))][, c('nr_adults', 'nr_nights', 'lead_time', 'days_in_waiting_list','previous_bookings_not_canceled',                                                                                     'previous_cancellations', 'special_requests',
+                                                                                      'time_between_arrival_cancel', 'car_parking_spaces')]
+pca_training_full <- prcomp(train_X_final_numeric)
+pc.var <- pca_training_full$sdev^2
+plot(cumsum(pc.var / sum(pc.var))) #nog mooi maken
+# 7 PCs -> explain ~ 97% of variance
+pca_training_rank7 <- prcomp(train_X_final_numeric, rank. = 7)
+
+# Matrix multiplication of original features and PCs to become 7 reduce dimensionality by 2
+train_X_final_numeric_PC <- matrix(unlist(matrix(train_X_final_numeric)), nrow = nrow(train_X_final_numeric))%*%matrix(pca_training_rank7$rotation, nrow = 9)
+
+# Delete original features and add 7 PCs
+train_X_final_delete <- train_X_final[, !names(train_X_final) %in% c('nr_adults', 'nr_nights', 'lead_time', 'days_in_waiting_list','previous_bookings_not_canceled',
+                                                                     'previous_cancellations', 'special_requests',
+                                                                     'time_between_arritrain_cancel', 'car_parking_spaces')]
+train_X_final_with_PC <- cbind(train_X_final_delete, train_X_final_numeric_PC)
+str(train_X_final_with_PC)
+
+#####
+# val
+#####
+val_X_final_numeric <- val_X_final[unlist(lapply(val_X_final, is.numeric))][, c('nr_adults', 'nr_nights', 'lead_time', 'days_in_waiting_list','previous_bookings_not_canceled',                                                                                     'previous_cancellations', 'special_requests',
+                                                                                'time_between_arrival_cancel', 'car_parking_spaces')]
+
+# Matrix multiplication of original features and PCs to become 7 reduce dimensionality by 2
+val_X_final_numeric_PC <- matrix(unlist(matrix(val_X_final_numeric)), nrow = nrow(val_X_final_numeric))%*%matrix(pca_training_rank7$rotation, nrow = 9)
+
+# Delete original features and add 7 PCs
+val_X_final_delete <- val_X_final[, !names(val_X_final) %in% c('nr_adults', 'nr_nights', 'lead_time', 'days_in_waiting_list','previous_bookings_not_canceled',
+                                                               'previous_cancellations', 'special_requests',
+                                                               'time_between_arrival_cancel', 'car_parking_spaces')]
+val_X_final_with_PC <- cbind(val_X_final_delete, val_X_final_numeric_PC)
+str(val_X_final_with_PC)
+
+
+
+#####
+# test
+#####
+test_X_final_numeric <- test_X_final[unlist(lapply(test_X_final, is.numeric))][, c('nr_adults', 'nr_nights', 'lead_time', 'days_in_waiting_list','previous_bookings_not_canceled',                                                                                     'previous_cancellations', 'special_requests',
+                                                                                      'time_between_arrival_cancel', 'car_parking_spaces')]
+
+# Matrix multiplication of original features and PCs to become 7 reduce dimensionality by 2
+test_X_final_numeric_PC <- matrix(unlist(matrix(test_X_final_numeric)), nrow = nrow(test_X_final_numeric))%*%matrix(pca_training_rank7$rotation, nrow = 9)
+
+# Delete original features and add 7 PCs
+test_X_final_delete <- test_X_final[, !names(test_X_final) %in% c('nr_adults', 'nr_nights', 'lead_time', 'days_in_waiting_list','previous_bookings_not_canceled',
+                                                                     'previous_cancellations', 'special_requests',
+                                                                     'time_between_arritest_cancel', 'car_parking_spaces')]
+test_X_final_with_PC <- cbind(test_X_final_delete, test_X_final_numeric_PC)
+str(test_X_final_with_PC)
 
 ##############################################################
 ##############################################################
 # 5. Write data away
 ##############################################################
 ##############################################################
-training_data_after_FE <- train_X_final
+training_data_after_FE <- train_X_final_with_PC
 training_data_after_FE$average_daily_rate <- train_y
 
-val_data_after_FE <- val_X_final
+val_data_after_FE <- val_X_final_with_PC
 val_data_after_FE$average_daily_rate <- val_y
 
-test_data_after_FE <- test_X_final
+test_data_after_FE <- test_X_final_with_PC
 
 # str(training_data_after_FE)
 
-# PCA
-val_X_final_numeric <- val_X_final[unlist(lapply(val_X_final, is.numeric))][, c('nr_adults', 'nr_nights', 'lead_time', 'days_in_waiting_list','previous_bookings_not_canceled',
-                                                                                     'previous_cancellations', 'special_requests',
-                                                                                     'time_between_arrival_cancel', 'car_parking_spaces')]
-pca_validation_full <- prcomp(val_X_final_numeric)
-pc.var <- pca_validation_full$sdev^2
-plot(cumsum(pc.var / sum(pc.var))) #nog mooi maken
-# 7 PCs -> explain ~ 97% of variance
-pca_validation_rank7 <- prcomp(val_X_final_numeric, rank. = 7)
 
-# Matrix multiplication of original features and PCs to become 7 reduce dimensionality by 2
-val_X_final_numeric_PC <- matrix(unlist(matrix(val_X_final_numeric)), nrow = nrow(val_X_final_numeric))%*%matrix(pca_validation_rank7$rotation, nrow = 9)
-
-# Delete original features and add 7 PCs
-val_X_final_delete <- val_X_final[, !names(val_X_final) %in% c('nr_adults', 'nr_nights', 'lead_time', 'days_in_waiting_list','previous_bookings_not_canceled',
-                 'previous_cancellations', 'special_requests',
-                 'time_between_arrival_cancel', 'car_parking_spaces')]
-val_X_final_with_PC <- cbind(val_X_final_delete, val_X_final_numeric_PC)
-str(val_X_final_with_PC)
 
 # Write
 write.csv(training_data_after_FE,"./data/gold_data_PCA/train.csv", row.names = FALSE)
 write.csv(val_data_after_FE,"./data/gold_data_PCA/val.csv", row.names = FALSE)
 write.csv(test_data_after_FE,"./data/gold_data_PCA/test.csv", row.names = FALSE)
-
