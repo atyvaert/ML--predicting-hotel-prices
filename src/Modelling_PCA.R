@@ -667,12 +667,13 @@ xgb.tune.rate <- train(x = train_X,
 stopCluster(cluster)
 
 # save model
-save(xgb.tune.rate, file = "models/xgb_model7_train.Rdata")
+save(xgb.tune.rate, file = "models/xgb_model7_train_PCA.Rdata")
 
 # 2) We make predictions on the validation set, which results in an RMSE 
 XGB_pred_val <- predict(xgb.tune.rate, newdata = val_X)
 sqrt(mean((XGB_pred_val - val_y)^2))
 #RMSE = 18.95107
+#RMSE PCA = 20.53102
 
 
 ##############################################################
