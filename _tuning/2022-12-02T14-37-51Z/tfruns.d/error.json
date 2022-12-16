@@ -1,0 +1,4 @@
+{
+  "message": "The following flags were provided but not declared: learning_rate",
+  "traceback": ["stop(\"The following flags were provided but not declared: \", \n    paste(undeclared, collapse = \", \"), call. = FALSE)", "parse_flags(FLAGS, config, file, arguments)", "flags(flag_numeric(\"dropout1\", 0.3), flag_integer(\"neurons1\", \n    128), flag_numeric(\"lr\", 0.001))", "eval(ei, envir)", "eval(ei, envir)", "withVisible(eval(ei, envir))", "tuning_run(\"/Users/Artur/layer1_model.R\", runs_dir = \"_tuning\", \n    flags = par)"]
+}

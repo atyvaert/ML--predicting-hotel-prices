@@ -1,0 +1,16 @@
+
+> # In essence, hypertuning is done through flags. Anywhere in your neural network, 
+> # you can replace a parameter with a flag
+> FLAGS <- flags(
++   .... [TRUNCATED] 
+
+> ##############
+> # wide model with 1 layer
+> #############
+> 
+> 
+> # build the neural network
+> one.layer.model <- function() {
++   model <- keras_m .... [TRUNCATED] 
+
+> layer1_model <- build_model()

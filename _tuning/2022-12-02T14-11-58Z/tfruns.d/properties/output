@@ -1,0 +1,52 @@
+
+> # In essence, hypertuning is done through flags. Anywhere in your neural network, 
+> # you can replace a parameter with a flag
+> FLAGS <- flags(
++   .... [TRUNCATED] 
+
+> ##############
+> # wide model with 1 layer
+> #############
+> 
+> 
+> # build the neural network
+> one.layer.model <- function() {
++   model <- keras_m .... [TRUNCATED] 
+
+> layer1_model <- build_model()
+
+> layer1_model %>% summary()
+Model: "sequential"
+____________________________________________________________________________________________________
+ Layer (type)                                Output Shape                            Param #        
+====================================================================================================
+ dense_2 (Dense)                             (None, 128)                             12288          
+ dropout_1 (Dropout)                         (None, 128)                             0              
+ dense_1 (Dense)                             (None, 128)                             16512          
+ dropout (Dropout)                           (None, 128)                             0              
+ dense (Dense)                               (None, 1)                               129            
+====================================================================================================
+Total params: 28,929
+Trainable params: 28,929
+Non-trainable params: 0
+____________________________________________________________________________________________________
+
+> early_stop <- callback_early_stopping(monitor = "val_loss", patience = 3)
+
+> epochs <- 50
+
+> # Fit the model and store training stats
+> history <- layer1_model %>%
++   fit(x_train, y_train, epochs = epochs, batch_size = 128,
++       validati .... [TRUNCATED] 
+
+> # predict on validation set
+> nn_pred_val <- layer1_model %>% predict(x_val)
+
+> score <- sqrt(mean((nn_pred_val - val_y)^2))
+
+> score
+[1] 26.74323
+
+> # save
+> save_model_hdf5(layer1_model, './model.h5')
