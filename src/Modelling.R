@@ -16,6 +16,8 @@ library(doParallel)
 library(caret)
 library(xgboost)
 library(e1071)
+library(splines)
+library(mgcv)
 
 
 # import data
@@ -336,22 +338,104 @@ write.csv(lasso_preds_df, file = "./data/sample_submission_lasso.csv", row.names
 
 
 ##############################################################
+##############################################################
+# 2 MOVING BEYOND LINEARITY
+##############################################################
+##############################################################
+# We can only perform polynomial functions, splines and gams on numerical features
+# First we will look at the numerical features
+plot(train$nr_adults, train$average_daily_rate, col = "gray")
+plot(train$nr_nights, train$average_daily_rate, col = "gray")
+plot(train$special_requests, train$average_daily_rate, col = "gray")
+plot(train$days_in_waiting_list, train$average_daily_rate, col = "gray")
+plot(train$previous_bookings_not_canceled, train$average_daily_rate, col = "gray")
+plot(train$previous_cancellations, train$average_daily_rate, col = "gray")
+plot(train$car_parking_spaces, train$average_daily_rate, col = "gray")
+plot(train$special_requests, train$average_daily_rate, col = "gray")
+plot(train$time_between_arrival_cancel, train$average_daily_rate, col = "gray")
+plot(train$lead_time, train$average_daily_rate, col = "gray")
+# We can see from the plots, that after normalization only 'time between arrival and cancel' an 'lead time' are still numerical variables
+# So we will only perform polynamial functions, splines and generalized additive models on these variables
 
 ##############################################################
-# MOVING BEYOND LINEARITY
+# 2.1 Polynomial Regression
 ##############################################################
+# We perform polynomial functions untill the 4th degree
+poly1.rate <- lm(average_daily_rate ~., data = train)
+poly2.rate <- lm(average_daily_rate ~. +  poly(lead_time, 2) +  poly(time_between_arrival_cancel, 2), data = train)
+poly3.rate <- lm(average_daily_rate ~. +  poly(lead_time, 3) +  poly(time_between_arrival_cancel, 3), data = train)
+poly4.rate <- lm(average_daily_rate ~. +  poly(lead_time, 4) +  poly(time_between_arrival_cancel, 4), data = train)
+anova(poly1.rate, poly2.rate, poly3.rate, poly4.rate)
+# from the anova table we can see that the 2nd degree model doesnt really improve the linear model, but the 3th improves the second
+# so out of the 3 polynomial functions, the 3th degree function will be the best 
+poly_rate <- poly3.rate
+# We make predictions on the validation set, RMSE = 30.72
+poly_pred_val <- predict(poly_rate, newdata = val_X)
+sqrt(mean((poly_pred_val - val_y)^2))
+
+##############################################################
+# 2.2 Splines
+##############################################################
+# First we fit splines for our numerical variables, with different degrees of freedom 
+spline1.rate <- lm(average_daily_rate ~., data = train)
+spline6.rate <- lm(average_daily_rate ~. +  bs(lead_time, df = 6) +  bs(time_between_arrival_cancel, df = 6), data = train)
+spline12.rate <- lm(average_daily_rate ~. +  bs(lead_time, df = 12) +  bs(time_between_arrival_cancel, df = 12), data = train)
+spline18.rate <- lm(average_daily_rate ~. +  bs(lead_time, df = 18) +  bs(time_between_arrival_cancel, df = 18), data = train)
+anova(spline1.rate, spline6.rate, spline12.rate, spline18.rate)
+# From the anova table we can see that the spline with 6 df doesn't improve the linear regression
+# But the splines with higher df, don't improve the model with asswell
+# so out of our splines the one with 6df will be the best
+spline.rate <- spline6.rate
+# We make predictions on the validation set, RMSE = 30.78
+spline_pred_val <- predict(spline.rate, newdata = val_X)
+sqrt(mean((spline_pred_val - val_y)^2))
+
+##############################################################
+# 2.3 Generative additive models
+##############################################################
+# In the Gam function we cannot use the point to select all our independent variables 
+# therefore we create a function that return a string that sums up all the independent variables 
+gam_with_All_variables <- function(col_names){
+  names = noquote(col_names)
+  string = "average_daily_rate ~ "
+  for(item in names){
+    string = paste(string, item, " + ")
+  }
+  return(string)
+}
+# apply this function to train_x 
+all_variables <- gam_with_All_variables(names(train_X))
+all_variables
+# we create 2 gam models, these are combinations of splines ant polynonial functions of the numerical variables
+# the parameters that are used, are the optimal parameters derived from step 1.1 and 1.2
+gam2 <- as.formula(paste(all_variables, " bs(lead_time, df = 6) + poly(time_between_arrival_cancel, 3)"))
+gam3 <- as.formula(paste(all_variables, " poly(time_between_arrival_cancel, 3) + bs(lead_time, df = 6)"))
+# we fit a linear regression and the two gam models
+gam1.rate <- lm(average_daily_rate ~., data = train)
+gam2.rate <- gam(gam2, data = train)
+gam3.rate <- gam(gam3 , data = train)
+anova(gam1.rate, gam2.rate, gam3.rate)
+# From the anova table we can see that the second model is significantly better than the linear regression model
+gam.rate <- gam2.rate
+# we make predictions on the validation set RMSE = 30.78
+gam_pred_val <- predict(gam.rate, newdata = val_X)
+sqrt(mean((gam_pred_val - val_y)^2))
 ##############################################################
 
 ##############################################################
-# EERST NOG POLYNOMIALS, SPLINES...: TELLEN DUS OOK AANPASSEN
-
-# @Viktor
-# 1) FOR EACH MODEL: DO HYPERPARAMETER TUNING ON TRAIN SET WITH CROSS VALIDATION
-# 2) RETRAIN ON TRAIN SET WITH OPTIMAL PARAMETERS AND PREDICT ON VALIDATION SET
-# 3) RETRAIN BEST-PERFORMING MODEL ON TRAIN + VAL SET TO PREDICT ON TEST SET
+# 2.4 Retrain the best performing model of non-linear models 
+# and make predictions on the test set
 ##############################################################
-
-
+# Train the model X on all the data (train + val) 
+# The best performing model is poly 3
+poly3.all <- lm(average_daily_rate ~. +  poly(lead_time, 3) +  poly(time_between_arrival_cancel, 3), data = train_and_val)
+# make predictions, bv:
+# make prediction on the test set and save
+poly_pred_test <- predict(poly3.all, newdata = test_X)
+# save 
+poly_pred_df <- data.frame(id = as.integer(test_X$id),
+                            average_daily_rate= poly_pred_test)
+write.csv(poly_pred_df, file = "./data/sample_submission_PolynomialR.csv", row.names = F)
 
 ##############################################################
 ##############################################################
