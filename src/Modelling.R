@@ -16,7 +16,9 @@ library(doParallel)
 library(caret)
 library(xgboost)
 library(e1071)
-
+library(splines)
+library(mgcv)
+library(lightgbm)
 
 # import data
 rm(list = ls())
@@ -337,20 +339,103 @@ write.csv(lasso_preds_df, file = "./data/sample_submission_lasso.csv", row.names
 
 ##############################################################
 ##############################################################
-# MOVING BEYOND LINEARITY
+# 2 MOVING BEYOND LINEARITY
 ##############################################################
+##############################################################
+# We can only perform polynomial functions, splines and gams on numerical features
+# First we will look at the numerical features
+plot(train$nr_adults, train$average_daily_rate, col = "gray")
+plot(train$nr_nights, train$average_daily_rate, col = "gray")
+plot(train$special_requests, train$average_daily_rate, col = "gray")
+plot(train$days_in_waiting_list, train$average_daily_rate, col = "gray")
+plot(train$previous_bookings_not_canceled, train$average_daily_rate, col = "gray")
+plot(train$previous_cancellations, train$average_daily_rate, col = "gray")
+plot(train$car_parking_spaces, train$average_daily_rate, col = "gray")
+plot(train$special_requests, train$average_daily_rate, col = "gray")
+plot(train$time_between_arrival_cancel, train$average_daily_rate, col = "gray")
+plot(train$lead_time, train$average_daily_rate, col = "gray")
+# We can see from the plots, that after normalization only 'time between arrival and cancel' an 'lead time' are still numerical variables
+# So we will only perform polynamial functions, splines and generalized additive models on these variables
+
+##############################################################
+# 2.1 Polynomial Regression
+##############################################################
+# We perform polynomial functions untill the 4th degree
+poly1.rate <- lm(average_daily_rate ~., data = train)
+poly2.rate <- lm(average_daily_rate ~. +  poly(lead_time, 2) +  poly(time_between_arrival_cancel, 2), data = train)
+poly3.rate <- lm(average_daily_rate ~. +  poly(lead_time, 3) +  poly(time_between_arrival_cancel, 3), data = train)
+poly4.rate <- lm(average_daily_rate ~. +  poly(lead_time, 4) +  poly(time_between_arrival_cancel, 4), data = train)
+anova(poly1.rate, poly2.rate, poly3.rate, poly4.rate)
+# from the anova table we can see that the 2nd degree model doesnt really improve the linear model, but the 3th improves the second
+# so out of the 3 polynomial functions, the 3th degree function will be the best 
+poly_rate <- poly3.rate
+# We make predictions on the validation set, RMSE = 30.72
+poly_pred_val <- predict(poly_rate, newdata = val_X)
+sqrt(mean((poly_pred_val - val_y)^2))
+
+##############################################################
+# 2.2 Splines
+##############################################################
+# First we fit splines for our numerical variables, with different degrees of freedom 
+spline1.rate <- lm(average_daily_rate ~., data = train)
+spline6.rate <- lm(average_daily_rate ~. +  bs(lead_time, df = 6) +  bs(time_between_arrival_cancel, df = 6), data = train)
+spline12.rate <- lm(average_daily_rate ~. +  bs(lead_time, df = 12) +  bs(time_between_arrival_cancel, df = 12), data = train)
+spline18.rate <- lm(average_daily_rate ~. +  bs(lead_time, df = 18) +  bs(time_between_arrival_cancel, df = 18), data = train)
+anova(spline1.rate, spline6.rate, spline12.rate, spline18.rate)
+# From the anova table we can see that the spline with 6 df doesn't improve the linear regression
+# But the splines with higher df, don't improve the model with asswell
+# so out of our splines the one with 6df will be the best
+spline.rate <- spline6.rate
+# We make predictions on the validation set, RMSE = 30.78
+spline_pred_val <- predict(spline.rate, newdata = val_X)
+sqrt(mean((spline_pred_val - val_y)^2))
+
+##############################################################
+# 2.3 Generative additive models
+##############################################################
+# In the Gam function we cannot use the point to select all our independent variables 
+# therefore we create a function that return a string that sums up all the independent variables 
+gam_with_All_variables <- function(col_names){
+  names = noquote(col_names)
+  string = "average_daily_rate ~ "
+  for(item in names){
+    string = paste(string, item, " + ")
+  }
+  return(string)
+}
+# apply this function to train_x 
+all_variables <- gam_with_All_variables(names(train_X))
+all_variables
+# we create 2 gam models, these are combinations of splines ant polynonial functions of the numerical variables
+# the parameters that are used, are the optimal parameters derived from step 1.1 and 1.2
+gam2 <- as.formula(paste(all_variables, " bs(lead_time, df = 6) + poly(time_between_arrival_cancel, 3)"))
+gam3 <- as.formula(paste(all_variables, " poly(time_between_arrival_cancel, 3) + bs(lead_time, df = 6)"))
+# we fit a linear regression and the two gam models
+gam1.rate <- lm(average_daily_rate ~., data = train)
+gam2.rate <- gam(gam2, data = train)
+gam3.rate <- gam(gam3 , data = train)
+anova(gam1.rate, gam2.rate, gam3.rate)
+# From the anova table we can see that the second model is significantly better than the linear regression model
+gam.rate <- gam2.rate
+# we make predictions on the validation set RMSE = 30.78
+gam_pred_val <- predict(gam.rate, newdata = val_X)
+sqrt(mean((gam_pred_val - val_y)^2))
 ##############################################################
 
 ##############################################################
-# EERST NOG POLYNOMIALS, SPLINES...: TELLEN DUS OOK AANPASSEN
-
-# @Viktor
-# 1) FOR EACH MODEL: DO HYPERPARAMETER TUNING ON TRAIN SET WITH CROSS VALIDATION
-# 2) RETRAIN ON TRAIN SET WITH OPTIMAL PARAMETERS AND PREDICT ON VALIDATION SET
-# 3) RETRAIN BEST-PERFORMING MODEL ON TRAIN + VAL SET TO PREDICT ON TEST SET
+# 2.4 Retrain the best performing model of non-linear models 
+# and make predictions on the test set
 ##############################################################
-
-
+# Train the model X on all the data (train + val) 
+# The best performing model is poly 3
+poly3.all <- lm(average_daily_rate ~. +  poly(lead_time, 3) +  poly(time_between_arrival_cancel, 3), data = train_and_val)
+# make predictions, bv:
+# make prediction on the test set and save
+poly_pred_test <- predict(poly3.all, newdata = test_X)
+# save 
+poly_pred_df <- data.frame(id = as.integer(test_X$id),
+                            average_daily_rate= poly_pred_test)
+write.csv(poly_pred_df, file = "./data/sample_submission_PolynomialR.csv", row.names = F)
 
 ##############################################################
 ##############################################################
@@ -444,6 +529,7 @@ save(rf.rate, file = "models/rf_model_train.Rdata")
 # 2) We make predictions on the validation set, which results in an RMSE 
 rf_pred_val <- predict(rf.rate, newdata = val_X)
 sqrt(mean((rf_pred_val - val_y)^2))
+# 18.38
 
 ###############################################
 # 3.2 random Forest with CV 
@@ -596,11 +682,7 @@ sqrt(mean((cv_boosting3_pred_val - val_y)^2))
 ##############################################################
 
 #hyperparameters:
-#https://www.analyticsvidhya.com/blog/2016/03/complete-guide-parameter-tuning-xgboost-with-codes-python/  
-# lambda (regul) default, tree depth (default 6),
-# pruning param: gamma (compare with gain) 5?, 
-# nthreas = detectcores-11
-# eta 0.01-0.2
+#https://www.analyticsvidhya.com/blog/2016/03/complete-guide-parameter-tuning-xgboost-with-codes-python/
 
 #We set up for parallel processing, change number of clusters according to CPU cores
 cluster <- makeCluster(detectCores()-1)
@@ -669,16 +751,124 @@ xgb.tune.rate <- train(x = train_X,
 stopCluster(cluster)
 
 # save model
-save(xgb_tune, file = "models/xgb_model4_train.Rdata")
+save(xgb.tune.rate, file = "models/xgb_model7_train.Rdata")
 
 # 2) We make predictions on the validation set, which results in an RMSE 
 XGB_pred_val <- predict(xgb.tune.rate, newdata = val_X)
 sqrt(mean((XGB_pred_val - val_y)^2))
+#RMSE = 18.95107
 
 
 ##############################################################
-# 4.3 Adaboost
+# 4.3 LightGBM
 ##############################################################
+
+#We set up for parallel processing, change number of clusters according to CPU cores
+cluster <- makeCluster(detectCores()-1)
+registerDoParallel(cluster)
+
+#grid search
+#create hyperparameter grid
+num_leaves <- seq(2, 100, 10)
+max_depth <- unique(round(log(num_leaves) / log(2),0))[-1]
+
+feature_fraction <- seq(0.1, 1, 0.1)
+bagging_fraction <- seq(0.1, 1, 0.1)
+min_data_in_leaf <- seq(100, 1000, 100)
+
+num_iterations <- seq(100,3000,200)
+early_stopping_rounds <- round(num_iterations * .1,0)
+
+hyper_grid <- expand.grid(max_depth = max_depth,
+                          num_leaves = num_leaves,
+                          num_iterations = num_iterations,
+                          feature_fraction = feature_fraction,
+                          bagging_fraction = bagging_fraction,
+                          min_data_in_leaf = min_data_in_leaf,
+                          early_stopping_rounds = early_stopping_rounds,
+                          learning_rate = seq(.001, .1, .02)
+)
+
+# We replicate a random search algorithm by sampling from the grid
+# parameter size determines how many models we test
+hyper_grid2 <- hyper_grid[sample(nrow(hyper_grid), size = 0.000001*nrow(hyper_grid)), ]
+
+rmse_fit = list()
+rmse_predict = list()
+
+dtrain <- lgb.Dataset(as.matrix(train_X), label = train_y, feature_pre_filter=FALSE)
+for (j in 1:nrow(hyper_grid2)) {
+  set.seed(1)
+  light_gbn_tuned <- lgb.train(
+    params = list(
+      objective = "regression", 
+      metric = "rmse",
+      max_depth = hyper_grid2$max_depth[j],
+      num_leaves =hyper_grid2$num_leaves[j],
+      num_iterations = hyper_grid2$num_iterations[j],
+      early_stopping_rounds=hyper_grid2$early_stopping_rounds[j],
+      learning_rate = hyper_grid2$learning_rate[j],
+      feature_fraction = hyper_grid2$feature_fraction[j],
+      bagging_fraction = hyper_grid2$bagging_fraction[j],
+      min_data_in_leaf = hyper_grid2$min_data_in_leaf[j],
+      early_stopping_rounds = hyper_grid2$early_stopping_rounds[j],
+      learning_rate = hyper_grid2$learning_rate[j]
+    ), 
+    valids = list(test = lgb.Dataset(as.matrix(val))),
+    data = dtrain
+  )
+  
+  yhat_fit_tuned <- predict(light_gbn_tuned, as.matrix(train_X))
+  yhat_predict_tuned <- predict(light_gbn_tuned,(as.matrix(val_X)))
+  
+  rmse_fit[j] <- RMSE(train_y,yhat_fit_tuned)
+  rmse_predict[j] <- RMSE(val_y,yhat_predict_tuned)
+  cat(j, "\n")
+}
+
+# Hyperparameters can be extracted from hyper_grid2 with index from rmse_predict
+
+stopCluster(cluster)
+
+##############################################################
+# 4.3 AdaBoost
+##############################################################
+#impossible i guess
+
+##########
+# Adaptive_cv + random search
+##########
+start <- Sys.time()
+trainControl <- trainControl(method = 'adaptive_cv',
+                             number = 5,
+                             repeats = 3,
+                             adaptive = list(min = 5, alpha = 0.05, method = "gls", complete = TRUE),
+                             verboseIter = TRUE,
+                             search = 'random',
+                             allowParallel = TRUE)
+
+# 1) train the AdaBoost model on the training data to do hyperparameter tuning
+set.seed(1)
+ada.tune.rate <- train(x = train_X,
+                       y = train_y,
+                       method = 'ada',
+                       trControl = trainControl,
+                       metric = 'RMSE',
+                       tuneLength = 25,
+                       verbose = TRUE
+)
+
+#close parallel
+stopCluster(cluster)
+
+# save model
+save(ada.tune.rate, file = "models/ada_model1_train.Rdata")
+
+# 2) We make predictions on the validation set, which results in an RMSE 
+ada_pred_val <- predict(ada.tune.rate, newdata = val_X)
+sqrt(mean((ada_pred_val - val_y)^2))
+stop <- Sys.time()
+stop - start
 
 ##############################################################
 # 5. Retrain the best performing model(s) of the decision trees 
@@ -701,6 +891,34 @@ sqrt(mean((XGB_pred_val - val_y)^2))
 #str(cv_boosting1_df)
 # save submission file
 #write.csv(cv_boosting1_df, file = "./data/sample_submission_boosting.csv", row.names = F)
+
+
+# Train the model X on all the data (train + val) 
+load(file = "models/xgb_model7_train.Rdata")
+xgb.tune.rate$bestTune
+xgb.rate.all <- xgboost(xgb.DMatrix(label = train_and_val_y, data = as.matrix(train_and_val_X)),
+                        nrounds = xgb.tune.rate$bestTune$nrounds,
+                        max_depth = xgb.tune.rate$bestTune$max_depth,
+                        eta = xgb.tune.rate$bestTune$eta,
+                        gamma = xgb.tune.rate$bestTune$gamma,
+                        colsample_bytree = xgb.tune.rate$bestTune$colsample_bytree,
+                        min_child_weight = xgb.tune.rate$bestTune$min_child_weight,
+                        subsample = xgb.tune.rate$bestTune$subsample
+)
+#save model
+save(xgb.rate.all, file="models/xgb_train_and_val.RData")
+
+# make predictions, bv:
+# make prediction on the test set and save
+xgb_pred_test <- predict(xgb.rate.all, newdata = xgb.DMatrix(as.matrix(test_X[, -1])))
+
+
+xgb_df <- data.frame(id = as.integer(test_X$id),
+                     average_daily_rate= xgb_pred_test)
+colnames(xgb_df)[2] <- 'average_daily_rate'
+str(xgb_df)
+# save submission file
+write.csv(xgb_df, file = "./data/sample_submission_xgb.csv", row.names = F)
 
 
 
@@ -730,7 +948,7 @@ set.seed(1)
 svm.rate.all = svm(average_daily_rate ~ ., data = train_and_val, scale = FALSE)
 
 # Make predictions on the test set
-svm_pred_test <- predict(svm.rate.all, newdata = val_X)
+svm_pred_test <- predict(svm.rate.all, newdata = test_X)
 
 SVM_reg_pred_df <- data.frame(id = as.integer(test_X$id),
                           average_daily_rate= svm_pred_test)
