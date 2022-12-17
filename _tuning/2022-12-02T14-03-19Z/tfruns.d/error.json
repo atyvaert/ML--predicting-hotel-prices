@@ -1,0 +1,4 @@
+{
+  "message": "invalid multibyte character in parser at line 24",
+  "traceback": "tuning_run(\"/Users/Artur/ml22-team10/nn_models/layer1_model.Rdata\", \n    runs_dir = \"_tuning\", flags = par)"
+}

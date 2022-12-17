@@ -1,0 +1,24 @@
+
+> # In essence, hypertuning is done through flags. Anywhere in your neural network, 
+> # you can replace a parameter with a flag
+> FLAGS <- flags(
++   .... [TRUNCATED] 
+
+> ##############
+> # wide model with 1 layer
+> #############
+> x_train <- model.matrix(average_daily_rate ~ ., data = train)[, -1]
+
+> y_train <- train$average_daily_rate
+
+> x_val <- model.matrix(average_daily_rate ~ ., data = val)[, -1]
+
+> y_val <- val$average_daily_rate
+
+> # build the neural network
+> one.layer.model <- function() {
++   model <- keras_model_sequential() 
++   model %>%
++     layer_dense(units = FLAGS$ne .... [TRUNCATED] 
+
+> layer1_model <- build_model()

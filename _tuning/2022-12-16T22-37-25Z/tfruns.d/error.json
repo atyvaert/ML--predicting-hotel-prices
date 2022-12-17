@@ -1,0 +1,4 @@
+{
+  "message": "argument is missing, with no default",
+  "traceback": ["flags(flag_numeric(\"dropout1\", 0.3), flag_integer(\"neurons1\", \n    128), flag_integer(\"neurons2\", 128), flag_numeric(\"lr\", 0.001), \n    flag_numeric(\"maxnorm1\", 3), )", "eval(ei, envir)", "eval(ei, envir)", "withVisible(eval(ei, envir))", "tuning_run(\"/Users/Artur/layer2_model.R\", sample = 0.5, runs_dir = \"_tuning\", \n    flags = par)"]
+}

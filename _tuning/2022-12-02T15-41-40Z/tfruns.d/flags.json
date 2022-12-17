@@ -1,0 +1,6 @@
+{
+  "dropout1": 0.5,
+  "neurons1": 64,
+  "neurons2": 256,
+  "lr": 1e-05
+}

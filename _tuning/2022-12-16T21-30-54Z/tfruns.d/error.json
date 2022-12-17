@@ -1,0 +1,4 @@
+{
+  "message": "argument \"form\" is missing, with no default",
+  "traceback": ["as.formula(form)", "build_model()", "eval(ei, envir)", "eval(ei, envir)", "withVisible(eval(ei, envir))", "tuning_run(\"/Users/Artur/layer1_model.R\", runs_dir = \"_tuning\", \n    flags = par)"]
+}
