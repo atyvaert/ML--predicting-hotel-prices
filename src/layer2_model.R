@@ -34,7 +34,8 @@ layer2_model <- two.layer.model()
 layer2_model %>% summary()
 
 
-#early_stop <- callback_early_stopping(monitor = "val_loss", patience = 4)
+# define early stop monitor
+early_stop <- callback_early_stopping(monitor = "val_loss", patience = 20)
 
 # define the number of epochs
 epochs <- 300
@@ -44,7 +45,8 @@ epochs <- 300
 history <- layer2_model %>%
   fit(x_train, y_train, epochs = epochs, batch_size = 128,
       validation_split = 0.2,
-      verbose = 1)
+      verbose = 1,
+      callbacks = list(early_stop))
 
 
 
