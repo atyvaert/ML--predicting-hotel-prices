@@ -22,7 +22,7 @@ if(!require('caret')) install.packages('caret')
 if(!require('rlang')) install.packages('rlang')
 library(caret)
 library(dplyr)
-
+library(chron)
 
 
 # import data
@@ -108,11 +108,11 @@ cats <- append(cats, categories(train_X_encode['booking_company'], p = 2))
 
 # apply on train set (exclude reference categories)
 dummies_train <- dummy(train_X_encode[, c('booking_distribution_channel', 
-                                         'canceled', 'country', 'customer_type', 'deposit',
-                                         'hotel_type', 'is_repeated_guest', 'last_status',
-                                         'market_segment', 'meal_booked', 'reserved_room_type',
-                                         'month_arrival', 'arrival_date_weekday', 'year_arrival',
-                                         'booking_agent', 'booking_company')], object = cats)
+                                          'canceled', 'country', 'customer_type', 'deposit',
+                                          'hotel_type', 'is_repeated_guest', 'last_status',
+                                          'market_segment', 'meal_booked', 'reserved_room_type',
+                                          'month_arrival', 'arrival_date_weekday', 'year_arrival',
+                                          'booking_agent', 'booking_company')], object = cats)
 
 # exclude the reference category: take the first one of the variable you added
 names(dummies_train)
@@ -231,6 +231,39 @@ time_between_arrival_cancel[time_between_arrival_cancel<0] <- 0
 test_X_encode <- cbind(test_X_encode, time_between_arrival_checkout, time_between_arrival_cancel)
 
 
+#############################
+# EXTRA indicator nr weekdays and weekend days
+#############################
+
+
+
+features_week_weekend_days <- function(df) {
+  # Initiate columns with zero (for the case that nr_nights is 0)
+  df$nr_weekdays <- 0
+  df$nr_weekenddays <- 0
+  
+  for(row in 1:nrow(df)){
+    if(df$nr_nights[row]!=0){
+      weekdays <- 0
+      weekenddays <- 0
+      for(night in 1:round(df$nr_nights[row])){
+        if(is.weekend(as.Date(df$posix_arrival[row])+night)){
+          weekenddays <- weekenddays + 1
+        }
+        else {
+          weekdays <- weekdays + 1
+        }
+      }
+      df$nr_weekdays[row] <- weekdays
+      df$nr_weekenddays[row] <- weekenddays
+    }
+  }
+  return(df)
+}
+
+train_X_encode <- features_week_weekend_days(train_X_encode)
+val_X_encode <- features_week_weekend_days(val_X_encode)
+test_X_encode <- features_week_weekend_days(test_X_encode)
 
 ##############################################################
 # 2.1 Numerical data
@@ -268,7 +301,7 @@ hist(train_X_scale$time_between_arrival_checkout)
 # normalization:
 norm.cols <- c('nr_adults', 'nr_nights', 'lead_time', 'days_in_waiting_list','previous_bookings_not_canceled',
                'previous_cancellations', 'nr_booking_changes', 'special_requests', 'time_between_arrival_checkout',
-               'time_between_arrival_cancel', 'car_parking_spaces')
+               'time_between_arrival_cancel', 'car_parking_spaces', 'nr_weekdays', 'nr_weekenddays')
 
 process <- preProcess(train_X_scale[, norm.cols], method=c("range")) # transformation from training set
 
@@ -310,17 +343,17 @@ val_X_final <- val_X_scale
 test_X_final <- test_X_scale
 
 train_X_final <- subset(train_X_scale, select = -c(id, arrival_date, last_status_date,
-                                          nr_previous_bookings, posix_arrival,
-                                          day_of_month_arrival, posix_last_status, year_arrival,
-                                          nr_booking_changes, time_between_arrival_checkout))
+                                                   nr_previous_bookings, posix_arrival,
+                                                   day_of_month_arrival, posix_last_status, year_arrival,
+                                                   nr_booking_changes, time_between_arrival_checkout, nr_nights))
 val_X_final <- subset(val_X_scale, select = -c(id, arrival_date, last_status_date,
                                                nr_previous_bookings, posix_arrival,
                                                day_of_month_arrival, posix_last_status, year_arrival,
-                                               nr_booking_changes, time_between_arrival_checkout))
+                                               nr_booking_changes, time_between_arrival_checkout, nr_nights))
 test_X_final <- subset(test_X_scale, select = -c(arrival_date, last_status_date,
                                                  nr_previous_bookings, posix_arrival,
                                                  day_of_month_arrival, posix_last_status, year_arrival,
-                                                 nr_booking_changes, time_between_arrival_checkout))
+                                                 nr_booking_changes, time_between_arrival_checkout, nr_nights))
 
 
 ##############################################################
@@ -342,4 +375,3 @@ test_data_after_FE <- test_X_final
 write.csv(training_data_after_FE,"./data/gold_data/train.csv", row.names = FALSE)
 write.csv(val_data_after_FE,"./data/gold_data/val.csv", row.names = FALSE)
 write.csv(test_data_after_FE,"./data/gold_data/test.csv", row.names = FALSE)
-
