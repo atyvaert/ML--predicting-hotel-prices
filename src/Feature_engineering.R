@@ -88,6 +88,16 @@ train_X_encode$year_arrival <- as.factor(train_X_encode$year_arrival)
 val_X_encode$year_arrival <- as.factor(val_X_encode$year_arrival)
 test_X_encode$year_arrival <- as.factor(test_X_encode$year_arrival)
 
+
+
+# Feature which indicates what part of the month the customer arrives
+# We split the months in weeks (1-7, 8-14, 15-21, 21-28, 29-...)
+
+train_X_encode$week_of_month <- as.factor(floor(train_X_encode$day_of_month_arrival/7)+1)
+val_X_encode$week_of_month <- as.factor(floor(val_X_encode$day_of_month_arrival/7)+1)
+test_X_encode$week_of_month <- as.factor(floor(test_X_encode$day_of_month_arrival/7)+1)
+
+
 # get categories and dummies
 # we only select the top 10 levels with highest frequency so our model does not explode
 # For all cases, this includes most of the data
@@ -95,7 +105,7 @@ cats <- categories(train_X_encode[, c('booking_distribution_channel',
                                       'canceled', 'customer_type', 'deposit',
                                       'hotel_type', 'is_repeated_guest', 'last_status',
                                       'market_segment', 'meal_booked', 'reserved_room_type',
-                                      'arrival_date_weekday', 'year_arrival')], p = 10)
+                                      'arrival_date_weekday', 'year_arrival', 'week_of_month')], p = 10)
 
 
 # for some variables with high cardinality, we use the specified amount of category levels
@@ -112,7 +122,7 @@ dummies_train <- dummy(train_X_encode[, c('booking_distribution_channel',
                                           'hotel_type', 'is_repeated_guest', 'last_status',
                                           'market_segment', 'meal_booked', 'reserved_room_type',
                                           'month_arrival', 'arrival_date_weekday', 'year_arrival',
-                                          'booking_agent', 'booking_company')], object = cats)
+                                          'booking_agent', 'booking_company', 'week_of_month')], object = cats)
 
 # exclude the reference category: take the first one of the variable you added
 names(dummies_train)
@@ -122,39 +132,42 @@ dummies_train <- subset(dummies_train,
                                     deposit_nodeposit, hotel_type_City.Hotel, is_repeated_guest_no,
                                     last_status_Check.Out, market_segment_Online.travel.agent, year_arrival_2015,
                                     meal_booked_meal.package.NOT.booked, reserved_room_type_A, month_arrival_January,
-                                    arrival_date_weekday_Mon, booking_company_40, booking_agent_240, last_status_Canceled))
+                                    arrival_date_weekday_Mon, booking_company_40, booking_agent_240,
+                                    last_status_Canceled, week_of_month_5))
 
 # apply on val set (exclude reference categories)
 # excluded no.canceled so it becomes one when it was canceled
-dummies_val <- dummy(val_X_encode[, c('booking_distribution_channel',
+dummies_val <- dummy(val_X_encode[, c('booking_distribution_channel', 
                                       'canceled', 'country', 'customer_type', 'deposit',
                                       'hotel_type', 'is_repeated_guest', 'last_status',
                                       'market_segment', 'meal_booked', 'reserved_room_type',
                                       'month_arrival', 'arrival_date_weekday', 'year_arrival',
-                                      'booking_agent', 'booking_company')], object = cats)
+                                      'booking_agent', 'booking_company', 'week_of_month')], object = cats)
 
 dummies_val <- subset(dummies_val, select = -c(booking_distribution_channel_Direct,
                                                country_China, canceled_no.cancellation, customer_type_Transient,
                                                deposit_nodeposit, hotel_type_City.Hotel, is_repeated_guest_no,
                                                last_status_Check.Out, market_segment_Online.travel.agent, year_arrival_2015,
                                                meal_booked_meal.package.NOT.booked, reserved_room_type_A, month_arrival_January,
-                                               arrival_date_weekday_Mon, booking_company_40, booking_agent_240, last_status_Canceled))
+                                               arrival_date_weekday_Mon, booking_company_40, booking_agent_240,
+                                               last_status_Canceled, week_of_month_5))
 
 # apply on test set (exclude reference categories)
 # excluded no.canceled so it becomes one when it was canceled
-dummies_test <- dummy(test_X_encode[, c('booking_distribution_channel',
+dummies_test <- dummy(test_X_encode[, c('booking_distribution_channel', 
                                         'canceled', 'country', 'customer_type', 'deposit',
                                         'hotel_type', 'is_repeated_guest', 'last_status',
                                         'market_segment', 'meal_booked', 'reserved_room_type',
                                         'month_arrival', 'arrival_date_weekday', 'year_arrival',
-                                        'booking_agent', 'booking_company')], object = cats)
+                                        'booking_agent', 'booking_company', 'week_of_month')], object = cats)
 
 dummies_test <- subset(dummies_test, select = -c(booking_distribution_channel_Direct,
                                                  country_China, canceled_no.cancellation, customer_type_Transient,
                                                  deposit_nodeposit, hotel_type_City.Hotel, is_repeated_guest_no,
                                                  last_status_Check.Out, market_segment_Online.travel.agent, year_arrival_2015,
                                                  meal_booked_meal.package.NOT.booked, reserved_room_type_A, month_arrival_January,
-                                                 arrival_date_weekday_Mon, booking_company_40, booking_agent_240, last_status_Canceled))
+                                                 arrival_date_weekday_Mon, booking_company_40, booking_agent_240,
+                                                 last_status_Canceled, week_of_month_5))
 
 # we remove the original predictors and merge them with the other predictors
 ## merge with overall training set
@@ -163,7 +176,7 @@ train_X_encode <- subset(train_X_encode, select = -c(booking_distribution_channe
                                                      hotel_type, is_repeated_guest, last_status,
                                                      market_segment, meal_booked, reserved_room_type,
                                                      month_arrival, arrival_date_weekday, booking_agent,
-                                                     booking_company))
+                                                     booking_company, week_of_month))
 train_X_encode <- cbind(train_X_encode, dummies_train)
 
 ## merge with overall val set
@@ -172,7 +185,7 @@ val_X_encode <- subset(val_X_encode, select = -c(booking_distribution_channel,
                                                  hotel_type, is_repeated_guest, last_status,
                                                  market_segment, meal_booked, reserved_room_type,
                                                  month_arrival, arrival_date_weekday, booking_agent,
-                                                 booking_company))
+                                                 booking_company, week_of_month))
 val_X_encode <- cbind(val_X_encode, dummies_val)
 
 ## merge with overall test set
@@ -181,7 +194,7 @@ test_X_encode <- subset(test_X_encode, select = -c(booking_distribution_channel,
                                                    hotel_type, is_repeated_guest, last_status,
                                                    market_segment, meal_booked, reserved_room_type,
                                                    month_arrival, arrival_date_weekday, booking_agent,
-                                                   booking_company))
+                                                   booking_company, week_of_month))
 test_X_encode <- cbind(test_X_encode, dummies_test)
 
 
@@ -372,6 +385,6 @@ test_data_after_FE <- test_X_final
 # str(training_data_after_FE)
 
 # Write
-write.csv(training_data_after_FE,"./data/gold_data/train.csv", row.names = FALSE)
-write.csv(val_data_after_FE,"./data/gold_data/val.csv", row.names = FALSE)
+write.csv(training_data_after_FE,"./data/gold_data/train_try2.csv", row.names = FALSE)
+write.csv(val_data_after_FE,"./data/gold_data/val_try2.csv", row.names = FALSE)
 write.csv(test_data_after_FE,"./data/gold_data/test.csv", row.names = FALSE)
