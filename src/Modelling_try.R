@@ -22,9 +22,9 @@ library(lightgbm)
 
 # import data
 rm(list = ls())
-train <- read.csv('./data/gold_data_try/train.csv')
-val <- read.csv('./data/gold_data_try/val.csv')
-test_X <- read.csv('./data/gold_data_try/test.csv')
+train <- read.csv('./data/gold_data/train_try.csv')
+val <- read.csv('./data/gold_data/val_try.csv')
+#test_X <- read.csv('./data/gold_data_try/test.csv')
 
 # separate dependent and independent variables for training and validation set
 train_X <- subset(train, select = -c(average_daily_rate))
@@ -43,7 +43,6 @@ train_and_val_y <- train_and_val$average_daily_rate
 str(train)
 str(val)
 str(test_X)
-
 
 
 ##############################################################
@@ -122,7 +121,7 @@ str(train)
 #### DIT IS VAN VOOR DE DATA UPDATE DUS NU 102 EXPL VAR!!!
 
 # perform forward stepwise selection and look at the results
-regfit.full_for <- regsubsets(train$average_daily_rate ~ ., data = train, nvmax = 95, really.big = T, method = "forward")
+regfit.full_for <- regsubsets(train$average_daily_rate ~ ., data = train, nvmax = ncol(train_X), really.big = T, method = "forward")
 regF.summary <- summary(regfit.full_for)
 #regF.summary
 #regF.summary$rsq
@@ -452,7 +451,7 @@ write.csv(poly_pred_df, file = "./data/sample_submission_PolynomialR.csv", row.n
 ##############################################################
 # 1.1 Fit a standard regression tree
 ##############################################################
-# 1) We train the model on the training data, we see that the MSE is 1791 (RMSE = 42.3)
+# 1) We train the model on the training data, we see that the MSE is 36.44
 # Besides, we see that have 13 terminal nodes
 tree.rate <- tree(average_daily_rate ~ ., train)
 summary(tree.rate)
@@ -474,7 +473,7 @@ cv.rate <- cv.tree(tree.rate)
 # plot the tree
 plot(cv.rate$size, cv.rate$dev, type = 'b')
 # We see that the most comlex tree is chosen by cross validation
-# We could prune the tree to make it less complex, but we do not think this is usefull here
+# We could prune the tree to make it less complex, but we do not think this is useful here
 # As the CV chooses 13 terminal nodes, this regression has the same results as 3.1
 
 

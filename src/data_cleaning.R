@@ -10,7 +10,6 @@ library(stringr)
 library(miscTools)
 
 # import the data
-setwd(dir = '/Users/Artur/ml22-team10')
 train <- read_csv('./data/bronze_data/train.csv')
 test_X <- read_csv('./data/bronze_data/test.csv')
 
@@ -151,6 +150,8 @@ test_X_impute[, cat.cols] <- mapply(test_X_impute[, cat.cols],
 # impute 'n/a' or Na values with 0 for nr_babies and nr_booking_changes as 'n/a' suggests
 # a value of zero. Next we delete the flag column of nr_booking_changes as we do not interpret the 
 # Na values of this column as real missing values due to imputing them with zero.
+# Besides, for variables like booking agent and company, NULL is presented as one of the categories
+# This should not be considered a NULL value, but rather as not applicable
 # for 'n/a':
 train_X_impute$nr_babies <- as.numeric(str_replace_all(train_X$nr_babies, "n/a", "0"))
 val_X_impute$nr_babies <- as.numeric(str_replace_all(val_X_impute$nr_babies, "n/a", "0"))
@@ -161,10 +162,21 @@ train_X_impute$nr_booking_changes[is.na(train_X_impute$nr_booking_changes)] <- 0
 val_X_impute$nr_booking_changes[is.na(val_X_impute$nr_booking_changes)] <- 0
 test_X_impute$nr_booking_changes[is.na(test_X_impute$nr_booking_changes)] <- 0
 
-# drop the flag variables of nr_babies and nr_booking_changes
+# for NULL values
+train_X_impute$booking_agent <- str_replace_all(train_X$booking_agent, 'NULL', "n/a")
+val_X_impute$booking_agent <- str_replace_all(val_X_impute$booking_agent, 'NULL', "n/a")
+test_X_impute$booking_agent <- str_replace_all(test_X_impute$booking_agent, 'NULL', "n/a")
+
+train_X_impute$booking_company <- str_replace_all(train_X$booking_company, 'NULL', "n/a")
+val_X_impute$booking_company <- str_replace_all(val_X_impute$booking_company, 'NULL', "n/a")
+test_X_impute$booking_company <- str_replace_all(test_X_impute$booking_company, 'NULL', "n/a")
+
+# drop the flag variable and nr_booking_changes
 train_X_impute = subset(train_X_impute, select = -c(nr_booking_changes_flag))
 val_X_impute = subset(val_X_impute, select = -c(nr_booking_changes_flag))
 test_X_impute = subset(test_X_impute, select = -c(nr_booking_changes_flag))
+
+
 
 # inspect
 colMeans(is.na(train_X_impute))

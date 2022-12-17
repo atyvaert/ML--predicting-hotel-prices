@@ -300,7 +300,7 @@ cor(train_X_encode$nr_previous_bookings, train_X_encode$previous_cancellations)
 # drop number of previous bookings as this contains the information of the columns
 # previous_cancellations and previous_bookings_not_canceled and this has high correlation
 # This happens in the next section
-
+cor(train_X_scale[,norm.cols])
 ##############################################################
 # 2.5 Column deleting
 ##############################################################

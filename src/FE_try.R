@@ -83,10 +83,21 @@ train_X_encode$arrival_date_weekday <- wday(train_X_encode$posix_arrival, label 
 val_X_encode$arrival_date_weekday <- wday(val_X_encode$posix_arrival, label = T)
 test_X_encode$arrival_date_weekday <- wday(test_X_encode$posix_arrival, label = T)
 
+# Make some time variable categorical
 # Make year_arrival categorical
 train_X_encode$year_arrival <- as.factor(train_X_encode$year_arrival)
 val_X_encode$year_arrival <- as.factor(val_X_encode$year_arrival)
 test_X_encode$year_arrival <- as.factor(test_X_encode$year_arrival)
+
+# make day of the month categorical
+train_X_encode$day_of_month_arrival <- as.factor(train_X_encode$day_of_month_arrival)
+val_X_encode$day_of_month_arrival <- as.factor(val_X_encode$day_of_month_arrival)
+test_X_encode$day_of_month_arrival <- as.factor(test_X_encode$day_of_month_arrival)
+
+# do the same for week number
+train_X_encode$week_number <- as.factor(train_X_encode$week_number)
+val_X_encode$week_number <- as.factor(val_X_encode$week_number)
+test_X_encode$week_number <- as.factor(test_X_encode$week_number)
 
 # get categories and dummies
 # we only select the top 10 levels with highest frequency so our model does not explode
@@ -99,8 +110,9 @@ cats <- categories(train_X_encode[, c('booking_distribution_channel',
 
 
 # for some variables with high cardinality, we use the specified amount of category levels
-# f.e.: month_arrival seperate because we want all 12 categories here
+# f.e.: month_arrival separate because we want all 12 categories here
 cats <- append(cats, categories(train_X_encode['month_arrival']))
+cats <- append(cats, categories(train_X_encode['day_of_month_arrival']))
 cats <- append(cats, categories(train_X_encode['country'], p = 15))
 cats <- append(cats, categories(train_X_encode['booking_agent'], p = 8)) #7 large agents (>1000) + null
 cats <- append(cats, categories(train_X_encode['booking_company'], p = 2))
@@ -112,12 +124,12 @@ dummies_train <- dummy(train_X_encode[, c('booking_distribution_channel',
                                           'hotel_type', 'is_repeated_guest', 'last_status',
                                           'market_segment', 'meal_booked', 'reserved_room_type',
                                           'month_arrival', 'arrival_date_weekday', 'year_arrival',
-                                          'booking_agent', 'booking_company')], object = cats)
+                                          'booking_agent', 'booking_company', 'day_of_month_arrival')], object = cats)
 
 # exclude the reference category: take the first one of the variable you added
 names(dummies_train)
 dummies_train <- subset(dummies_train, 
-                        select = -c(booking_distribution_channel_Direct,
+                        select = -c(booking_distribution_channel_Direct, day_of_month_arrival_1,
                                     country_China, canceled_no.cancellation, customer_type_Transient,
                                     deposit_nodeposit, hotel_type_City.Hotel, is_repeated_guest_no,
                                     last_status_Check.Out, market_segment_Online.travel.agent, year_arrival_2015,
@@ -126,14 +138,14 @@ dummies_train <- subset(dummies_train,
 
 # apply on val set (exclude reference categories)
 # excluded no.canceled so it becomes one when it was canceled
-dummies_val <- dummy(val_X_encode[, c('booking_distribution_channel', 
+dummies_val <- dummy(val_X_encode[, c('booking_distribution_channel',
                                       'canceled', 'country', 'customer_type', 'deposit',
                                       'hotel_type', 'is_repeated_guest', 'last_status',
                                       'market_segment', 'meal_booked', 'reserved_room_type',
                                       'month_arrival', 'arrival_date_weekday', 'year_arrival',
-                                      'booking_agent', 'booking_company')], object = cats)
+                                      'booking_agent', 'booking_company', 'day_of_month_arrival')], object = cats)
 
-dummies_val <- subset(dummies_val, select = -c(booking_distribution_channel_Direct,
+dummies_val <- subset(dummies_val, select = -c(booking_distribution_channel_Direct, day_of_month_arrival_1,
                                                country_China, canceled_no.cancellation, customer_type_Transient,
                                                deposit_nodeposit, hotel_type_City.Hotel, is_repeated_guest_no,
                                                last_status_Check.Out, market_segment_Online.travel.agent, year_arrival_2015,
@@ -142,14 +154,14 @@ dummies_val <- subset(dummies_val, select = -c(booking_distribution_channel_Dire
 
 # apply on test set (exclude reference categories)
 # excluded no.canceled so it becomes one when it was canceled
-dummies_test <- dummy(test_X_encode[, c('booking_distribution_channel', 
+dummies_test <- dummy(test_X_encode[, c('booking_distribution_channel',
                                         'canceled', 'country', 'customer_type', 'deposit',
                                         'hotel_type', 'is_repeated_guest', 'last_status',
                                         'market_segment', 'meal_booked', 'reserved_room_type',
                                         'month_arrival', 'arrival_date_weekday', 'year_arrival',
-                                        'booking_agent', 'booking_company')], object = cats)
+                                        'booking_agent', 'booking_company', 'day_of_month_arrival')], object = cats)
 
-dummies_test <- subset(dummies_test, select = -c(booking_distribution_channel_Direct,
+dummies_test <- subset(dummies_test, select = -c(booking_distribution_channel_Direct, day_of_month_arrival_1,
                                                  country_China, canceled_no.cancellation, customer_type_Transient,
                                                  deposit_nodeposit, hotel_type_City.Hotel, is_repeated_guest_no,
                                                  last_status_Check.Out, market_segment_Online.travel.agent, year_arrival_2015,
@@ -163,7 +175,7 @@ train_X_encode <- subset(train_X_encode, select = -c(booking_distribution_channe
                                                      hotel_type, is_repeated_guest, last_status,
                                                      market_segment, meal_booked, reserved_room_type,
                                                      month_arrival, arrival_date_weekday, booking_agent,
-                                                     booking_company))
+                                                     booking_company, day_of_month_arrival))
 train_X_encode <- cbind(train_X_encode, dummies_train)
 
 ## merge with overall val set
@@ -172,7 +184,7 @@ val_X_encode <- subset(val_X_encode, select = -c(booking_distribution_channel,
                                                  hotel_type, is_repeated_guest, last_status,
                                                  market_segment, meal_booked, reserved_room_type,
                                                  month_arrival, arrival_date_weekday, booking_agent,
-                                                 booking_company))
+                                                 booking_company, day_of_month_arrival))
 val_X_encode <- cbind(val_X_encode, dummies_val)
 
 ## merge with overall test set
@@ -181,13 +193,9 @@ test_X_encode <- subset(test_X_encode, select = -c(booking_distribution_channel,
                                                    hotel_type, is_repeated_guest, last_status,
                                                    market_segment, meal_booked, reserved_room_type,
                                                    month_arrival, arrival_date_weekday, booking_agent,
-                                                   booking_company))
+                                                   booking_company, day_of_month_arrival))
 test_X_encode <- cbind(test_X_encode, dummies_test)
 
-
-##############################################################
-# 1.3 Special data: create a indicator variable
-##############################################################
 
 
 ##############################################################
@@ -311,27 +319,16 @@ test_X_final <- test_X_scale
 
 train_X_final <- subset(train_X_scale, select = -c(id, arrival_date, last_status_date,
                                                    nr_previous_bookings, posix_arrival,
-                                                   day_of_month_arrival, posix_last_status, year_arrival,
+                                                   posix_last_status, year_arrival,
                                                    nr_booking_changes, time_between_arrival_checkout))
 val_X_final <- subset(val_X_scale, select = -c(id, arrival_date, last_status_date,
                                                nr_previous_bookings, posix_arrival,
-                                               day_of_month_arrival, posix_last_status, year_arrival,
+                                               posix_last_status, year_arrival,
                                                nr_booking_changes, time_between_arrival_checkout))
 test_X_final <- subset(test_X_scale, select = -c(arrival_date, last_status_date,
                                                  nr_previous_bookings, posix_arrival,
-                                                 day_of_month_arrival, posix_last_status, year_arrival,
+                                                 posix_last_status, year_arrival,
                                                  nr_booking_changes, time_between_arrival_checkout))
-
-
-
-##############################################################
-##############################################################
-# Create indicator high demand period
-##############################################################
-##############################################################
-
-
-
 
 
 ##############################################################
@@ -352,3 +349,4 @@ test_data_after_FE <- test_X_final
 # Write
 write.csv(training_data_after_FE,"./data/gold_data/train_try.csv", row.names = FALSE)
 write.csv(val_data_after_FE,"./data/gold_data/val_try.csv", row.names = FALSE)
+
