@@ -1,0 +1,4 @@
+{
+  "message": "could not find function \"build_model\"",
+  "traceback": ["eval(ei, envir)", "eval(ei, envir)", "withVisible(eval(ei, envir))", "tuning_run(\"/Users/Artur/layer1_model.R\", runs_dir = \"_tuning\", \n    flags = par)"]
+}

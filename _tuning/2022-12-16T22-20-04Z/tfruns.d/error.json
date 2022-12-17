@@ -1,0 +1,4 @@
+{
+  "message": "second argument must be a list",
+  "traceback": ["stop(\"second argument must be a list\")", "do.call(reticulate::tuple, args$validation_data)", "resolve_validation_data(validation_data)", "append(args, resolve_validation_data(validation_data))", "fit.keras.engine.training.Model(., x_train, y_train, epochs = epochs, \n    batch_size = 128, validation_data = 0.2, verbose = 1)", "fit(., x_train, y_train, epochs = epochs, batch_size = 128, validation_data = 0.2, \n    verbose = 1)", "layer1_model %>% fit(x_train, y_train, epochs = epochs, batch_size = 128, \n    validation_data = 0.2, verbose = 1)", "eval(ei, envir)", "eval(ei, envir)", "withVisible(eval(ei, envir))", "tuning_run(\"/Users/Artur/layer1_model.R\", runs_dir = \"_tuning\", \n    flags = par, sample = 0.4)"]
+}
