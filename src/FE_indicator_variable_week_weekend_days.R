@@ -345,15 +345,15 @@ test_X_final <- test_X_scale
 train_X_final <- subset(train_X_scale, select = -c(id, arrival_date, last_status_date,
                                                    nr_previous_bookings, posix_arrival,
                                                    day_of_month_arrival, posix_last_status, year_arrival,
-                                                   nr_booking_changes, time_between_arrival_checkout))
+                                                   nr_booking_changes, time_between_arrival_checkout, nr_nights))
 val_X_final <- subset(val_X_scale, select = -c(id, arrival_date, last_status_date,
                                                nr_previous_bookings, posix_arrival,
                                                day_of_month_arrival, posix_last_status, year_arrival,
-                                               nr_booking_changes, time_between_arrival_checkout))
+                                               nr_booking_changes, time_between_arrival_checkout, nr_nights))
 test_X_final <- subset(test_X_scale, select = -c(arrival_date, last_status_date,
                                                  nr_previous_bookings, posix_arrival,
                                                  day_of_month_arrival, posix_last_status, year_arrival,
-                                                 nr_booking_changes, time_between_arrival_checkout))
+                                                 nr_booking_changes, time_between_arrival_checkout, nr_nights))
 
 
 
@@ -383,5 +383,6 @@ test_data_after_FE <- test_X_final
 # str(training_data_after_FE)
 
 # Write
-write.csv(training_data_after_FE,"./data/gold_data/train_try.csv", row.names = FALSE)
-write.csv(val_data_after_FE,"./data/gold_data/val_try.csv", row.names = FALSE)
+write.csv(training_data_after_FE,"./data/gold_data/train_try2.csv", row.names = FALSE)
+write.csv(val_data_after_FE,"./data/gold_data/val_try2.csv", row.names = FALSE)
+write.csv(test_data_after_FE,"./data/gold_data/test.csv", row.names = FALSE)

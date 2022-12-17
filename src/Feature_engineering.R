@@ -99,7 +99,7 @@ cats <- categories(train_X_encode[, c('booking_distribution_channel',
 
 
 # for some variables with high cardinality, we use the specified amount of category levels
-# f.e.: month_arrival seperate because we want all 12 categories here
+# f.e.: month_arrival separate because we want all 12 categories here
 cats <- append(cats, categories(train_X_encode['month_arrival']))
 cats <- append(cats, categories(train_X_encode['country'], p = 15))
 cats <- append(cats, categories(train_X_encode['booking_agent'], p = 8)) #7 large agents (>1000) + null
@@ -126,7 +126,7 @@ dummies_train <- subset(dummies_train,
 
 # apply on val set (exclude reference categories)
 # excluded no.canceled so it becomes one when it was canceled
-dummies_val <- dummy(val_X_encode[, c('booking_distribution_channel', 
+dummies_val <- dummy(val_X_encode[, c('booking_distribution_channel',
                                       'canceled', 'country', 'customer_type', 'deposit',
                                       'hotel_type', 'is_repeated_guest', 'last_status',
                                       'market_segment', 'meal_booked', 'reserved_room_type',
@@ -142,7 +142,7 @@ dummies_val <- subset(dummies_val, select = -c(booking_distribution_channel_Dire
 
 # apply on test set (exclude reference categories)
 # excluded no.canceled so it becomes one when it was canceled
-dummies_test <- dummy(test_X_encode[, c('booking_distribution_channel', 
+dummies_test <- dummy(test_X_encode[, c('booking_distribution_channel',
                                         'canceled', 'country', 'customer_type', 'deposit',
                                         'hotel_type', 'is_repeated_guest', 'last_status',
                                         'market_segment', 'meal_booked', 'reserved_room_type',
@@ -333,7 +333,7 @@ cor(train_X_encode$nr_previous_bookings, train_X_encode$previous_cancellations)
 # drop number of previous bookings as this contains the information of the columns
 # previous_cancellations and previous_bookings_not_canceled and this has high correlation
 # This happens in the next section
-cor(train_X_scale[,norm.cols])
+
 ##############################################################
 # 2.5 Column deleting
 ##############################################################
