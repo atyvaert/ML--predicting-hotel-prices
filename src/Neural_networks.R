@@ -149,7 +149,7 @@ par <- list(
   lr = c(0.0001,0.001,0.01),
   maxnorm1 = c(1,2, 3, 4)
 )
-runs1 <- tuning_run('/Users/Artur/layer1_model.R', runs_dir = '_tuning', flags = par, sample = 0.4)
+runs1 <- tuning_run('./src/layer1_model.R', runs_dir = '_tuning', flags = par, sample = 0.4)
 
 
 # Finally, I simply list all the runs, by referring to its running directory, where all the information 
@@ -198,7 +198,7 @@ par <- list(
 )
 
 # perform runs
-runs2 <- tuning_run('/Users/Artur/layer2_model.R', sample = 0.5, runs_dir = '_tuning', flags = par)
+runs2 <- tuning_run('./src/layer2_model.R', sample = 0.5, runs_dir = '_tuning', flags = par)
 
 
 # Finally, I simply list all the runs, by referring to its running directory, where all the information 
