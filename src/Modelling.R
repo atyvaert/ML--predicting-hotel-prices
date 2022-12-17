@@ -378,15 +378,14 @@ sqrt(mean((poly_pred_val - val_y)^2))
 ##############################################################
 # First we fit splines for our numerical variables, with different degrees of freedom 
 spline1.rate <- lm(average_daily_rate ~., data = train)
+spline4.rate <- lm(average_daily_rate ~. +  bs(lead_time, df = 4) +  bs(time_between_arrival_cancel, df = 4), data = train)
+spline5.rate <- lm(average_daily_rate ~. +  bs(lead_time, df = 5) +  bs(time_between_arrival_cancel, df = 5), data = train)
 spline6.rate <- lm(average_daily_rate ~. +  bs(lead_time, df = 6) +  bs(time_between_arrival_cancel, df = 6), data = train)
-spline12.rate <- lm(average_daily_rate ~. +  bs(lead_time, df = 12) +  bs(time_between_arrival_cancel, df = 12), data = train)
-spline18.rate <- lm(average_daily_rate ~. +  bs(lead_time, df = 18) +  bs(time_between_arrival_cancel, df = 18), data = train)
 anova(spline1.rate, spline6.rate, spline12.rate, spline18.rate)
-# From the anova table we can see that the spline with 6 df doesn't improve the linear regression
-# But the splines with higher df, don't improve the model with asswell
-# so out of our splines the one with 6df will be the best
-spline.rate <- spline6.rate
-# We make predictions on the validation set, RMSE = 30.78
+# From the anova table we can see that the spline with 5 df imporves the models with 4 df, but the model with 6 df doesn't impove the one with 5df
+# so out of our splines the one with 5df will be the best
+spline.rate <- spline12.rate
+# We make predictions on the validation set, RMSE = 30.637
 spline_pred_val <- predict(spline.rate, newdata = val_X)
 sqrt(mean((spline_pred_val - val_y)^2))
 
@@ -408,16 +407,16 @@ all_variables <- gam_with_All_variables(names(train_X))
 all_variables
 # we create 2 gam models, these are combinations of splines ant polynonial functions of the numerical variables
 # the parameters that are used, are the optimal parameters derived from step 1.1 and 1.2
-gam2 <- as.formula(paste(all_variables, " bs(lead_time, df = 6) + poly(time_between_arrival_cancel, 3)"))
-gam3 <- as.formula(paste(all_variables, " poly(time_between_arrival_cancel, 3) + bs(lead_time, df = 6)"))
+gam2 <- as.formula(paste(all_variables, " bs(lead_time, df = 5) + poly(time_between_arrival_cancel, 3)"))
+gam3 <- as.formula(paste(all_variables, " poly(time_between_arrival_cancel, 3) + bs(lead_time, df = 5)"))
 # we fit a linear regression and the two gam models
 gam1.rate <- lm(average_daily_rate ~., data = train)
 gam2.rate <- gam(gam2, data = train)
 gam3.rate <- gam(gam3 , data = train)
 anova(gam1.rate, gam2.rate, gam3.rate)
 # From the anova table we can see that the second model is significantly better than the linear regression model
-gam.rate <- gam2.rate
-# we make predictions on the validation set RMSE = 30.78
+gam.rate <- gam.rate
+# we make predictions on the validation set RMSE = 30.638
 gam_pred_val <- predict(gam.rate, newdata = val_X)
 sqrt(mean((gam_pred_val - val_y)^2))
 ##############################################################
@@ -427,15 +426,15 @@ sqrt(mean((gam_pred_val - val_y)^2))
 # and make predictions on the test set
 ##############################################################
 # Train the model X on all the data (train + val) 
-# The best performing model is poly 3
-poly3.all <- lm(average_daily_rate ~. +  poly(lead_time, 3) +  poly(time_between_arrival_cancel, 3), data = train_and_val)
+# The best performing model is spline 5
+spline5.all <- lm(average_daily_rate ~. +  bs(lead_time, df = 5) +  bs(time_between_arrival_cancel, df = 5), data = train_and_val)
 # make predictions, bv:
 # make prediction on the test set and save
-poly_pred_test <- predict(poly3.all, newdata = test_X)
+spline_pred_test <- predict(spline5.all, newdata = test_X)
 # save 
-poly_pred_df <- data.frame(id = as.integer(test_X$id),
-                            average_daily_rate= poly_pred_test)
-write.csv(poly_pred_df, file = "./data/sample_submission_PolynomialR.csv", row.names = F)
+spline_pred_df <- data.frame(id = as.integer(test_X$id),
+                            average_daily_rate= spline_pred_test)
+write.csv(spline_pred_df, file = "./data/sample_submission_Spline.csv", row.names = F)
 
 ##############################################################
 ##############################################################
