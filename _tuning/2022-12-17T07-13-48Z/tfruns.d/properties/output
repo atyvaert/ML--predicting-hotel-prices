@@ -20,12 +20,12 @@ Model: "sequential"
 ____________________________________________________________________________________________________
  Layer (type)                                Output Shape                            Param #        
 ====================================================================================================
- dense_1 (Dense)                             (None, 256)                             25088          
- dropout (Dropout)                           (None, 256)                             0              
- dense (Dense)                               (None, 1)                               257            
+ dense_1 (Dense)                             (None, 700)                             68600          
+ dropout (Dropout)                           (None, 700)                             0              
+ dense (Dense)                               (None, 1)                               701            
 ====================================================================================================
-Total params: 25,345
-Trainable params: 25,345
+Total params: 69,301
+Trainable params: 69,301
 Non-trainable params: 0
 ____________________________________________________________________________________________________
 
@@ -36,13 +36,3 @@ ________________________________________________________________________________
 > history <- layer1_model %>%
 +   fit(x_train, y_train, epochs = epochs, batch_size = 128,
 +       validati .... [TRUNCATED] 
-
-> # save
-> # save(layer1_model, file = './nn_models/layer1.Rdata')
-> 
-> 
-> 
-> 
-> 
-> 
-> 
