@@ -181,7 +181,7 @@ plot(regS.summary$adjr2, xlab = "Number of Variables", ylab = "Adjusted Rsq", ty
 
 # look at the optimal number of parameters by applying the model on the validation set
 # and looking for the minimal RMSE
-optimal_nr_predictors_seqrep =  min_validation_error(regfit.full_seq) #54
+optimal_nr_predictors_seqrep =  min_validation_error(regfit.full_seq) #99
 
 # train the model on the training data and calculate the RMSE of the validation set
 # coef(regfit.full_seq, optimal_nr_predictors_seqrep)
@@ -410,22 +410,9 @@ plot(cv.rate$size, cv.rate$dev, type = 'b')
 # 2. BAGGING
 ##############################################################
 
-# score = 20.4
-
-
-cluster <- makeCluster(detectCores()-1)
-registerDoParallel(cluster)
-
-# Besides, we also start saving our models so we do not have to run these models again
-
-
 # 1) train the bagging model on the training data to do hyperparameter tuning
-# WARNING: this takes some time to run
 set.seed(1)
 bagging.rate <- randomForest(average_daily_rate ~ ., data = train, mtry = ncol(train_X), ntrees = 150, importance = TRUE)
-
-# Close the parallel processing with the following code:
-stopCluster(cluster)
 
 # save the model
 save(bagging.rate, file = "models/bagging_model_training.Rdata")
@@ -433,7 +420,8 @@ save(bagging.rate, file = "models/bagging_model_training.Rdata")
 # 2) We make predictions on the validation set, which results in an RMSE 
 bagging_pred_val <- predict(bagging.rate, newdata = val_X)
 sqrt(mean((bagging_pred_val - val_y)^2))
-
+# score = 20.4
+# RMSE = 
 
 
 ##############################################################
@@ -441,15 +429,13 @@ sqrt(mean((bagging_pred_val - val_y)^2))
 ##############################################################
 
 ###############################################
-# 3.1 random Forest with standard parameters
+# 3.1 Random Forest with standard parameters
 ###############################################
-#score = 19.5
-# By default, randomForest() uses p/3 variables when building a random forest of regression trees
-
+# Using p/3 variables in each tree is a good starting point when building a random forest of regression trees
 
 # 1) train the bagging model on the training data to do hyperparameter tuning
 set.seed(1)
-rf.rate <- randomForest(average_daily_rate ~ ., data = train, mtry = 33,  ntree = 110, importance = TRUE)
+rf.rate <- randomForest(average_daily_rate ~ ., data = train, mtry = 33,  ntree = 150, importance = TRUE)
 
 # save the model
 save(rf.rate, file = "models/rf_model_train.Rdata")
@@ -458,14 +444,11 @@ save(rf.rate, file = "models/rf_model_train.Rdata")
 rf_pred_val <- predict(rf.rate, newdata = val_X)
 sqrt(mean((rf_pred_val - val_y)^2))
 # 18.38
-# 
-# with week weekend days variable: 18.93511
-# week weekend + week bins: 18.54187
+# RMSE = 
 
 ###############################################
 # 3.2 random Forest with CV 
 ###############################################
-#score = 19.5
 
 #We tune over 3 values of interaction depth
 # TO DO: KIJKEN NAAR BESTE VALUE EN ERROND EXTRA GRID OF RANDOM SEARCH @ Simon
@@ -501,8 +484,8 @@ registerDoParallel(cluster)
 # 1) train the random forest model on the training data to do hyperparameter tuning
 set.seed(1)
 trainControl <- trainControl(method = 'adaptive_cv',
-                             number = 10,
-                             repeats = 5,
+                             number = 5,
+                             repeats = 3,
                              adaptive = list(min = 5, alpha = 0.05, method = "gls", complete = TRUE),
                              verboseIter = TRUE,
                              search = 'random',
@@ -513,7 +496,7 @@ cv.rf.rate <- train(average_daily_rate ~ .,
                     method = 'rf',
                     trControl = trainControl,
                     metric = 'RMSE',
-                    tuneLength = 25,
+                    tuneLength = 5,
                     verbose = TRUE
 )
 
@@ -525,6 +508,7 @@ save(cv.rf.rate, file = "models/adaptive_cv_rf_model_train.Rdata")
 # 2) We make predictions on the validation set, which results in an RMSE 
 cv_rf_pred_val <- predict(cv.rf.rate, newdata = val_X)
 sqrt(mean((cv_rf_pred_val - val_y)^2))
+# RMSE = 
 
 
 ##############################################################
@@ -535,6 +519,7 @@ sqrt(mean((cv_rf_pred_val - val_y)^2))
 # 4.1 Boosting standard model
 ##############################################################
 
+#We set up for parallel processing, change number of clusters according to CPU cores
 cluster <- makeCluster(detectCores()-1)
 registerDoParallel(cluster)
 
@@ -562,68 +547,51 @@ sqrt(mean((boosting_pred_val - val_y)^2))
 # HEBT MAAR BEST OOK VERMELDEN IN DE CODE
 
 ##########
-# A) First sequence of tuning parameters
+# A) Randomized search
 ##########
 
-# First, we tune over 3 values of interaction depth when building the model
-gbmGrid <-  expand.grid(interaction.depth = c(1, 4, 6), 
-                        n.trees = c(1000, 1500, 2000), 
-                        shrinkage = 0.1,
-                        n.minobsinnode = 20)
+#We set up for parallel processing, change number of clusters according to CPU cores
+cluster <- makeCluster(detectCores()-1)
+registerDoParallel(cluster)
 
 # 1) train the boosting model on the training data to do hyperparameter tuning
+trainControl <- trainControl(method = 'adaptive_cv',
+                             number = 5,
+                             repeats = 3,
+                             adaptive = list(min = 5, alpha = 0.05, method = "gls", complete = TRUE),
+                             verboseIter = TRUE,
+                             search = 'random',
+                             allowParallel = TRUE)
+
 set.seed(1)
-trainControl <- trainControl(method = 'cv', number = 3, verboseIter = TRUE, allowParallel = TRUE)
 cv.boosting1.rate <- train(average_daily_rate ~ .,
-                           data = train_and_val,
-                           method = 'gbm',
-                           trControl = trainControl,
-                           metric = 'RMSE',
-                           tuneGrid = gbmGrid
+                    data = train,
+                    method = 'gbm',
+                    trControl = trainControl,
+                    metric = 'RMSE',
+                    tuneLength = 5,
+                    verbose = TRUE
 )
+stopCluster(cluster)
+
 
 # save model so we do not have to run it time and time again 
-save(cv.boosting1.rate, file = "models/cv_boosting1_model_train.Rdata")
+save(cv.boosting1.rate, file = "models/adaptivecv_boosting_model_train.Rdata")
 
 # 2) We make predictions on the validation set, which results in an RMSE 
 cv_boosting1_pred_val <- predict(cv.boosting1.rate, newdata = val_X)
 sqrt(mean((cv_boosting1_pred_val - val_y)^2))
-
-
-##########
-# B) Second sequence of tuning parameters
-##########
-
-# Next, we tune over 3 values of interaction depth
-gbmGrid <-  expand.grid(interaction.depth = c(7, 9, 11), 
-                        n.trees = c(1000, 1500, 2000), 
-                        shrinkage = 0.05,
-                        n.minobsinnode = 20)
-
-# 1) train the boosting model on the training data to do hyperparameter tuning
-set.seed(1)
-trainControl <- trainControl(method = 'cv', number = 4, verboseIter = TRUE, allowParallel = TRUE)
-cv.boosting2.rate <- train(average_daily_rate ~ .,
-                           data = train,
-                           method = 'gbm',
-                           trControl = trainControl,
-                           metric = 'RMSE',
-                           tuneGrid = gbmGrid
-)
-
-# save model 
-save(cv.boosting2.rate, file = "models/cv_boosting2_model_train.Rdata")
-
-# 2) We make predictions on the validation set, which results in an RMSE 
-cv_boosting2_pred_val <- predict(cv.boosting2.rate, newdata = val_X)
-sqrt(mean((cv_boosting2_pred_val - val_y)^2))
-
+RMSE = 
 
 ##########
-# C) Third sequence of tuning parameters
+# A) Grid search
 ##########
 
-# Next, we tune over 3 values of interaction depth
+# Number of tested combinations is limited because of limited resources
+# Randomized search (above) provided better predictions
+
+# After running some grids, we increased the values for interaction depth. This was our final grid: 
+
 gbmGrid <-  expand.grid(interaction.depth = c(11, 13, 15), 
                         n.trees = 3000, 
                         shrinkage = c(0.01, 0.001),
@@ -631,7 +599,7 @@ gbmGrid <-  expand.grid(interaction.depth = c(11, 13, 15),
 
 # 1) train the boosting model on the training data to do hyperparameter tuning
 set.seed(1)
-trainControl <- trainControl(method = 'cv', number = 4, verboseIter = TRUE, allowParallel = TRUE)
+trainControl <- trainControl(method = 'cv', number = 3, verboseIter = TRUE, allowParallel = TRUE)
 cv.boosting3.rate <- train(average_daily_rate ~ .,
                            data = train,
                            method = 'gbm',
@@ -641,9 +609,9 @@ cv.boosting3.rate <- train(average_daily_rate ~ .,
 )
 
 # save model
-save(cv.boosting3.rate, file = "models/cv_boosting3_model_train.Rdata")
+save(cv.boosting3.rate, file = "models/cv_boosting_model_train.Rdata")
 
-# 2) We make predictions on the validation set, which results in an RMSE 
+# 2) We make predictions on the validation set 
 cv_boosting3_pred_val <- predict(cv.boosting3.rate, newdata = val_X)
 sqrt(mean((cv_boosting3_pred_val - val_y)^2))
 
@@ -652,53 +620,17 @@ sqrt(mean((cv_boosting3_pred_val - val_y)^2))
 # 4.2 XGBoost
 ##############################################################
 
-#hyperparameters:
+# to tune hyperparameters:
 #https://www.analyticsvidhya.com/blog/2016/03/complete-guide-parameter-tuning-xgboost-with-codes-python/
-
-#We set up for parallel processing, change number of clusters according to CPU cores
-cluster <- makeCluster(detectCores()-1)
-registerDoParallel(cluster)
-
-##########
-# A) First sequence of grid parameters
-##########
-XGBgrid1 <-  expand.grid(nrounds = c(500, 1000, 1500), 
-                         max_depth = 6, 
-                         eta = 0.05,
-                         gamma = 0,
-                         colsample_bytree = 1,
-                         min_child_weight = 1,
-                         subsample = 1)
-#result: 1500, 6
-
-
-##########
-# B) Second sequence of grid parameters
-##########
-XGBgrid2 <-  expand.grid(nrounds = c(1500, 2000), 
-                         max_depth = c(6, 8), 
-                         eta = c(0.05, 0.01),
-                         gamma = 0,
-                         colsample_bytree = 1,
-                         min_child_weight = 1,
-                         subsample = 1)
-
-set.seed(1)
-trainControl <- trainControl(method = 'cv', number = 3, verboseIter = TRUE, allowParallel = TRUE)
-
-
-xgb_tune <- train(x = train_and_val_X,
-                  y = train_and_val_y,
-                  method = 'xgbTree',
-                  trControl = trainControl,
-                  metric = 'RMSE',
-                  tuneGrid = XGBgrid2,
-                  verbose = TRUE
-)
 
 ##########
 # C) Adaptive_cv + random search
 ##########
+
+# We set up for parallel processing, change number of clusters according to CPU cores
+cluster <- makeCluster(detectCores()-1)
+registerDoParallel(cluster)
+
 trainControl <- trainControl(method = 'adaptive_cv',
                              number = 10,
                              repeats = 5,
