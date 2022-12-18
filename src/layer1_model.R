@@ -40,7 +40,7 @@ layer1_model %>% summary()
 early_stop <- callback_early_stopping(monitor = "val_loss", patience = 20)
 
 # define number of epochs
-epochs <- 300
+epochs <- 200
 
 
 # Fit the model and store training stats
