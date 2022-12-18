@@ -74,7 +74,8 @@ y_train <- train$average_daily_rate
 x_val <- model.matrix(average_daily_rate ~ ., data = val)[, -1]
 y_val <- val$average_daily_rate
 
-
+x_train_and_val <-model.matrix(average_daily_rate ~ ., data = train_and_val)[, -1]
+y_train_and_val <- train_and_val_y
 
 #####################################################################
 #####################################################################
@@ -450,23 +451,46 @@ save(layer5_model, file = './nn_models/layer5.Rdata')
 
 
 
-#######################@
+#######################
 # to test the best model
 #######################
 
-# plot the best models
-system.time(
-  history <- modelnn %>%
-    fit(x_train, y_train, epochs = 30, batch_size = 128,
-        validation_split = 0.2))
+# Run the best model again and save the model
+layer1_model <- keras_model_sequential()
+layer1_model %>%
+  layer_dense(units = best_run1$flag_neurons1, activation = "relu",
+              input_shape = ncol(x_train),
+              constraint_maxnorm(max_value = best_run1$flag_maxnorm, axis = 0)) %>%
+  layer_dropout(rate = best_run1$flag_dropout1) %>%
+  layer_dense(units = 1, activation = "linear")
+layer1_model
 
-history
-plot(history, smooth = FALSE)
+layer1_model %>% compile(loss = "mse",
+                         optimizer = optimizer_rmsprop(learning_rate = best_run1$flag_lr),
+                         metrics = list("mean_squared_error"))
+
+# define early stop monitor
+early_stop <- callback_early_stopping(monitor = "val_loss", patience = 20)
+
+# Fit the model and store training stats
+history <- layer1_model %>%
+  fit(x_train_and_val, y_train_and_val, epochs = 500, batch_size = 128,
+      validation_split = 0.2,
+      verbose = 1,
+      callbacks = list(early_stop))
 
 
+
+# predict on test set
 x_test <- as.matrix(test_X[, -1])
+nn_layer1_pred_test <- layer1_model %>% predict(x_test)
+nn_layer1_pred_test
 
-
-
+nn_df <- data.frame(id = as.integer(test_X$id),
+                     average_daily_rate= nn_layer1_pred_test)
+colnames(nn_df)[2] <- 'average_daily_rate'
+str(nn_df)
+# save submission file
+write.csv(nn_df, file = "./data/sample_submission_nn.csv", row.names = F)
 
 

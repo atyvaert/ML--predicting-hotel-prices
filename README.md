@@ -116,7 +116,7 @@ selection. At each steps features can either be removed or added based on their 
 We identified that in our case the optimal number of parameters was X and we can fit a model using thes parameters. 
 
 1.2 SHRINKAGE METHODS
-Shrinkage methods constrain or shrinksthe coefficient estimates. To control the shrinking, a hyperparameter (λ) 
+Shrinkage methods constrain or shrink the coefficient estimates. To control the shrinking, a hyperparameter (λ) 
 and a penalty term are added to the minimization problem. 
 
 1.2.1 RIDGE REGRESSION
