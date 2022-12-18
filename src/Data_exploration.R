@@ -1,18 +1,18 @@
+#Hier moet nog introduction komen
+
 ##############################################################
 ##############################################################
 # 1. Data Import
 ##############################################################
 ##############################################################
-rm(list = ls())
 
+
+rm(list = ls())
 
 # packages and libraries needed
 library(stringr)
 library(miscTools)
-
-
-setwd(dir = "./GitHub/ml22-team10")
-
+library(readr)
 
 
 train <- read_csv('./data/bronze_data/train.csv')
@@ -49,8 +49,7 @@ str(train_y)
 
 # 1 Arrival dates
 train_X$arrival_date
-# IMPORTANT: WEEKDAY NEEDS TO BE ADDED
-# parse date with posixct: 
+# parse date with posixct 
 
 # 2 assigned_room_type
 barplot(table(train_X$assigned_room_type))
@@ -228,18 +227,11 @@ table(train_X$special_requests)
 
 # Na overview
 # 83045 rows
-sum(is.na((train_X$nr_booking_changes))) #72192, a lot!
-sum(is.na((train_X$nr_children))) #16894
+sum(is.na((train_X$nr_booking_changes))) #72271, a lot!
+sum(is.na((train_X$nr_children))) #16889
 sum(is.na((train_X$nr_nights))) #0
-sum(is.na((train_X$nr_previous_bookings))) #18394
-sum(is.na((train_X$previous_bookings_not_canceled))) #5027
-sum(is.na((train_X$previous_cancellations))) #4992
+sum(is.na((train_X$nr_previous_bookings))) #18393
+sum(is.na((train_X$previous_bookings_not_canceled))) #5028
+sum(is.na((train_X$previous_cancellations))) #4989
 sum(is.na((train_X$reserved_room_type))) #0
 sum(is.na((train_X$special_requests))) #0
-
-
-
-
-
-
-
