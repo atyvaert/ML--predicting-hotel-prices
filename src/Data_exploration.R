@@ -5,7 +5,7 @@
 ##############################################################
 # According to the CRISP-DM framework,there needs to be a good connection between business understanding and data understanding.
 # After having carefully read the assignment, the authors have developed a good business understanding and look to improve their data understanding.
-# Therefor, the first step after the business understanding is Data Exploration.
+# Therefore, the first step after the business understanding is Data Exploration.
 
 
 ##############################################################
