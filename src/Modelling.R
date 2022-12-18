@@ -584,7 +584,6 @@ cv.rf.rate <- train(average_daily_rate ~ .,
                     method = 'rf',
                     trControl = trainControl,
                     metric = 'RMSE',
-                    tuneGrid = rfGrid,
                     tuneLength = 25,
                     verbose = TRUE
 )
@@ -592,7 +591,7 @@ cv.rf.rate <- train(average_daily_rate ~ .,
 stopCluster(cluster)
 
 # save the model
-save(cv.rf.rate, file = "models/cv_rf_model_train.Rdata")
+save(cv.rf.rate, file = "models/adaptive_cv_rf_model_train.Rdata")
 
 # 2) We make predictions on the validation set, which results in an RMSE 
 cv_rf_pred_val <- predict(cv.rf.rate, newdata = val_X)
