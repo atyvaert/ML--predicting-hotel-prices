@@ -142,36 +142,42 @@ par <- list(
   dropout1 = c(0.3,0.4,0.5),
   neurons1 = c(64,128,256, 512, 700, 900),
   lr = c(0.0001,0.001,0.01),
-  maxnorm1 = c(1,2, 3, 4)
+  maxnorm1 = c(0.5, 1,2, 3)
 )
 runs1 <- tuning_run('./src/layer1_model.R', runs_dir = '_tuning', flags = par, sample = 0.4)
 
 
 # Finally, I simply list all the runs, by referring to its running directory, where all the information 
 # from the run is stored and I ask for it to be ordered according to the mean squared error.
-ls_runs1(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning')
+ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning')
 
 # Finally, I select the best model parameters and I train the model with it.
-# The best model has a dropout value, 512 neurons and a learning rate of 0.001
+# The best model has a dropout value of 0.4, 512 neurons and a learning rate of 0.001 and a maxnorm of 1
 best_run1 <- ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning')[1,]
 
 # Run the best model again and save the model
 layer1_model <- keras_model_sequential()
 layer1_model %>%
-  layer_dense(units = best_run1$flag_neurons1, units = FLAGS$neurons1, activation = "relu",
+  layer_dense(units = best_run1$flag_neurons1, activation = "relu",
               input_shape = ncol(x_train),
-              constraint_maxnorm(max_value = best_run1$maxnorm1, axis = 0)) %>%
+              constraint_maxnorm(max_value = best_run1$flag_maxnorm, axis = 0)) %>%
   layer_dropout(rate = best_run1$flag_dropout1) %>%
   layer_dense(units = 1, activation = "linear")
 layer1_model
 
 layer1_model %>% compile(loss = "mse",
-                   optimizer = optimizer_rmsprop(learning_rate = best_run1$lr),
+                   optimizer = optimizer_rmsprop(learning_rate = best_run1$flag_lr),
                    metrics = list("mean_squared_error"))
+
+# define early stop monitor
+early_stop <- callback_early_stopping(monitor = "val_loss", patience = 20)
+
+# Fit the model and store training stats
 history <- layer1_model %>%
   fit(x_train, y_train, epochs = 500, batch_size = 128,
       validation_split = 0.2,
-      verbose = 1)
+      verbose = 1,
+      callbacks = list(early_stop))
 
 # predict on validation set
 nn_run1_pred_val <- layer1_model %>% predict(x_val)
@@ -201,28 +207,28 @@ runs2 <- tuning_run('./src/layer2_model.R', sample = 0.2, runs_dir = '_tuning', 
 
 # Finally, I simply list all the runs, by referring to its running directory, where all the information 
 # from the run is stored and I ask for it to be ordered according to the mean squared error.
-ls_runs2(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning')
+ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning')
 
 # Finally, I select the best model parameters and I train the model with it.
 # The best model has a dropout value, 512 neurons and a learning rate of 0.001
-best_run2 <- ls_runs2(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning')[1,]
+best_run2 <- ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning')[1,]
 
 # hier nog probleem: run the best model again lukt nog niet
 # Run the best model again and save the model
 layer2_model <- keras_model_sequential()
 layer2_model %>%
-  layer_dense(units = best_run2$neurons1, activation = "relu",
+  layer_dense(units = best_run2$flag_neurons1, activation = "relu",
               input_shape = ncol(x_train),
-              constraint_maxnorm(max_value = best_run2$maxnorm1, axis = 0)) %>%
-  layer_dropout(rate = best_run2$dropout1) %>%
-  layer_dense(units = best_run2$neurons2, activation = "relu",
-              constraint_maxnorm(max_value = best_run2$maxnorm1, axis = 0)) %>%
-  layer_dropout(rate = best_run2$dropout1) %>%
+              constraint_maxnorm(max_value = best_run2$flag_maxnorm, axis = 0)) %>%
+  layer_dropout(rate = best_run2$flag_dropout1) %>%
+  layer_dense(units = best_run2$flag_neurons2, activation = "relu",
+              constraint_maxnorm(max_value = best_run2$flag_maxnorm, axis = 0)) %>%
+  layer_dropout(rate = best_run2$flag_dropout1) %>%
   layer_dense(units = 1, activation = "linear")
 layer2_model
 
 layer2_model %>% compile(loss = "mse",
-                         optimizer = optimizer_rmsprop(learning_rate = best_run2$lr),
+                         optimizer = optimizer_rmsprop(learning_rate = best_run2$flag_lr),
                          metrics = list("mean_squared_error"))
 history <- layer2_model %>%
   fit(x_train, y_train, epochs = 500, batch_size = 128,
@@ -260,31 +266,31 @@ runs3 <- tuning_run('./src/layer3_model.R', sample = 0.2, runs_dir = '_tuning', 
 
 # Finally, I simply list all the runs, by referring to its running directory, where all the information 
 # from the run is stored and I ask for it to be ordered according to the mean squared error.
-ls_runs3(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning')
+ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning')
 
 # Finally, I select the best model parameters and I train the model with it.
 # The best model has a dropout value, 512 neurons and a learning rate of 0.001
-best_run3 <- ls_runs3(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning')[1,]
+best_run3 <- ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning')[1,]
 
 # hier nog probleem: run the best model again lukt nog niet
 # Run the best model again and save the model
 layer3_model <- keras_model_sequential()
 layer3_model %>%
-  layer_dense(units = best_run3$neurons1, activation = "relu",
+  layer_dense(units = best_run3$flag_neurons1, activation = "relu",
               input_shape = ncol(x_train),
-              constraint_maxnorm(max_value = best_run3$maxnorm1, axis = 0)) %>%
-  layer_dropout(rate = best_run3$dropout1) %>%
-  layer_dense(units = best_run3$neurons2, activation = "relu",
-              constraint_maxnorm(max_value = best_run3$maxnorm1, axis = 0)) %>%
-  layer_dropout(rate = best_run3$dropout1) %>%
-  layer_dense(units = best_run3$neurons3, activation = "relu",
-              constraint_maxnorm(max_value = best_run3$maxnorm1, axis = 0)) %>%
-  layer_dropout(rate = best_run3$dropout1) %>%
+              constraint_maxnorm(max_value = best_run3$flag_maxnorm, axis = 0)) %>%
+  layer_dropout(rate = best_run3$flag_dropout1) %>%
+  layer_dense(units = best_run3$flag_neurons2, activation = "relu",
+              constraint_maxnorm(max_value = best_run3$flag_maxnorm, axis = 0)) %>%
+  layer_dropout(rate = best_run3$flag_dropout1) %>%
+  layer_dense(units = best_run3$flag_neurons2, activation = "relu",
+              constraint_maxnorm(max_value = best_run3$flag_maxnorm, axis = 0)) %>%
+  layer_dropout(rate = best_run3$flag_dropout1) %>%
   layer_dense(units = 1, activation = "linear")
 layer3_model
 
 layer3_model %>% compile(loss = "mse",
-                         optimizer = optimizer_rmsprop(learning_rate = best_run3$lr),
+                         optimizer = optimizer_rmsprop(learning_rate = best_run3$flag_lr),
                          metrics = list("mean_squared_error"))
 history <- layer3_model %>%
   fit(x_train, y_train, epochs = 500, batch_size = 128,
@@ -326,34 +332,34 @@ runs4 <- tuning_run('./src/layer4_model.R', sample = 0.2, runs_dir = '_tuning', 
 
 # Finally, I simply list all the runs, by referring to its running directory, where all the information 
 # from the run is stored and I ask for it to be ordered according to the mean squared error.
-ls_runs4(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning')
+ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning')
 
 # Finally, I select the best model parameters and I train the model with it.
 # The best model has a dropout value, 512 neurons and a learning rate of 0.001
-best_run4 <- ls_runs4(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning')[1,]
+best_run4 <- ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning')[1,]
 
 # hier nog probleem: run the best model again lukt nog niet
 # Run the best model again and save the model
 layer4_model <- keras_model_sequential()
 layer4_model %>%
-  layer_dense(units = best_run4$neurons1, activation = "relu",
+  layer_dense(units = best_run4$flag_neurons1, activation = "relu",
               input_shape = ncol(x_train),
-              constraint_maxnorm(max_value = best_run4$maxnorm1, axis = 0)) %>%
-  layer_dropout(rate = best_run4$dropout1) %>%
-  layer_dense(units = best_run4$neurons2, activation = "relu",
-              constraint_maxnorm(max_value = best_run4$maxnorm1, axis = 0)) %>%
-  layer_dropout(rate = best_run4$dropout1) %>%
-  layer_dense(units = best_run4$neurons3, activation = "relu",
-              constraint_maxnorm(max_value = best_run4$maxnorm1, axis = 0)) %>%
-  layer_dropout(rate = best_run4$dropout1) %>%
-  layer_dense(units = best_run4$neurons4, activation = "relu",
-              constraint_maxnorm(max_value = best_run4$maxnorm1, axis = 0)) %>%
-  layer_dropout(rate = best_run4$dropout1) %>%
+              constraint_maxnorm(max_value = best_run4$flag_maxnorm, axis = 0)) %>%
+  layer_dropout(rate = best_run4$flag_dropout1) %>%
+  layer_dense(units = best_run4$flag_neurons2, activation = "relu",
+              constraint_maxnorm(max_value = best_run4$flag_maxnorm, axis = 0)) %>%
+  layer_dropout(rate = best_run4$flag_dropout1) %>%
+  layer_dense(units = best_run4$flag_neurons3, activation = "relu",
+              constraint_maxnorm(max_value = best_run4$flag_maxnorm, axis = 0)) %>%
+  layer_dropout(rate = best_run4$flag_dropout1) %>%
+  layer_dense(units = best_run4$flag_neurons5, activation = "relu",
+              constraint_maxnorm(max_value = best_run4$flag_maxnorm, axis = 0)) %>%
+  layer_dropout(rate = best_run4$flag_dropout1) %>%
   layer_dense(units = 1, activation = "linear")
 layer4_model
 
 layer4_model %>% compile(loss = "mse",
-                         optimizer = optimizer_rmsprop(learning_rate = best_run4$lr),
+                         optimizer = optimizer_rmsprop(learning_rate = best_run4$flag_lr),
                          metrics = list("mean_squared_error"))
 history <- layer4_model %>%
   fit(x_train, y_train, epochs = 500, batch_size = 128,
@@ -394,37 +400,37 @@ runs5 <- tuning_run('./src/layer5_model.R', sample = 0.2, runs_dir = '_tuning', 
 
 # Finally, I simply list all the runs, by referring to its running directory, where all the information 
 # from the run is stored and I ask for it to be ordered according to the mean squared error.
-ls_runs5(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning')
+ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning')
 
 # Finally, I select the best model parameters and I train the model with it.
 # The best model has a dropout value, 512 neurons and a learning rate of 0.001
-best_run5 <- ls_runs5(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning')[1,]
+best_run5 <- ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning')[1,]
 
 # hier nog probleem: run the best model again lukt nog niet
 # Run the best model again and save the model
 layer5_model <- keras_model_sequential()
 layer5_model %>%
-  layer_dense(units = best_run5$neurons1, activation = "relu",
+  layer_dense(units = best_run5$flag_neurons1, activation = "relu",
               input_shape = ncol(x_train),
-              constraint_maxnorm(max_value = best_run5$maxnorm1, axis = 0)) %>%
-  layer_dropout(rate = best_run5$dropout1) %>%
-  layer_dense(units = best_run5$neurons2, activation = "relu",
-              constraint_maxnorm(max_value = best_run5$maxnorm1, axis = 0)) %>%
-  layer_dropout(rate = best_run5$dropout1) %>%
-  layer_dense(units = best_run5$neurons3, activation = "relu",
-              constraint_maxnorm(max_value = best_run5$maxnorm1, axis = 0)) %>%
-  layer_dropout(rate = best_run5$dropout1) %>%
-  layer_dense(units = best_run5$neurons4, activation = "relu",
-              constraint_maxnorm(max_value = best_run5$maxnorm1, axis = 0)) %>%
-  layer_dropout(rate = best_run5$dropout1) %>%
-  layer_dense(units = best_run5$neurons5, activation = "relu",
-              constraint_maxnorm(max_value = best_run5$maxnorm1, axis = 0)) %>%
-  layer_dropout(rate = best_run5$dropout1) %>%
+              constraint_maxnorm(max_value = best_run5$flag_maxnorm, axis = 0)) %>%
+  layer_dropout(rate = best_run5$flag_dropout1) %>%
+  layer_dense(units = best_run5$flag_neurons2, activation = "relu",
+              constraint_maxnorm(max_value = best_run5$flag_maxnorm, axis = 0)) %>%
+  layer_dropout(rate = best_run5$flag_dropout1) %>%
+  layer_dense(units = best_run5$flag_neurons3, activation = "relu",
+              constraint_maxnorm(max_value = best_run5$flag_maxnorm, axis = 0)) %>%
+  layer_dropout(rate = best_run5$flag_dropout1) %>%
+  layer_dense(units = best_run5$flag_neurons4, activation = "relu",
+              constraint_maxnorm(max_value = best_run5$flag_maxnorm, axis = 0)) %>%
+  layer_dropout(rate = best_run5$flag_dropout1) %>%
+  layer_dense(units = best_run5$flag_neurons5, activation = "relu",
+              constraint_maxnorm(max_value = best_run5$flag_maxnorm, axis = 0)) %>%
+  layer_dropout(rate = best_run5$flag_dropout1) %>%
   layer_dense(units = 1, activation = "linear")
-layer4_model
+layer5_model
 
 layer5_model %>% compile(loss = "mse",
-                         optimizer = optimizer_rmsprop(learning_rate = best_run5$lr),
+                         optimizer = optimizer_rmsprop(learning_rate = best_run5$flag_lr),
                          metrics = list("mean_squared_error"))
 history <- layer5_model %>%
   fit(x_train, y_train, epochs = 500, batch_size = 128,
