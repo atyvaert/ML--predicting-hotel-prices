@@ -391,6 +391,7 @@ plot(tree.rate)
 # 2) We make predictions on the validation set, which results in an RMSE of 36.4
 tree_pred_val <- predict(tree.rate, newdata = val_X)
 sqrt(mean((tree_pred_val - val_y)^2))
+# RMSE = 36.44005
 
 ##############################################################
 # 1.2 Fit a regression tree  with cross validation
@@ -400,7 +401,7 @@ cv.rate <- cv.tree(tree.rate)
 
 # plot the tree
 plot(cv.rate$size, cv.rate$dev, type = 'b')
-# We see that the most comlex tree is chosen by cross validation
+# We see that the most complex tree is chosen by cross validation
 # We could prune the tree to make it less complex, but we do not think this is usefull here
 # As the CV chooses 13 terminal nodes, this regression has the same results as 3.1
 
@@ -411,20 +412,20 @@ plot(cv.rate$size, cv.rate$dev, type = 'b')
 
 # score = 20.4
 
-# As these models become computationally very intensive, we set up parallel processing to speed
-# up the process. Change number of clusters according to CPU
+
 cluster <- makeCluster(detectCores()-1)
 registerDoParallel(cluster)
 
 # Besides, we also start saving our models so we do not have to run these models again
 
-# you can close the parellel processing with the following code:
-#stopCluster(cluster)
 
 # 1) train the bagging model on the training data to do hyperparameter tuning
 # WARNING: this takes some time to run
 set.seed(1)
-bagging.rate <- randomForest(average_daily_rate ~ ., data = train, mtry = 95, importance = TRUE)
+bagging.rate <- randomForest(average_daily_rate ~ ., data = train, mtry = ncol(train_X), ntrees = 150, importance = TRUE)
+
+# Close the parallel processing with the following code:
+stopCluster(cluster)
 
 # save the model
 save(bagging.rate, file = "models/bagging_model_training.Rdata")
@@ -534,9 +535,14 @@ sqrt(mean((cv_rf_pred_val - val_y)^2))
 # 4.1 Boosting standard model
 ##############################################################
 
+cluster <- makeCluster(detectCores()-1)
+registerDoParallel(cluster)
+
 # 1) train the boosting model on the training data to do hyperparameter tuning
 boosting.rate <- gbm(average_daily_rate ~ ., data = train, distribution = "gaussian", n.trees = 5000, 
                      interaction.depth = 4, shrinkage = 0.2, verbose = F)
+
+stopCluster(cluster)
 
 # save the model
 save(boosting.rate, file = "models/boosting_model_train.Rdata")
@@ -544,8 +550,6 @@ save(boosting.rate, file = "models/boosting_model_train.Rdata")
 # 2) We make predictions on the validation set, which results in an RMSE 
 boosting_pred_val <- predict(boosting.rate, newdata = val_X)
 sqrt(mean((boosting_pred_val - val_y)^2))
-
-
 
 
 ##############################################################
