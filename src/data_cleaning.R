@@ -1,15 +1,18 @@
+#introduction
+
 ##############################################################
 ##############################################################
 # Data Cleaning
 ##############################################################
 ##############################################################
+
 # packages and libraries needed
 library(readr)
 library(dummy)
 library(stringr)
 library(miscTools)
 
-
+# Might be needed for setting R language to english for weekdays
 #Sys.setlocale("LC_ALL","English")
 
 # import the data
@@ -66,6 +69,7 @@ test_X_impute <- test_X
 ##############################################################
 # 2.1 Detecting missing values
 ##############################################################
+
 # training data
 colMeans(is.na(train_X_impute))
 # val data
@@ -101,7 +105,7 @@ str(test_X_impute)
 
 # 2.2.1 Impute NUMERIC variables with information from the training set
 
-# use the 'impute' function for numeric predictors:
+# use the 'impute' function for numeric predictors (imputes with given method or value):
 impute <- function(x, method = mean, val = NULL){
   if(is.null(val)){
     val <- method(x, na.rm = T)
@@ -179,13 +183,10 @@ train_X_impute = subset(train_X_impute, select = -c(nr_booking_changes_flag))
 val_X_impute = subset(val_X_impute, select = -c(nr_booking_changes_flag))
 test_X_impute = subset(test_X_impute, select = -c(nr_booking_changes_flag))
 
-
-
 # inspect
 colMeans(is.na(train_X_impute))
 colMeans(is.na(val_X_impute))
 colMeans(is.na(test_X_impute))
-
 
 
 ##############################################################
@@ -195,10 +196,13 @@ colMeans(is.na(test_X_impute))
 # This is not always the case!
 ##############################################################
 ##############################################################
-train_X_impute$nr_previous_bookings[train_X_impute$nr_previous_bookings==0] <- rowSums(cbind(train_X_impute$previous_bookings_not_canceled, train_X_impute$previous_cancellations))[train_X_impute$nr_previous_bookings==0]
-train_X_impute$previous_bookings_not_canceled[train_X_impute$previous_bookings_not_canceled==0] <- (train_X_impute$nr_previous_bookings - train_X_impute$previous_cancellations)[train_X_impute$previous_bookings_not_canceled==0]
-train_X_impute$previous_cancellations[train_X_impute$previous_cancellations==0] <- (train_X_impute$nr_previous_bookings - train_X_impute$previous_bookings_not_canceled)[train_X_impute$previous_cancellations==0]
 
+# nr_pre_previous_bookings = previous_cancellations + previous_bookings_not_canceled where nr_previous_bookings = 0
+train_X_impute$nr_previous_bookings[train_X_impute$nr_previous_bookings==0] <- rowSums(cbind(train_X_impute$previous_bookings_not_canceled, train_X_impute$previous_cancellations))[train_X_impute$nr_previous_bookings==0]
+# pre_previous_bookings_not_canceled = nr_previous_bookings - previous_cancellations where previous_bookings_not_canceled = 0
+train_X_impute$previous_bookings_not_canceled[train_X_impute$previous_bookings_not_canceled==0] <- (train_X_impute$nr_previous_bookings - train_X_impute$previous_cancellations)[train_X_impute$previous_bookings_not_canceled==0]
+# previous_cancellations = nr_previous_bookings - pre_previous_bookings_not_canceled where previous_cancellations = 0
+train_X_impute$previous_cancellations[train_X_impute$previous_cancellations==0] <- (train_X_impute$nr_previous_bookings - train_X_impute$previous_bookings_not_canceled)[train_X_impute$previous_cancellations==0]
 
 
 ##############################################################
@@ -212,7 +216,6 @@ test_X_outlier <- test_X_impute #uniformity reasons
 
 # make a vector of all the variables of which valid outliers need to be handled
 outlier.cols <- c()
-# outlier.cols <- append(outlier.cols, '')
 
 # We inspected the outlier with the help of the following function, that we will not repeat
 # all the time:
@@ -230,7 +233,7 @@ outlier.cols <- append(outlier.cols, 'lead_time')
 
 # 19) nr_adults
 # Here, we see a value of more than 10 adults as an outlier. Especially, since no value is higher than 3 except for 
-# a one time booking of 40 adults
+# a one time booking of 40 and 50 adults
 train_X_outlier$nr_adults[train_X$nr_adults > 10] <- NA
 train_X_outlier$nr_adults <- impute(train_X_outlier$nr_adults, method = median)
 outlier.cols <- append(outlier.cols, 'nr_adults')
@@ -239,7 +242,7 @@ outlier.cols <- append(outlier.cols, 'nr_adults')
 # only values of 1 or 2 are present, even these have z-values higher than 3, these are not seen as outliers
 
 # 21) nr_booking_changes  
-# >4  are outliers, however valid? We see that most values are 0, 1 or 2. The values 4 and 5 are seen as valid outliers.
+# >4  are outliers. We see that most values are 0, 1 or 2. The values 4 and 5 are seen as valid outliers.
 # However, a value of 21 is seen as an unreasonable outlier.
 train_X_outlier$nr_booking_changes[train_X_outlier$nr_booking_changes> 20] <- NA
 train_X_outlier$nr_booking_changes <- impute(train_X_outlier$nr_booking_changes, method = median)
@@ -247,7 +250,7 @@ outlier.cols <- append(outlier.cols, 'nr_booking_changes')
 
 
 # 22) nr_children  
-# starting from 98% outliers (based on z-values). We see two children as a valid outlier. However,
+#  We see two children as a valid outlier (based on z-scores). However,
 # there is also a single observation with 10 children, which we see as an invalid outlier.
 train_X_outlier$nr_children[train_X$nr_children > 9] <- NA
 train_X_outlier$nr_children <- impute(train_X_outlier$nr_children, method = median)
@@ -262,16 +265,16 @@ train_X_outlier$nr_nights <- impute(train_X_outlier$nr_nights, method = median)
 outlier.cols <- append(outlier.cols, 'nr_nights')
 
 # 24) nr_previous_bookings  
-# Here, we see a lot of values of 1 until 5. Even some valid outliers up until 26 as well. Even this is already a lot of bookings.
-# However, we also have  a value of more than 70. We will see more than 30 bookings as an invalid outlier as you booked the hotel
-# more than once per month over a timespan of 2 years. This is highly unusual.
+# Here, we see a lot of values between 1 and 5. Even some valid outliers up until 26 as well. Even this is already a lot of bookings.
+# However, we also have  a value of more than 70. We see more than 30 bookings as an invalid outlier as this means a person booked the hotel
+# more than once per month over a timespan of 2 years.
 train_X_outlier$nr_previous_bookings[train_X$nr_previous_bookings>30] <- NA
 train_X_outlier$nr_previous_bookings <- impute(train_X_outlier$nr_previous_bookings, method = median)
 outlier.cols <- append(outlier.cols, 'nr_previous_bookings')
 
 
 # 25) previous_bookings_not_canceled  
-#starting from 99.3% (=21!!), we have outliers. Again, we have a value higher than 70. This could be
+# starting from 99.3% (=21!!), we have outliers. Again, we have a value higher than 70. This could be
 # due to solving our data inconsistencies in the previous step. Therefore, we will also see this as an invalid outlier.
 # Again we use a value of 30 as cut off point.
 train_X_outlier$previous_bookings_not_canceled[train_X$previous_bookings_not_canceled>30] <- NA
@@ -281,14 +284,14 @@ outlier.cols <- append(outlier.cols, 'previous_bookings_not_canceled')
 
 # 26) previous_cancellations  
 #starting from 99.8% ( = 4!!), we have outliers. However, 4 is still a reasonable value.
-# However, when a person cancels his room more than 20 times, we will see this as an invalid outlier.
+# However, when a person cancels his room more than 20 times, we see this as an invalid outlier.
 train_X_outlier$previous_cancellations[train_X$previous_cancellations>20] <- NA
 train_X_outlier$previous_cancellations <- impute(train_X_outlier$previous_cancellations, method = median)
 outlier.cols <- append(outlier.cols, 'previous_cancellations')
 
 
 # 28) special_requests  
-#starting from 97.6% (=3), we have outliers. However, we do not see any unusual values.
+# starting from 97.6% (=3), we have outliers. However, we do not see any unusual values.
 outlier.cols <- append(outlier.cols, 'special_requests')
 
 # inspect
@@ -297,9 +300,7 @@ str(val_X_outlier)
 str(test_X_outlier)
 
 
-
-
-# use this function to handle valid outliers
+# use this function to handle (scale) valid outliers
 handle_outlier_z <- function(col){
   col_z <- scale(col)
   ifelse(abs(col_z)>3,
@@ -343,13 +344,14 @@ test_X_outlier$day_of_month_arrival <- format(test_X_outlier$posix_arrival, form
 test_X_outlier$month_arrival <- format(test_X_outlier$posix_arrival, format = '%B')
 test_X_outlier$year_arrival <- as.factor(format(test_X_outlier$posix_arrival, format = '%Y'))
 
+##############################################################
+# Special case imputation: 'last_status_date'
+##############################################################
+# To impute NA we calculate the mean of the difference between arrival_date and last_status_date for each category
+# -> add this value to arrival_date and impute in NA rows
+#(this needed to happen after dates parsing)
 
-# last_status_date
-# to impute NA we calculate the mean of the difference between
-# arrival_date and last_status_date for each category
-# add this value to arrival_date and impute in NA rows
-
-#train
+# train
 train_X_outlier$posix_last_status <- as.POSIXlt(train_X_outlier$last_status_date, format='%Y-%m-%dT %H:%M:%S')
 
 mean_diff_canceled <- round(mean((difftime(train_X_outlier$posix_last_status[train_X_outlier$last_status=="Canceled"], train_X_outlier$posix_arrival[train_X_outlier$last_status=="Canceled"], units = "d")), na.rm = T))
@@ -362,7 +364,7 @@ train_X_outlier$posix_last_status[is.na(train_X_outlier$posix_last_status) & (tr
 
 train_X_outlier$posix_last_status <- format(as.POSIXct(train_X_outlier$posix_last_status, format="%Y-%m-%d"), format="%Y-%m-%d")
 
-#val
+# val
 val_X_outlier$posix_last_status <- as.POSIXlt(val_X_outlier$last_status_date, format='%Y-%m-%dT %H:%M:%S')
 
 val_X_outlier$posix_last_status[is.na(val_X_outlier$posix_last_status) & (val_X_outlier$last_status=="Canceled")] <- val_X_outlier$posix_arrival[is.na(val_X_outlier$posix_last_status) & (val_X_outlier$last_status=="Canceled")] + mean_diff_canceled
@@ -371,7 +373,7 @@ val_X_outlier$posix_last_status[is.na(val_X_outlier$posix_last_status) & (val_X_
 
 val_X_outlier$posix_last_status <- format(as.POSIXct(val_X_outlier$posix_last_status, format="%Y-%m-%d"), format="%Y-%m-%d")
 
-#test
+# test
 test_X_outlier$posix_last_status <- as.POSIXlt(test_X_outlier$last_status_date, format='%Y-%m-%dT %H:%M:%S')
 
 test_X_outlier$posix_last_status[is.na(test_X_outlier$posix_last_status) & (test_X_outlier$last_status=="Canceled")] <- test_X_outlier$posix_arrival[is.na(test_X_outlier$posix_last_status) & (test_X_outlier$last_status=="Canceled")] + mean_diff_canceled
