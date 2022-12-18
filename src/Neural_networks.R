@@ -20,9 +20,9 @@ library(keras)
 
 # import data
 rm(list = ls())
-train <- read.csv('./data/gold_data/train.csv')
-val <- read.csv('./data/gold_data/val.csv')
-test_X <- read.csv('./data/gold_data/test.csv')
+train <- read.csv('./data/gold_data/train_try2.csv')
+val <- read.csv('./data/gold_data/val_try2.csv')
+test_X <- read.csv('./data/gold_data/test_try2.csv')
 
 # separate dependent and independent variables for training and validation set
 train_X <- subset(train, select = -c(average_daily_rate))
@@ -198,20 +198,20 @@ par <- list(
   neurons1 = c(32,64,128,256),
   neurons2 = c(16, 32,64,128),
   lr = c(0.001,0.01),
-  maxnorm1 = c(1,2, 3)
+  maxnorm1 = c(0.5,1,2, 3)
 )
 
 # perform runs
-runs2 <- tuning_run('./src/layer2_model.R', sample = 0.2, runs_dir = '_tuning', flags = par)
+runs2 <- tuning_run('./src/layer2_model.R', sample = 0.2, runs_dir = '_tuning2', flags = par)
 
 
 # Finally, I simply list all the runs, by referring to its running directory, where all the information 
 # from the run is stored and I ask for it to be ordered according to the mean squared error.
-ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning')
+ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning2')
 
 # Finally, I select the best model parameters and I train the model with it.
 # The best model has a dropout value, 512 neurons and a learning rate of 0.001
-best_run2 <- ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning')[1,]
+best_run2 <- ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning2')[1,]
 
 # hier nog probleem: run the best model again lukt nog niet
 # Run the best model again and save the model
@@ -257,20 +257,20 @@ par <- list(
   neurons2 = c(16, 32,64, 128),
   neurons3 = c(8, 16, 32),
   lr = c(0.001,0.01),
-  maxnorm1 = c(1,2, 3)
+  maxnorm1 = c(0.5,1,2, 3)
 )
 
 # perform runs
-runs3 <- tuning_run('./src/layer3_model.R', sample = 0.2, runs_dir = '_tuning', flags = par)
+runs3 <- tuning_run('./src/layer3_model.R', sample = 0.2, runs_dir = '_tuning3', flags = par)
 
 
 # Finally, I simply list all the runs, by referring to its running directory, where all the information 
 # from the run is stored and I ask for it to be ordered according to the mean squared error.
-ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning')
+ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning3')
 
 # Finally, I select the best model parameters and I train the model with it.
 # The best model has a dropout value, 512 neurons and a learning rate of 0.001
-best_run3 <- ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning')[1,]
+best_run3 <- ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning3')[1,]
 
 # hier nog probleem: run the best model again lukt nog niet
 # Run the best model again and save the model
@@ -322,21 +322,21 @@ par <- list(
   neurons3 = c(8,16, 32, 64),
   neurons4 = c(8, 16, 32),
   lr = c(0.001,0.01),
-  maxnorm1 = c(1,2, 3)
+  maxnorm1 = c(0.5,1,2, 3)
 )
 
 
 # perform runs
-runs4 <- tuning_run('./src/layer4_model.R', sample = 0.2, runs_dir = '_tuning', flags = par)
+runs4 <- tuning_run('./src/layer4_model.R', sample = 0.2, runs_dir = '_tuning4', flags = par)
 
 
 # Finally, I simply list all the runs, by referring to its running directory, where all the information 
 # from the run is stored and I ask for it to be ordered according to the mean squared error.
-ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning')
+ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning4')
 
 # Finally, I select the best model parameters and I train the model with it.
 # The best model has a dropout value, 512 neurons and a learning rate of 0.001
-best_run4 <- ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning')[1,]
+best_run4 <- ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning4')[1,]
 
 # hier nog probleem: run the best model again lukt nog niet
 # Run the best model again and save the model
@@ -391,20 +391,20 @@ par <- list(
   neurons4 = c(8, 16, 32),
   neurons4 = c(4, 8, 16),
   lr = c(0.001,0.01),
-  maxnorm1 = c(1,2, 3)
+  maxnorm1 = c(0.5,1,2, 3)
 )
 
 # perform runs
-runs5 <- tuning_run('./src/layer5_model.R', sample = 0.2, runs_dir = '_tuning', flags = par)
+runs5 <- tuning_run('./src/layer5_model.R', sample = 0.2, runs_dir = '_tuning5', flags = par)
 
 
 # Finally, I simply list all the runs, by referring to its running directory, where all the information 
 # from the run is stored and I ask for it to be ordered according to the mean squared error.
-ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning')
+ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning5')
 
 # Finally, I select the best model parameters and I train the model with it.
 # The best model has a dropout value, 512 neurons and a learning rate of 0.001
-best_run5 <- ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning')[1,]
+best_run5 <- ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning5')[1,]
 
 # hier nog probleem: run the best model again lukt nog niet
 # Run the best model again and save the model

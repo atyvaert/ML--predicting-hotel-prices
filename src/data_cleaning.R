@@ -1,26 +1,44 @@
 ##############################################################
 ##############################################################
-# Data Cleaning
+# 0. Introduction of File
 ##############################################################
 ##############################################################
-# packages and libraries needed
+# Before the actual modeling starts, it is important to clean the data and create features.
+# In this file, the focus rests on data cleaning.
+
+
+
+##############################################################
+##############################################################
+# 1. Data Import
+##############################################################
+##############################################################
+
+# The authors follow the Bronze/Silver/Gold data structure.
+# In this step, the raw (Bronze) data is used.
+
+
+# The needed packages and libraries are loaded
 library(readr)
 library(dummy)
 library(stringr)
 library(miscTools)
 
-# import the data
+# It might be needed to set R language to English for weekdays variables.
+# Sys.setlocale("LC_ALL","English")
+
+#The Bronze data is read
 train <- read_csv('./data/bronze_data/train.csv')
 test_X <- read_csv('./data/bronze_data/test.csv')
 
 
-# create training and validation set
+# Creation of training and validation set
 set.seed(100)
 valvector <- sample(nrow(train), size=nrow(train)*0.2)
 val <- train[valvector, ]
 train <- train[-valvector, ]
 
-# separate dependent and independent variables
+# separation of dependent and independent variables
 train_X <- subset(train, select = -c(average_daily_rate))
 train_y <- train$average_daily_rate
 train_y <- as.numeric(word(train_y, 1))
@@ -32,11 +50,12 @@ val_y <- as.numeric(word(val_y, 1))
 
 ##############################################################
 ##############################################################
-# 1. Adjust structure
+# 2. Adjust structure
 ##############################################################
 ##############################################################
 
-#lead_time to integer number of days for training set
+# lead_time needs to be integer number of days 
+# for training set
 train_X$lead_time <- substr(train_X$lead_time, start = 1, stop = (nchar(train_X$lead_time)-7))
 train_X$lead_time <- as.numeric(train_X$lead_time)
 
@@ -51,7 +70,7 @@ test_X$lead_time <- as.numeric(test_X$lead_time)
 
 ##############################################################
 ##############################################################
-# 2. Missing values
+# 3. Missing values
 ##############################################################
 ##############################################################
 
@@ -61,8 +80,9 @@ val_X_impute <- val_X
 test_X_impute <- test_X
 
 ##############################################################
-# 2.1 Detecting missing values
+# 3.1 Detecting missing values
 ##############################################################
+
 # training data
 colMeans(is.na(train_X_impute))
 # val data
@@ -71,10 +91,10 @@ colMeans(is.na(val_X_impute))
 colMeans(is.na(test_X_impute))
 
 ##############################################################
-# 2.2 Missing value imputation + Flagging
+# 3.2 Missing value imputation and Flagging
 ##############################################################
-# Missing values might increase model performance if they are informative, therefore
-# we add a NA indicator of the missing values. We do this by making use of the function naFlag:
+# Missing values might increase model performance if they are informative, therefor
+# a NA indicator of the missing values is added. This is done by making use of the function naFlag:
 
 naFlag <- function(df, df_val = NULL) {
   if (is.null(df_val)) {
@@ -91,14 +111,14 @@ train_X_impute <- cbind(train_X_impute, naFlag(df = train_X))
 val_X_impute <- cbind(val_X_impute,naFlag(df = val_X, df_val = train_X))
 test_X_impute <- cbind(test_X_impute,naFlag(df = test_X, df_val = train_X))
 
-# inspect
+# Inspect
 str(train_X_impute)
 str(val_X_impute)
 str(test_X_impute)
 
-# 2.2.1 Impute NUMERIC variables with information from the training set
+# 3.2.1 Impute NUMERIC variables with information from the training set
 
-# use the 'impute' function for numeric predictors:
+# Use the 'impute' function for numeric predictors (imputes with given method or value):
 impute <- function(x, method = mean, val = NULL){
   if(is.null(val)){
     val <- method(x, na.rm = T)
@@ -108,8 +128,8 @@ impute <- function(x, method = mean, val = NULL){
 }
 
 
-# impute numerical variables with the median as we thought this was most fitting for 
-# these variables
+# Impute numerical variables with the median as the authors thought this was most fitting for these variables
+
 median.cols <- c('car_parking_spaces', 'nr_adults', 'nr_children', 'nr_previous_bookings',
                  'previous_bookings_not_canceled', 'previous_cancellations', 'days_in_waiting_list',
                  'lead_time')
@@ -124,15 +144,17 @@ test_X_impute[, median.cols] <- mapply(test_X_impute[, median.cols],
                                        val = colMedians(train_X[, median.cols], na.rm = T))
 
 
-# 2.2.1 Impute CATEGORICAL variables with information from the training set
-# use the 'modus' function for categorical predictors. This returns the mode of a column.
+# 3.2.2 Impute CATEGORICAL variables with information from the training set
+
+# Use the 'modus' function for categorical predictors. This returns the mode of a column.
+
 modus <- function(x, na.rm = FALSE) {
   if (na.rm) x <- x[!is.na(x)]
   ux <- unique(x)
   return(ux[which.max(tabulate(match(x, ux)))])
 }
 
-# handle
+# Handling of missing values
 cat.cols <- c('booking_distribution_channel', 'country', 'customer_type', 'deposit', 'hotel_type',
               'is_repeated_guest', 'last_status', 'market_segment')
 
@@ -147,9 +169,9 @@ test_X_impute[, cat.cols] <- mapply(test_X_impute[, cat.cols],
                                     val = sapply(train_X[, cat.cols], modus, na.rm = T))
 
 
-# impute 'n/a' or Na values with 0 for nr_babies and nr_booking_changes as 'n/a' suggests
-# a value of zero. Next we delete the flag column of nr_booking_changes as we do not interpret the 
-# Na values of this column as real missing values due to imputing them with zero.
+# 3.2.3 Impute 'n/a' or Na values with 0 for nr_babies and nr_booking_changes as 'n/a' suggests
+# a value of zero. Next the flag column of nr_booking_changes was deleted as this is not interpreted as a real missing variable 
+# due to imputing them with zero.
 # Besides, for variables like booking agent and company, NULL is presented as one of the categories
 # This should not be considered a NULL value, but rather as not applicable
 # for 'n/a':
@@ -171,12 +193,10 @@ train_X_impute$booking_company <- str_replace_all(train_X$booking_company, 'NULL
 val_X_impute$booking_company <- str_replace_all(val_X_impute$booking_company, 'NULL', "n/a")
 test_X_impute$booking_company <- str_replace_all(test_X_impute$booking_company, 'NULL', "n/a")
 
-# drop the flag variable and nr_booking_changes
+# drop the flag variable of nr_booking_changes
 train_X_impute = subset(train_X_impute, select = -c(nr_booking_changes_flag))
 val_X_impute = subset(val_X_impute, select = -c(nr_booking_changes_flag))
 test_X_impute = subset(test_X_impute, select = -c(nr_booking_changes_flag))
-
-
 
 # inspect
 colMeans(is.na(train_X_impute))
@@ -184,40 +204,44 @@ colMeans(is.na(val_X_impute))
 colMeans(is.na(test_X_impute))
 
 
+##############################################################
+##############################################################
+#3.3 Data inconsistencies
+##############################################################
+##############################################################
 
-##############################################################
-##############################################################
-# Data inconsistencies: nr_previous_bookings = 
-# previous_cancellations + previous_bookings_not_canceled
+# nr_previous_bookings = previous_cancellations + previous_bookings_not_canceled
 # This is not always the case!
-##############################################################
-##############################################################
+
+# nr_previous_bookings = previous_cancellations + previous_bookings_not_canceled where nr_previous_bookings = 0
 train_X_impute$nr_previous_bookings[train_X_impute$nr_previous_bookings==0] <- rowSums(cbind(train_X_impute$previous_bookings_not_canceled, train_X_impute$previous_cancellations))[train_X_impute$nr_previous_bookings==0]
+# nr_previous_bookings_not_canceled = nr_previous_bookings - previous_cancellations where previous_bookings_not_canceled = 0
 train_X_impute$previous_bookings_not_canceled[train_X_impute$previous_bookings_not_canceled==0] <- (train_X_impute$nr_previous_bookings - train_X_impute$previous_cancellations)[train_X_impute$previous_bookings_not_canceled==0]
+# previous_cancellations = nr_previous_bookings - nr_previous_bookings_not_canceled where previous_cancellations = 0
 train_X_impute$previous_cancellations[train_X_impute$previous_cancellations==0] <- (train_X_impute$nr_previous_bookings - train_X_impute$previous_bookings_not_canceled)[train_X_impute$previous_cancellations==0]
 
 
+##############################################################
+##############################################################
+# 4. Detecting and handling outliers
+##############################################################
+##############################################################
 
-##############################################################
-##############################################################
-# 3. Detecting and handling outliers
-##############################################################
-##############################################################
 train_X_outlier <- train_X_impute
-val_X_outlier <- val_X_impute #We make this column for uniformity reasons, no outliers are deleted
-test_X_outlier <- test_X_impute #uniformity reasons
+val_X_outlier <- val_X_impute # This column is created for uniformity reasons, no outliers are deleted
+test_X_outlier <- test_X_impute # This column is created for uniformity reasons, no outliers are deleted
 
-# make a vector of all the variables of which valid outliers need to be handled
+# Creation of vector of all the variables of which valid outliers need to be handled
 outlier.cols <- c()
-# outlier.cols <- append(outlier.cols, '')
 
-# We inspected the outlier with the help of the following function, that we will not repeat
+# Inspect outliers with the help of the following function.
+# This will not be repeated all times here.
 # all the time:
 # boxplot(train_X_impute$X)
 # quantile(train_X_impute$X, na.rm = T, probs = seq(0, 1, 0.001))
 # quantile(scale(train_X_impute$X), na.rm = T, probs = seq(0, 1, 0.001))
 
-# look at all the numeric variables and detect valid and invalid outliers:
+# Look at all the numeric variables and detect valid and invalid outliers:
 # 1) car_parking_spaces
 # All the car parking spaces have a value between 0 and 3, with the majority being 0
 # We do not see the a value of 3 car parking spaces as an outlier
@@ -226,8 +250,8 @@ outlier.cols <- c()
 outlier.cols <- append(outlier.cols, 'lead_time')
 
 # 19) nr_adults
-# Here, we see a value of more than 10 adults as an outlier. Especially, since no value is higher than 3 except for 
-# a one time booking of 40 adults
+# Here, a value of more than 10 adults is seen as an outlier. Especially, since no value is higher than 3 except for 
+# a one time booking of 40 and 50 adults
 train_X_outlier$nr_adults[train_X$nr_adults > 10] <- NA
 train_X_outlier$nr_adults <- impute(train_X_outlier$nr_adults, method = median)
 outlier.cols <- append(outlier.cols, 'nr_adults')
@@ -236,7 +260,7 @@ outlier.cols <- append(outlier.cols, 'nr_adults')
 # only values of 1 or 2 are present, even these have z-values higher than 3, these are not seen as outliers
 
 # 21) nr_booking_changes  
-# >4  are outliers, however valid? We see that most values are 0, 1 or 2. The values 4 and 5 are seen as valid outliers.
+# >4  are outliers. We see that most values are 0, 1 or 2. The values 4 and 5 are seen as valid outliers.
 # However, a value of 21 is seen as an unreasonable outlier.
 train_X_outlier$nr_booking_changes[train_X_outlier$nr_booking_changes> 20] <- NA
 train_X_outlier$nr_booking_changes <- impute(train_X_outlier$nr_booking_changes, method = median)
@@ -244,7 +268,7 @@ outlier.cols <- append(outlier.cols, 'nr_booking_changes')
 
 
 # 22) nr_children  
-# starting from 98% outliers (based on z-values). We see two children as a valid outlier. However,
+#  We see two children as a valid outlier (based on z-scores). However,
 # there is also a single observation with 10 children, which we see as an invalid outlier.
 train_X_outlier$nr_children[train_X$nr_children > 9] <- NA
 train_X_outlier$nr_children <- impute(train_X_outlier$nr_children, method = median)
@@ -253,22 +277,22 @@ outlier.cols <- append(outlier.cols, 'nr_children')
 # 23) nr_nights
 # starting from 98.6% we have outliers based on z-values
 # This a value of 10 nights, which is reasonable. However, there is also a value of 69. A stay of longer 
-# than one month (= 30 days) we interprete as an invalid outlier
+# than one month (= 30 days) is interpreted as an invalid outlier
 train_X_outlier$nr_nights[train_X$nr_nights>30] <- NA
 train_X_outlier$nr_nights <- impute(train_X_outlier$nr_nights, method = median)
 outlier.cols <- append(outlier.cols, 'nr_nights')
 
 # 24) nr_previous_bookings  
-# Here, we see a lot of values of 1 until 5. Even some valid outliers up until 26 as well. Even this is already a lot of bookings.
-# However, we also have  a value of more than 70. We will see more than 30 bookings as an invalid outlier as you booked the hotel
-# more than once per month over a timespan of 2 years. This is highly unusual.
+# Here, we see a lot of values between 1 and 5. Even some valid outliers up until 26 as well. Even this is already a lot of bookings.
+# However, we also have  a value of more than 70. We see more than 30 bookings as an invalid outlier as this means a person booked the hotel
+# more than once per month over a timespan of 2 years.
 train_X_outlier$nr_previous_bookings[train_X$nr_previous_bookings>30] <- NA
 train_X_outlier$nr_previous_bookings <- impute(train_X_outlier$nr_previous_bookings, method = median)
 outlier.cols <- append(outlier.cols, 'nr_previous_bookings')
 
 
 # 25) previous_bookings_not_canceled  
-#starting from 99.3% (=21!!), we have outliers. Again, we have a value higher than 70. This could be
+# starting from 99.3% (=21!!), we have outliers. Again, we have a value higher than 70. This could be
 # due to solving our data inconsistencies in the previous step. Therefore, we will also see this as an invalid outlier.
 # Again we use a value of 30 as cut off point.
 train_X_outlier$previous_bookings_not_canceled[train_X$previous_bookings_not_canceled>30] <- NA
@@ -278,14 +302,14 @@ outlier.cols <- append(outlier.cols, 'previous_bookings_not_canceled')
 
 # 26) previous_cancellations  
 #starting from 99.8% ( = 4!!), we have outliers. However, 4 is still a reasonable value.
-# However, when a person cancels his room more than 20 times, we will see this as an invalid outlier.
+# However, when a person cancels his room more than 20 times, we see this as an invalid outlier.
 train_X_outlier$previous_cancellations[train_X$previous_cancellations>20] <- NA
 train_X_outlier$previous_cancellations <- impute(train_X_outlier$previous_cancellations, method = median)
 outlier.cols <- append(outlier.cols, 'previous_cancellations')
 
 
 # 28) special_requests  
-#starting from 97.6% (=3), we have outliers. However, we do not see any unusual values.
+# starting from 97.6% (=3), we have outliers. However, we do not see any unusual values.
 outlier.cols <- append(outlier.cols, 'special_requests')
 
 # inspect
@@ -294,9 +318,7 @@ str(val_X_outlier)
 str(test_X_outlier)
 
 
-
-
-# use this function to handle valid outliers
+# use this function to handle (scale) valid outliers
 handle_outlier_z <- function(col){
   col_z <- scale(col)
   ifelse(abs(col_z)>3,
@@ -317,7 +339,7 @@ train_X_outlier$days_in_waiting_list <- ifelse(train_X_impute$days_in_waiting_li
 
 ##############################################################
 ##############################################################
-# 4. Parsing dates
+# 5. Parsing dates
 ##############################################################
 ##############################################################
 
@@ -340,13 +362,14 @@ test_X_outlier$day_of_month_arrival <- format(test_X_outlier$posix_arrival, form
 test_X_outlier$month_arrival <- format(test_X_outlier$posix_arrival, format = '%B')
 test_X_outlier$year_arrival <- as.factor(format(test_X_outlier$posix_arrival, format = '%Y'))
 
+##############################################################
+# Special case imputation: 'last_status_date'
+##############################################################
+# To impute NA we calculate the mean of the difference between arrival_date and last_status_date for each category
+# -> add this value to arrival_date and impute in NA rows
+#(this needed to happen after dates parsing)
 
-# last_status_date
-# to impute NA we calculate the mean of the difference between
-# arrival_date and last_status_date for each category
-# add this value to arrival_date and impute in NA rows
-
-#train
+# train
 train_X_outlier$posix_last_status <- as.POSIXlt(train_X_outlier$last_status_date, format='%Y-%m-%dT %H:%M:%S')
 
 mean_diff_canceled <- round(mean((difftime(train_X_outlier$posix_last_status[train_X_outlier$last_status=="Canceled"], train_X_outlier$posix_arrival[train_X_outlier$last_status=="Canceled"], units = "d")), na.rm = T))
@@ -359,7 +382,7 @@ train_X_outlier$posix_last_status[is.na(train_X_outlier$posix_last_status) & (tr
 
 train_X_outlier$posix_last_status <- format(as.POSIXct(train_X_outlier$posix_last_status, format="%Y-%m-%d"), format="%Y-%m-%d")
 
-#val
+# val
 val_X_outlier$posix_last_status <- as.POSIXlt(val_X_outlier$last_status_date, format='%Y-%m-%dT %H:%M:%S')
 
 val_X_outlier$posix_last_status[is.na(val_X_outlier$posix_last_status) & (val_X_outlier$last_status=="Canceled")] <- val_X_outlier$posix_arrival[is.na(val_X_outlier$posix_last_status) & (val_X_outlier$last_status=="Canceled")] + mean_diff_canceled
@@ -368,7 +391,7 @@ val_X_outlier$posix_last_status[is.na(val_X_outlier$posix_last_status) & (val_X_
 
 val_X_outlier$posix_last_status <- format(as.POSIXct(val_X_outlier$posix_last_status, format="%Y-%m-%d"), format="%Y-%m-%d")
 
-#test
+# test
 test_X_outlier$posix_last_status <- as.POSIXlt(test_X_outlier$last_status_date, format='%Y-%m-%dT %H:%M:%S')
 
 test_X_outlier$posix_last_status[is.na(test_X_outlier$posix_last_status) & (test_X_outlier$last_status=="Canceled")] <- test_X_outlier$posix_arrival[is.na(test_X_outlier$posix_last_status) & (test_X_outlier$last_status=="Canceled")] + mean_diff_canceled
@@ -380,7 +403,7 @@ test_X_outlier$posix_last_status <- format(as.POSIXct(test_X_outlier$posix_last_
 
 ##############################################################
 ##############################################################
-# 5. Write data away
+# 6. Write data away to silver layer
 ##############################################################
 ##############################################################
 training_data_after_data_cleaning <- train_X_outlier
@@ -389,7 +412,7 @@ val_data_after_data_cleaning <- val_X_outlier
 val_data_after_data_cleaning$average_daily_rate <- val_y
 test_data_after_data_cleaning <- test_X_outlier
 
-# inspect:
+# inspection
 #str(training_data_after_data_cleaning)
 #str(test_data_after_data_cleaning)
 
@@ -399,3 +422,12 @@ write.csv(test_data_after_data_cleaning,"./data/silver_data/test.csv", row.names
 
 
 
+##############################################################
+##############################################################
+# 7. End Note
+##############################################################
+##############################################################
+
+# This is the end of the Data Cleaning section of the assignment.
+# After this, the authors now begin the process of Feature Engineering
+# as proposed by the CRISP-DM framework.
