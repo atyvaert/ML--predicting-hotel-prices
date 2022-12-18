@@ -203,7 +203,7 @@ par <- list(
 )
 
 # perform runs
-runs2 <- tuning_run('./src/layer2_model.R', sample = 0.3, runs_dir = '_tuning2_try', flags = par)
+runs2 <- tuning_run('./src/layer2_model.R', sample = 0.3, runs_dir = '_tuning2', flags = par)
 
 
 # Finally, I simply list all the runs, by referring to its running directory, where all the information 
@@ -414,7 +414,7 @@ runs5 <- tuning_run('./src/layer5_model.R', sample = 0.2, runs_dir = '_tuning5.2
 
 # Finally, I simply list all the runs, by referring to its running directory, where all the information 
 # from the run is stored and I ask for it to be ordered according to the mean squared error.
-ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning5')
+ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning5.2')
 
 # Finally, I select the best model parameters and I train the model with it.
 # The best model has a dropout value, 512 neurons and a learning rate of 0.001
