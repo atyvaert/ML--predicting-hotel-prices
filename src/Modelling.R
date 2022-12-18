@@ -690,6 +690,7 @@ save(svm.rate, file = "models/svm_model_train.Rdata")
 # 2) We make predictions on the validation set, which results in an RMSE 
 svm_pred_val <- predict(svm.rate, newdata = val_X)
 sqrt(mean((svm_pred_val - val_y)^2))
+# RMSE = 36.42701
 
 # 3) As this is the only model we make for SVM, we immediately train the model on all the data
 set.seed(1)
