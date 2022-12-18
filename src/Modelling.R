@@ -451,8 +451,8 @@ sqrt(mean((rf_pred_val - val_y)^2))
 # 3.2 random Forest with CV 
 ###############################################
 
-#We tune over 3 values of interaction depth
-rfGrid <-  expand.grid(mtry = c(20, 34, 40))
+#We tune over 3 values of interaction depth around p/3 (=34)
+rfGrid <-  expand.grid(mtry = c(28, 31, 34, 37, 40))
 
 # 1) train the random forest model on the training data to do hyperparameter tuning
 set.seed(1)
