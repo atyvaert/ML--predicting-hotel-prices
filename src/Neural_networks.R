@@ -20,9 +20,9 @@ library(keras)
 
 # import data
 rm(list = ls())
-train <- read.csv('./data/gold_data/train.csv')
-val <- read.csv('./data/gold_data/val.csv')
-test_X <- read.csv('./data/gold_data/test.csv')
+train <- read.csv('./data/gold_data/train_try2.csv')
+val <- read.csv('./data/gold_data/val_try2.csv')
+test_X <- read.csv('./data/gold_data/test_try2.csv')
 
 # separate dependent and independent variables for training and validation set
 train_X <- subset(train, select = -c(average_daily_rate))
@@ -198,7 +198,7 @@ par <- list(
   neurons1 = c(32,64,128,256),
   neurons2 = c(16, 32,64,128),
   lr = c(0.001,0.01),
-  maxnorm1 = c(1,2, 3)
+  maxnorm1 = c(0.5,1,2, 3)
 )
 
 # perform runs
@@ -257,7 +257,7 @@ par <- list(
   neurons2 = c(16, 32,64, 128),
   neurons3 = c(8, 16, 32),
   lr = c(0.001,0.01),
-  maxnorm1 = c(1,2, 3)
+  maxnorm1 = c(0.5,1,2, 3)
 )
 
 # perform runs
@@ -322,7 +322,7 @@ par <- list(
   neurons3 = c(8,16, 32, 64),
   neurons4 = c(8, 16, 32),
   lr = c(0.001,0.01),
-  maxnorm1 = c(1,2, 3)
+  maxnorm1 = c(0.5,1,2, 3)
 )
 
 
@@ -391,7 +391,7 @@ par <- list(
   neurons4 = c(8, 16, 32),
   neurons4 = c(4, 8, 16),
   lr = c(0.001,0.01),
-  maxnorm1 = c(1,2, 3)
+  maxnorm1 = c(0.5,1,2, 3)
 )
 
 # perform runs
