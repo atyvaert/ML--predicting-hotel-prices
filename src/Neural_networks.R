@@ -202,16 +202,16 @@ par <- list(
 )
 
 # perform runs
-runs2 <- tuning_run('./src/layer2_model.R', sample = 0.2, runs_dir = '_tuning', flags = par)
+runs2 <- tuning_run('./src/layer2_model.R', sample = 0.2, runs_dir = '_tuning2', flags = par)
 
 
 # Finally, I simply list all the runs, by referring to its running directory, where all the information 
 # from the run is stored and I ask for it to be ordered according to the mean squared error.
-ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning')
+ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning2')
 
 # Finally, I select the best model parameters and I train the model with it.
 # The best model has a dropout value, 512 neurons and a learning rate of 0.001
-best_run2 <- ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning')[1,]
+best_run2 <- ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning2')[1,]
 
 # hier nog probleem: run the best model again lukt nog niet
 # Run the best model again and save the model
@@ -261,16 +261,16 @@ par <- list(
 )
 
 # perform runs
-runs3 <- tuning_run('./src/layer3_model.R', sample = 0.2, runs_dir = '_tuning', flags = par)
+runs3 <- tuning_run('./src/layer3_model.R', sample = 0.2, runs_dir = '_tuning3', flags = par)
 
 
 # Finally, I simply list all the runs, by referring to its running directory, where all the information 
 # from the run is stored and I ask for it to be ordered according to the mean squared error.
-ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning')
+ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning3')
 
 # Finally, I select the best model parameters and I train the model with it.
 # The best model has a dropout value, 512 neurons and a learning rate of 0.001
-best_run3 <- ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning')[1,]
+best_run3 <- ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning3')[1,]
 
 # hier nog probleem: run the best model again lukt nog niet
 # Run the best model again and save the model
@@ -327,16 +327,16 @@ par <- list(
 
 
 # perform runs
-runs4 <- tuning_run('./src/layer4_model.R', sample = 0.2, runs_dir = '_tuning', flags = par)
+runs4 <- tuning_run('./src/layer4_model.R', sample = 0.2, runs_dir = '_tuning4', flags = par)
 
 
 # Finally, I simply list all the runs, by referring to its running directory, where all the information 
 # from the run is stored and I ask for it to be ordered according to the mean squared error.
-ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning')
+ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning4')
 
 # Finally, I select the best model parameters and I train the model with it.
 # The best model has a dropout value, 512 neurons and a learning rate of 0.001
-best_run4 <- ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning')[1,]
+best_run4 <- ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning4')[1,]
 
 # hier nog probleem: run the best model again lukt nog niet
 # Run the best model again and save the model
@@ -395,16 +395,16 @@ par <- list(
 )
 
 # perform runs
-runs5 <- tuning_run('./src/layer5_model.R', sample = 0.2, runs_dir = '_tuning', flags = par)
+runs5 <- tuning_run('./src/layer5_model.R', sample = 0.2, runs_dir = '_tuning5', flags = par)
 
 
 # Finally, I simply list all the runs, by referring to its running directory, where all the information 
 # from the run is stored and I ask for it to be ordered according to the mean squared error.
-ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning')
+ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning5')
 
 # Finally, I select the best model parameters and I train the model with it.
 # The best model has a dropout value, 512 neurons and a learning rate of 0.001
-best_run5 <- ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning')[1,]
+best_run5 <- ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning5')[1,]
 
 # hier nog probleem: run the best model again lukt nog niet
 # Run the best model again and save the model
