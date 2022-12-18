@@ -1,3 +1,5 @@
+#intro
+
 ##############################################################
 ##############################################################
 # Feature engineering
@@ -41,7 +43,7 @@ val_y <- val$average_daily_rate
 # inspect
 #str(train_X)
 #str(val_X)
-str(test_X)
+#str(test_X)
 
 
 ##############################################################
@@ -56,13 +58,16 @@ test_X_encode <- test_X
 ##############################################################
 # 1.1 Ordinal data: integer encoding
 ##############################################################
-
+# No ordinal data
 
 ##############################################################
 # 1.2 Nominal data: one-hot encoding
 ##############################################################
 # We use the dummmy package to treat nominal data as this is a more flexible approach
 # and we have a lot of variables with a lot of levels
+
+# Special cases
+##############################################################
 
 # Before the one-hot encoding, we create a new feature. 
 # Explanation can be found in 2.4 on correlation
@@ -71,7 +76,6 @@ test_X_encode <- test_X
 train_X_encode$room_type_conflict <- ifelse(train_X_encode[, 'assigned_room_type']== train_X_encode[, 'reserved_room_type'], 0, 1)
 val_X_encode$room_type_conflict <- ifelse(val_X_encode[, 'assigned_room_type']== val_X_encode[, 'reserved_room_type'], 0, 1)
 test_X_encode$room_type_conflict <- ifelse(test_X_encode[, 'assigned_room_type']== test_X_encode[, 'reserved_room_type'], 0, 1)
-
 # drop assigned room type
 train_X_encode <- subset(train_X_encode, select = -c(assigned_room_type))
 val_X_encode <- subset(val_X_encode, select = -c(assigned_room_type))
@@ -89,15 +93,15 @@ val_X_encode$year_arrival <- as.factor(val_X_encode$year_arrival)
 test_X_encode$year_arrival <- as.factor(test_X_encode$year_arrival)
 
 
-
 # Feature which indicates what part of the month the customer arrives
 # We split the months in weeks (1-7, 8-14, 15-21, 21-28, 29-...)
-
 train_X_encode$week_of_month <- as.factor(floor(train_X_encode$day_of_month_arrival/7)+1)
 val_X_encode$week_of_month <- as.factor(floor(val_X_encode$day_of_month_arrival/7)+1)
 test_X_encode$week_of_month <- as.factor(floor(test_X_encode$day_of_month_arrival/7)+1)
 
 
+# Other features
+##############################################################
 # get categories and dummies
 # we only select the top 10 levels with highest frequency so our model does not explode
 # For all cases, this includes most of the data
@@ -169,8 +173,8 @@ dummies_test <- subset(dummies_test, select = -c(booking_distribution_channel_Di
                                                  arrival_date_weekday_Mon, booking_company_40, booking_agent_240,
                                                  last_status_Canceled, week_of_month_5))
 
-# we remove the original predictors and merge them with the other predictors
-## merge with overall training set
+# Remove the original predictors and merge them with the other predictors
+# train
 train_X_encode <- subset(train_X_encode, select = -c(booking_distribution_channel,
                                                      canceled, country, customer_type, deposit,
                                                      hotel_type, is_repeated_guest, last_status,
@@ -179,7 +183,7 @@ train_X_encode <- subset(train_X_encode, select = -c(booking_distribution_channe
                                                      booking_company, week_of_month))
 train_X_encode <- cbind(train_X_encode, dummies_train)
 
-## merge with overall val set
+# val
 val_X_encode <- subset(val_X_encode, select = -c(booking_distribution_channel,
                                                  canceled, country, customer_type, deposit,
                                                  hotel_type, is_repeated_guest, last_status,
@@ -188,7 +192,7 @@ val_X_encode <- subset(val_X_encode, select = -c(booking_distribution_channel,
                                                  booking_company, week_of_month))
 val_X_encode <- cbind(val_X_encode, dummies_val)
 
-## merge with overall test set
+# test
 test_X_encode <- subset(test_X_encode, select = -c(booking_distribution_channel,
                                                    canceled, country, customer_type, deposit,
                                                    hotel_type, is_repeated_guest, last_status,
@@ -196,11 +200,6 @@ test_X_encode <- subset(test_X_encode, select = -c(booking_distribution_channel,
                                                    month_arrival, arrival_date_weekday, booking_agent,
                                                    booking_company, week_of_month))
 test_X_encode <- cbind(test_X_encode, dummies_test)
-
-
-##############################################################
-# 1.3 Special data: create a indicator variable
-##############################################################
 
 
 ##############################################################
@@ -245,9 +244,9 @@ test_X_encode <- cbind(test_X_encode, time_between_arrival_checkout, time_betwee
 
 
 #############################
-# EXTRA indicator nr weekdays and weekend days
+# Indicator nr_weekdays and nr_weekenddays
 #############################
-
+# We split the feature nr_nights in nr_weekdays and nr_weekenddays because prices might differ for the weekend.
 
 
 features_week_weekend_days <- function(df) {
@@ -335,6 +334,8 @@ cor(train_X_encode$nr_previous_bookings, train_X_encode$previous_cancellations)
 
 #high correlations:
 ########################################################################################################
+# Some variables had high correlation. How we handled them is explained below:
+
 #nr_booking_changes & nr_booking_changes_FLAG 0.89 -> delete 2nd -> below
 #nr_nights & time_between_arrival_checkout 0.58 -> delete 2nd -> below
 #assigned_room_type_* and reserved_room_type_* -> delete 1st and add column flag if assigned != reserved
@@ -343,8 +344,8 @@ cor(train_X_encode$nr_previous_bookings, train_X_encode$previous_cancellations)
 #booking_distribution_channel_Corporate & booking_company_NULL -> like above
 #canceled_stay.cancelled & last_status_canceled -> delete 2nd
 
-# drop number of previous bookings as this contains the information of the columns
-# previous_cancellations and previous_bookings_not_canceled and this has high correlation
+# Drop number of previous bookings as this is the sum of previous_cancellations and previous_bookings_not_canceled
+# -> This has high correlation
 # This happens in the next section
 
 ##############################################################
