@@ -1,15 +1,36 @@
-#intro
+##############################################################
+##############################################################
+# 0. Introduction of File
+##############################################################
+##############################################################
+# The authors now perform Feature Engineering.
+# The website TowardsDataScience describes feature engineering as 
+# a machine learning technique that leverages data to create new variables that aren’t in the training set.
+# Doing so, the authors aim to improve predictive capabilities.
+
+# Feature engineering is the last part of the Data Preparation phase in the CRISP-DM framework.
+# After this step, the actual Modeling part will begin.
 
 ##############################################################
 ##############################################################
-# Feature engineering
+
+
+
+##############################################################
+##############################################################
+# 1. Data Import
 ##############################################################
 ##############################################################
 
-# Might be needed for setting R language to english for weekdays
-#Sys.setlocale("LC_ALL","English")
+# The authors follow the Bronze/Silver/Gold data structure.
+# In this step, the Silver data is used.
+# The final data will be written away to 
 
-# libraries
+
+# It might be needed to set R language to English for weekdays
+# Sys.setlocale("LC_ALL","English")
+
+# The needed packages and libraries are loaded
 library(lubridate)
 library(readr)
 library(dummy)
@@ -27,13 +48,13 @@ library(dplyr)
 library(chron)
 
 
-# import data
+#The Silver data is read
 rm(list = ls())
 train <- read.csv('./data/silver_data/train.csv')
 val <- read.csv('./data/silver_data/val.csv')
 test_X <- read.csv('./data/silver_data/test.csv')
 
-# separate dependent and independent variables for training and validation set
+# Separation of dependent and independent variables for training and validation set
 train_X <- subset(train, select = -c(average_daily_rate))
 train_y <- train$average_daily_rate
 
@@ -41,14 +62,18 @@ val_X <- subset(val, select = -c(average_daily_rate))
 val_y <- val$average_daily_rate
 
 # inspect
-#str(train_X)
-#str(val_X)
-#str(test_X)
+# str(train_X)
+# str(val_X)
+# str(test_X)
+
+
+
+
 
 
 ##############################################################
 ##############################################################
-# 1. Categorical data
+# 2. Categorical data
 ##############################################################
 ##############################################################
 train_X_encode <- train_X
@@ -56,54 +81,56 @@ val_X_encode <- val_X
 test_X_encode <- test_X
 
 ##############################################################
-# 1.1 Ordinal data: integer encoding
+# 2.1 Ordinal data: integer encoding
 ##############################################################
 # No ordinal data
 
 ##############################################################
-# 1.2 Nominal data: one-hot encoding
+# 2.2 Nominal data: one-hot encoding
 ##############################################################
 # We use the dummmy package to treat nominal data as this is a more flexible approach
 # and we have a lot of variables with a lot of levels
 
-# Special cases
+##############################################################
+# 2.3 Special cases
 ##############################################################
 
 # Before the one-hot encoding, we create a new feature. 
-# Explanation can be found in 2.4 on correlation
+# Explanation can be found in  section 3.5 on correlation
 # This column indicates if assigned and reserved room type are the same
 # We also delete the column assigned room type due to correlation issues
+
 train_X_encode$room_type_conflict <- ifelse(train_X_encode[, 'assigned_room_type']== train_X_encode[, 'reserved_room_type'], 0, 1)
 val_X_encode$room_type_conflict <- ifelse(val_X_encode[, 'assigned_room_type']== val_X_encode[, 'reserved_room_type'], 0, 1)
 test_X_encode$room_type_conflict <- ifelse(test_X_encode[, 'assigned_room_type']== test_X_encode[, 'reserved_room_type'], 0, 1)
+
 # drop assigned room type
 train_X_encode <- subset(train_X_encode, select = -c(assigned_room_type))
 val_X_encode <- subset(val_X_encode, select = -c(assigned_room_type))
 test_X_encode <- subset(test_X_encode, select = -c(assigned_room_type))
-
 
 # First we make a categorical feature arrival_date_weekday
 train_X_encode$arrival_date_weekday <- wday(train_X_encode$posix_arrival, label = T)
 val_X_encode$arrival_date_weekday <- wday(val_X_encode$posix_arrival, label = T)
 test_X_encode$arrival_date_weekday <- wday(test_X_encode$posix_arrival, label = T)
 
-# Make year_arrival categorical
+# year_arrival was made categorical
 train_X_encode$year_arrival <- as.factor(train_X_encode$year_arrival)
 val_X_encode$year_arrival <- as.factor(val_X_encode$year_arrival)
 test_X_encode$year_arrival <- as.factor(test_X_encode$year_arrival)
 
 
-# Feature which indicates what part of the month the customer arrives
-# We split the months in weeks (1-7, 8-14, 15-21, 21-28, 29-...)
+# A feature that indicates what part of the month the customer arrives was also made.
+# Months were split in weeks (1-7, 8-14, 15-21, 22-28, 29-...)
 train_X_encode$week_of_month <- as.factor(floor(train_X_encode$day_of_month_arrival/7)+1)
 val_X_encode$week_of_month <- as.factor(floor(val_X_encode$day_of_month_arrival/7)+1)
 test_X_encode$week_of_month <- as.factor(floor(test_X_encode$day_of_month_arrival/7)+1)
 
-
-# Other features
+##############################################################
+# 2.4 Other features
 ##############################################################
 # get categories and dummies
-# we only select the top 10 levels with highest frequency so our model does not explode
+# we only select the top 10 levels with highest frequency so the model does not explode
 # For all cases, this includes most of the data
 cats <- categories(train_X_encode[, c('booking_distribution_channel',
                                       'canceled', 'customer_type', 'deposit',
@@ -112,15 +139,17 @@ cats <- categories(train_X_encode[, c('booking_distribution_channel',
                                       'arrival_date_weekday', 'year_arrival', 'week_of_month')], p = 10)
 
 
-# for some variables with high cardinality, we use the specified amount of category levels
-# f.e.: month_arrival separate because we want all 12 categories here
+# For some variables with high cardinality, we use the specified amount of category levels
+# We either use our own knowledge or the expert opinion of the TA
+# e.g.: month_arrival separate because we want all 12 categories here
+
 cats <- append(cats, categories(train_X_encode['month_arrival']))
 cats <- append(cats, categories(train_X_encode['country'], p = 15))
 cats <- append(cats, categories(train_X_encode['booking_agent'], p = 8)) #7 large agents (>1000) + null
 cats <- append(cats, categories(train_X_encode['booking_company'], p = 2))
 
 
-# apply on train set (exclude reference categories)
+# Apply on train set (exclude reference categories)
 dummies_train <- dummy(train_X_encode[, c('booking_distribution_channel', 
                                           'canceled', 'country', 'customer_type', 'deposit',
                                           'hotel_type', 'is_repeated_guest', 'last_status',
@@ -128,7 +157,7 @@ dummies_train <- dummy(train_X_encode[, c('booking_distribution_channel',
                                           'month_arrival', 'arrival_date_weekday', 'year_arrival',
                                           'booking_agent', 'booking_company', 'week_of_month')], object = cats)
 
-# exclude the reference category: take the first one of the variable you added
+# Exclude the reference category: take the first one of the variable added
 names(dummies_train)
 dummies_train <- subset(dummies_train, 
                         select = -c(booking_distribution_channel_Direct,
@@ -139,8 +168,8 @@ dummies_train <- subset(dummies_train,
                                     arrival_date_weekday_Mon, booking_company_40, booking_agent_240,
                                     last_status_Canceled, week_of_month_5))
 
-# apply on val set (exclude reference categories)
-# excluded no.canceled so it becomes one when it was canceled
+# Apply on val set (exclude reference categories)
+# Excluded no.canceled so it becomes one when it was canceled
 dummies_val <- dummy(val_X_encode[, c('booking_distribution_channel', 
                                       'canceled', 'country', 'customer_type', 'deposit',
                                       'hotel_type', 'is_repeated_guest', 'last_status',
@@ -156,8 +185,8 @@ dummies_val <- subset(dummies_val, select = -c(booking_distribution_channel_Dire
                                                arrival_date_weekday_Mon, booking_company_40, booking_agent_240,
                                                last_status_Canceled, week_of_month_5))
 
-# apply on test set (exclude reference categories)
-# excluded no.canceled so it becomes one when it was canceled
+# Apply on test set (exclude reference categories)
+# Excluded no.canceled so it becomes one when it was canceled
 dummies_test <- dummy(test_X_encode[, c('booking_distribution_channel', 
                                         'canceled', 'country', 'customer_type', 'deposit',
                                         'hotel_type', 'is_repeated_guest', 'last_status',
@@ -174,7 +203,7 @@ dummies_test <- subset(dummies_test, select = -c(booking_distribution_channel_Di
                                                  last_status_Canceled, week_of_month_5))
 
 # Remove the original predictors and merge them with the other predictors
-# train
+# Train set
 train_X_encode <- subset(train_X_encode, select = -c(booking_distribution_channel,
                                                      canceled, country, customer_type, deposit,
                                                      hotel_type, is_repeated_guest, last_status,
@@ -183,7 +212,7 @@ train_X_encode <- subset(train_X_encode, select = -c(booking_distribution_channe
                                                      booking_company, week_of_month))
 train_X_encode <- cbind(train_X_encode, dummies_train)
 
-# val
+# Val set
 val_X_encode <- subset(val_X_encode, select = -c(booking_distribution_channel,
                                                  canceled, country, customer_type, deposit,
                                                  hotel_type, is_repeated_guest, last_status,
@@ -192,7 +221,7 @@ val_X_encode <- subset(val_X_encode, select = -c(booking_distribution_channel,
                                                  booking_company, week_of_month))
 val_X_encode <- cbind(val_X_encode, dummies_val)
 
-# test
+# Test set
 test_X_encode <- subset(test_X_encode, select = -c(booking_distribution_channel,
                                                    canceled, country, customer_type, deposit,
                                                    hotel_type, is_repeated_guest, last_status,
@@ -204,12 +233,14 @@ test_X_encode <- cbind(test_X_encode, dummies_test)
 
 ##############################################################
 ##############################################################
-# 2. Numerical data
+# 3. Numerical data
 ##############################################################
 ##############################################################
 
-
-# Create feature time_between_last_status_arrival
+##############################################################
+# 3.1 time_between_last_status_arrival
+##############################################################
+# Creation of feature time_between_last_status_arrival
 # time_between_arrival_checkout gives a positive difference when last status date is after
 # arrival (often when customer checks out)
 # time_between_arrival_cancel gives a negative difference when last status date is before
@@ -243,10 +274,11 @@ time_between_arrival_cancel[time_between_arrival_cancel<0] <- 0
 test_X_encode <- cbind(test_X_encode, time_between_arrival_checkout, time_between_arrival_cancel)
 
 
-#############################
-# Indicator nr_weekdays and nr_weekenddays
-#############################
-# We split the feature nr_nights in nr_weekdays and nr_weekenddays because prices might differ for the weekend.
+##############################################################
+# 3.2 Indicator nr_weekdays and nr_weekenddays
+##############################################################
+# The feature nr_nights is split up in nr_weekdays and nr_weekenddays because prices might differ for the weekend.
+# One could assume that a beach resort receives more visitors in a weekend day than on an average tuesday ...
 
 
 features_week_weekend_days <- function(df) {
@@ -278,20 +310,20 @@ val_X_encode <- features_week_weekend_days(val_X_encode)
 test_X_encode <- features_week_weekend_days(test_X_encode)
 
 ##############################################################
-# 2.1 Numerical data
+# 3.3 Numerical data - Indicator variables
 ##############################################################
 # Make indicators variables for several variables as more than 90% is equal to zero and each time,
 # there are very few values with 1 or somewhat higher
 ind.cols <- c('nr_babies', 'nr_children')
 
-# apply
+# Apply
 train_X_encode[, ind.cols] <- ifelse(train_X_encode[, ind.cols] == 0, 0, 1)
 val_X_encode[, ind.cols] <- ifelse(val_X_encode[, ind.cols] == 0, 0, 1)
 test_X_encode[, ind.cols] <- ifelse(test_X_encode[, ind.cols] == 0, 0, 1)
 
 
 ##############################################################
-# 2.2 Transformations
+# 3.4 Transformations
 ##############################################################
 # for three variables, we perform a log transformation as we want to make the distribution
 # less skewed and reduce the range of the variables
@@ -304,7 +336,7 @@ train_X_encode[, trans.cols] <- log(train_X_encode[, trans.cols])
 
 
 ##############################################################
-# 2.3 Scaling
+# 3.4 Scaling
 ##############################################################
 # check if variable is normally distributed or not to see if we need to apply normalization 
 # or standardization with the following code
@@ -324,7 +356,7 @@ test_X_scale[, norm.cols] <- predict(process, test_X_scale[, norm.cols])
 
 
 ##############################################################
-# 2.4 Check correlations
+# 3.5 Check correlations
 ##############################################################
 
 # we tested correlations with the following code that we do not repeat all the time
@@ -332,9 +364,8 @@ cor(train_X_encode$nr_previous_bookings, train_X_encode$previous_bookings_not_ca
 cor(train_X_encode$nr_previous_bookings, train_X_encode$previous_cancellations)
 
 
-#high correlations:
-########################################################################################################
-# Some variables had high correlation. How we handled them is explained below:
+#high correlations!
+# Some variables had high correlation. How these were handled is explained below:
 
 #nr_booking_changes & nr_booking_changes_FLAG 0.89 -> delete 2nd -> below
 #nr_nights & time_between_arrival_checkout 0.58 -> delete 2nd -> below
@@ -349,7 +380,7 @@ cor(train_X_encode$nr_previous_bookings, train_X_encode$previous_cancellations)
 # This happens in the next section
 
 ##############################################################
-# 2.5 Column deleting
+# 3.6 Column deleting
 ##############################################################
 
 train_X_final <- train_X_scale
@@ -372,7 +403,7 @@ test_X_final <- subset(test_X_scale, select = -c(arrival_date, last_status_date,
 
 ##############################################################
 ##############################################################
-# 5. Write data away
+# 4. Write data away to Gold layer
 ##############################################################
 ##############################################################
 training_data_after_FE <- train_X_final
@@ -385,7 +416,20 @@ test_data_after_FE <- test_X_final
 
 # str(training_data_after_FE)
 
-# Write
+# Write data away
 write.csv(training_data_after_FE,"./data/gold_data/train.csv", row.names = FALSE)
 write.csv(val_data_after_FE,"./data/gold_data/val.csv", row.names = FALSE)
 write.csv(test_data_after_FE,"./data/gold_data/test.csv", row.names = FALSE)
+
+
+
+
+##############################################################
+##############################################################
+# 5. End Note
+##############################################################
+##############################################################
+
+# This is the end of the Feature Engineering section of the assignment.
+# After this, the authors now begin the process of modeling
+# as proposed by the CRISP-DM framework.
