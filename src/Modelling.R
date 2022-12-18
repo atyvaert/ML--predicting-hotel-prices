@@ -448,7 +448,31 @@ sqrt(mean((rf_pred_val - val_y)^2))
 
 
 ###############################################
-# 3.2 random Forest with adaptiveCV 
+# 3.2 random Forest with CV 
+###############################################
+
+#We tune over 3 values of interaction depth
+rfGrid <-  expand.grid(mtry = c(20, 34, 40))
+
+# 1) train the random forest model on the training data to do hyperparameter tuning
+set.seed(1)
+trainControl <- trainControl(method = 'cv', number = 5, verboseIter = TRUE, allowParallel = TRUE)
+cv.rf.rate <- train(average_daily_rate ~ .,
+                    data = train,
+                    method = 'rf',
+                    trControl = trainControl,
+                    metric = 'RMSE',
+                    tuneGrid = rfGrid
+)
+# save the model
+save(cv.rf.rate, file = "models/cv_rf_model_train.Rdata")
+# 2) We make predictions on the validation set, which results in an RMSE 
+cv_rf_pred_val <- predict(cv.rf.rate, newdata = val_X)
+sqrt(mean((cv_rf_pred_val - val_y)^2))
+
+
+###############################################
+# 3.3 random Forest with adaptiveCV 
 ###############################################
 
 #We set up for parallel processing, change number of clusters according to CPU cores
@@ -459,7 +483,7 @@ registerDoParallel(cluster)
 set.seed(1)
 trainControl <- trainControl(method = 'adaptive_cv',
                              number = 5,
-                             repeats = 3,
+                             repeats = 2,
                              adaptive = list(min = 5, alpha = 0.05, method = "gls", complete = TRUE),
                              verboseIter = TRUE,
                              search = 'random',
