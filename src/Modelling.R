@@ -62,11 +62,6 @@ str(test_X)
 # set in order to predict the test set. If the RMSE is very close for multiple models, it is possible that we 
 # retrain more than 1 model.
 
-# NOTE: The baseline models are an exception on this rule and there each model is trained
-# on all data (train + validation set) after finding the best model, this is easy to compute
-# and we needed at least one linear model submission.
-
-
 
 ##############################################################
 ##############################################################
@@ -86,17 +81,6 @@ linR_pred <- predict(lm.fit, val_X)
 sqrt(mean((val_y - linR_pred)^2))
 # RMSE = 30.71916
 
-# train the model on all the available training data
-lm.fit <- lm(average_daily_rate ~ ., data = train_and_val)
-
-# make predictions on the test set
-linR_pred_test <- predict(lm.fit, test_X)
-linR_preds_df <- data.frame(id = as.integer(test_X$id),
-                            average_daily_rate= linR_pred_test)
-#str(linR_preds_df)
-
-# save submission file
-write.csv(linR_preds_df, file = "./data/sample_submission_linR.csv", row.names = F)
 
 ##############################################################
 # This function returns how many features we should use based on RMSE on the validation set
@@ -145,27 +129,10 @@ forward_pred <- predict(best_model_forward, val_X)
 sqrt(mean((forward_pred - val_y)^2))
 #RMSE = 30.71786
 
-# train the model with the optimal parameters to all available training data (train + val set)
-model_train_matrix_forward <- cbind(train_and_val_X[lm.cols.forward], train_and_val_y)
-
-best_model_forward = lm(train_and_val_y ~ ., data = model_train_matrix_forward)
-
-# make predictions on the test set and save in submission folder
-forward_pred_test <- predict(best_model_forward, test_X)
-forward_preds_df <- data.frame(id = as.integer(test_X$id),
-                               average_daily_rate= forward_pred_test)
-
-# str(forward_preds_df)
-
-# save submission file
-write.csv(forward_preds_df, file = "./data/sample_submission_forwardsel.csv", row.names = F)
-
 
 ##############################################################
 # 1.3 Backward Stepwise selection 
 ##############################################################
-
-### same comment
 
 # perform backwards stepwise selection and look at the results
 regfit.full_back <- regsubsets(average_daily_rate ~ ., data = train, nvmax = ncol(train_X), really.big = T, method = "backward")
@@ -195,19 +162,6 @@ backward_pred <- predict(best_model_backward, val_X)
 sqrt(mean((backward_pred - val_y)^2))
 # RMSE = 30.71776
 
-# train the model with the optimal parameters to all available training data (train + val set)
-model_train_matrix_backward <- cbind(train_and_val_X[lm.cols.backward], train_and_val_y)
-best_model_backward =  lm(train_and_val_y ~., data = model_train_matrix_backward)
-
-# predictions on the test set and save in submission folder
-backward_pred_test <- predict(best_model_backward, test_X)
-backward_preds_df <- data.frame(id = as.integer(test_X$id),
-                                average_daily_rate= backward_pred_test)
-
-# str(backward_preds_df)
-
-# save submission file
-write.csv(backward_preds_df, file = "./data/sample_submission_backwardsel.csv", row.names = F)
 
 ##############################################################
 # 1.4 Sequential replacement Stepwise selection 
@@ -240,20 +194,6 @@ seqrep_pred <- predict(best_model_seqrep, val_X)
 sqrt(mean((seqrep_pred - val_y)^2))
 # RMSE = 30.70939
 
-# train the model with the optimal parameters to all available training data (train + val set)
-model_train_matrix_seqrep <- cbind(train_and_val_X[lm.cols.seqrep], train_and_val_y)
-best_model_seqrep =  lm(train_and_val_y ~., data = model_train_matrix_seqrep)
-
-
-
-# predictions on the test set and save in submission folder
-seqrep_pred_test <- predict(best_model_seqrep, test_X)
-seqrep_preds_df <- data.frame(id = as.integer(test_X$id),
-                              average_daily_rate= seqrep_pred_test)
-
-# save submission file
-write.csv(seqrep_preds_df, file = "./data/sample_submission_seqrepsel.csv", row.names = F)
-
 
 ##############################################################
 # 1.5 Ridge Regression
@@ -277,20 +217,6 @@ ridge_pred_val = predict(ridge.mod, s = bestlam, newx = as.matrix(val_X))
 sqrt(mean((val_y - ridge_pred_val)^2))
 # RMSE = 32.33805
 
-# train the model on training and validation data 
-ridge.mod <- glmnet(all_train, train_and_val_y, alpha = 0, lambda = bestlam, standardize = F)
-
-# make predictions for the test set with the optimal lambda
-rigde_pred_test = predict(ridge.mod, s = bestlam, newx = as.matrix(test_X[, -1]))
-
-# predictions
-ridge_preds_df <- data.frame(id = as.integer(test_X$id),
-                             average_daily_rate= rigde_pred_test)
-colnames(ridge_preds_df)[2] <- 'average_daily_rate'
-str(ridge_preds_df)
-# save submission file
-write.csv(ridge_preds_df, file = "./data/sample_submission_ridge.csv", row.names = F)
-
 
 ##############################################################
 # 1.6 Lasso Regression
@@ -313,20 +239,26 @@ lasso_pred_val = predict(lasso.mod, s = bestlam, newx = as.matrix(val_X))
 sqrt(mean((val_y - lasso_pred_val)^2))
 # RMSE = 30.71731
 
-# train the model on training and validation data 
-lasso.mod <- glmnet(all_train, train_and_val_y, alpha = 1, lambda = bestlam, standardize = F)
 
-# make predictions for the test set with the optimal lambda
-lasso_pred_test = predict(lasso.mod, s = bestlam, newx = as.matrix(test_X[, -1]))
+##############################################################
+# 1.7 Retrain the best performing model of the linear models 
+# and make predictions on the test set
+##############################################################
 
-# predictions
-lasso_preds_df <- data.frame(id = as.integer(test_X$id),
-                             average_daily_rate = lasso_pred_test)
+# Best model: subset selection with sequential replacement
+# RMSE = 30.70939
 
-colnames(lasso_preds_df)[2] <- 'average_daily_rate'
-str(lasso_preds_df)
+# train the model with the optimal parameters to all available training data (train + val set)
+model_train_matrix_seqrep <- cbind(train_and_val_X[lm.cols.seqrep], train_and_val_y)
+best_model_seqrep =  lm(train_and_val_y ~., data = model_train_matrix_seqrep)
+
+# predictions on the test set and save in submission folder
+seqrep_pred_test <- predict(best_model_seqrep, test_X)
+seqrep_preds_df <- data.frame(id = as.integer(test_X$id),
+                              average_daily_rate= seqrep_pred_test)
+
 # save submission file
-write.csv(lasso_preds_df, file = "./data/sample_submission_lasso.csv", row.names = F)
+write.csv(seqrep_preds_df, file = "./data/sample_submission_seqrepsel.csv", row.names = F)
 
 
 ##############################################################
@@ -375,13 +307,14 @@ spline1.rate <- lm(average_daily_rate ~., data = train)
 spline4.rate <- lm(average_daily_rate ~. +  bs(lead_time, df = 4) +  bs(time_between_arrival_cancel, df = 4), data = train)
 spline5.rate <- lm(average_daily_rate ~. +  bs(lead_time, df = 5) +  bs(time_between_arrival_cancel, df = 5), data = train)
 spline6.rate <- lm(average_daily_rate ~. +  bs(lead_time, df = 6) +  bs(time_between_arrival_cancel, df = 6), data = train)
-anova(spline1.rate, spline6.rate, spline12.rate, spline18.rate)
+anova(spline1.rate, spline4.rate, spline5.rate, spline6.rate)
 # From the anova table we can see that the spline with 5 df imporves the models with 4 df, but the model with 6 df doesn't impove the one with 5df
 # so out of our splines the one with 5df will be the best
-spline.rate <- spline12.rate
-# We make predictions on the validation set, RMSE = 30.637
+spline.rate <- spline5.rate
+# We make predictions on the validation set
 spline_pred_val <- predict(spline.rate, newdata = val_X)
 sqrt(mean((spline_pred_val - val_y)^2))
+# RMSE = 30.637
 
 ##############################################################
 # 2.3 Generative additive models
@@ -409,10 +342,11 @@ gam2.rate <- gam(gam2, data = train)
 gam3.rate <- gam(gam3 , data = train)
 anova(gam1.rate, gam2.rate, gam3.rate)
 # From the anova table we can see that the second model is significantly better than the linear regression model
-gam.rate <- gam.rate
-# we make predictions on the validation set RMSE = 30.638
+gam.rate <- gam2.rate
+# we make predictions on the validation set
 gam_pred_val <- predict(gam.rate, newdata = val_X)
 sqrt(mean((gam_pred_val - val_y)^2))
+# RMSE = 30.61176
 ##############################################################
 
 ##############################################################
