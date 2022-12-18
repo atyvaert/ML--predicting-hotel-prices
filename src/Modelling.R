@@ -90,7 +90,7 @@ lm.fit <- lm(average_daily_rate ~ ., data = train_and_val)
 # make predictions on the test set and save in submission folder
 linR_pred_test <- predict(lm.fit, test_X)
 linR_preds_df <- data.frame(id = as.integer(test_X$id),
-                               average_daily_rate= linR_pred_test)
+                            average_daily_rate= linR_pred_test)
 
 #str(linR_preds_df)
 
@@ -286,7 +286,7 @@ rigde_pred_test = predict(ridge.mod, s = bestlam, newx = as.matrix(test_X[, -1])
 
 # predictions
 ridge_preds_df <- data.frame(id = as.integer(test_X$id),
-                              average_daily_rate= rigde_pred_test)
+                             average_daily_rate= rigde_pred_test)
 colnames(ridge_preds_df)[2] <- 'average_daily_rate'
 str(ridge_preds_df)
 # save submission file
@@ -433,7 +433,7 @@ spline5.all <- lm(average_daily_rate ~. +  bs(lead_time, df = 5) +  bs(time_betw
 spline_pred_test <- predict(spline5.all, newdata = test_X)
 # save 
 spline_pred_df <- data.frame(id = as.integer(test_X$id),
-                            average_daily_rate= spline_pred_test)
+                             average_daily_rate= spline_pred_test)
 write.csv(spline_pred_df, file = "./data/sample_submission_Spline.csv", row.names = F)
 
 ##############################################################
@@ -529,6 +529,9 @@ save(rf.rate, file = "models/rf_model_train.Rdata")
 rf_pred_val <- predict(rf.rate, newdata = val_X)
 sqrt(mean((rf_pred_val - val_y)^2))
 # 18.38
+# 
+# with week weekend days variable: 18.93511
+# week weekend + week bins: 18.54187
 
 ###############################################
 # 3.2 random Forest with CV 
@@ -549,6 +552,44 @@ cv.rf.rate <- train(average_daily_rate ~ .,
                     metric = 'RMSE',
                     tuneGrid = rfGrid
 )
+
+# save the model
+save(cv.rf.rate, file = "models/cv_rf_model_train.Rdata")
+
+# 2) We make predictions on the validation set, which results in an RMSE 
+cv_rf_pred_val <- predict(cv.rf.rate, newdata = val_X)
+sqrt(mean((cv_rf_pred_val - val_y)^2))
+
+###############################################
+# 3.2 random Forest with adaptiveCV 
+###############################################
+#score = 
+
+#We set up for parallel processing, change number of clusters according to CPU cores
+cluster <- makeCluster(detectCores()-1)
+registerDoParallel(cluster)
+
+# 1) train the random forest model on the training data to do hyperparameter tuning
+set.seed(1)
+trainControl <- trainControl(method = 'adaptive_cv',
+                             number = 10,
+                             repeats = 5,
+                             adaptive = list(min = 5, alpha = 0.05, method = "gls", complete = TRUE),
+                             verboseIter = TRUE,
+                             search = 'random',
+                             allowParallel = TRUE)
+
+cv.rf.rate <- train(average_daily_rate ~ .,
+                    data = train,
+                    method = 'rf',
+                    trControl = trainControl,
+                    metric = 'RMSE',
+                    tuneGrid = rfGrid,
+                    tuneLength = 25,
+                    verbose = TRUE
+)
+
+stopCluster(cluster)
 
 # save the model
 save(cv.rf.rate, file = "models/cv_rf_model_train.Rdata")
@@ -661,11 +702,11 @@ gbmGrid <-  expand.grid(interaction.depth = c(11, 13, 15),
 set.seed(1)
 trainControl <- trainControl(method = 'cv', number = 4, verboseIter = TRUE, allowParallel = TRUE)
 cv.boosting3.rate <- train(average_daily_rate ~ .,
-                   data = train,
-                   method = 'gbm',
-                   trControl = trainControl,
-                   metric = 'RMSE',
-                   tuneGrid = gbmGrid
+                           data = train,
+                           method = 'gbm',
+                           trControl = trainControl,
+                           metric = 'RMSE',
+                           tuneGrid = gbmGrid
 )
 
 # save model
@@ -691,12 +732,12 @@ registerDoParallel(cluster)
 # A) First sequence of grid parameters
 ##########
 XGBgrid1 <-  expand.grid(nrounds = c(500, 1000, 1500), 
-                        max_depth = 6, 
-                        eta = 0.05,
-                        gamma = 0,
-                        colsample_bytree = 1,
-                        min_child_weight = 1,
-                        subsample = 1)
+                         max_depth = 6, 
+                         eta = 0.05,
+                         gamma = 0,
+                         colsample_bytree = 1,
+                         min_child_weight = 1,
+                         subsample = 1)
 #result: 1500, 6
 
 
@@ -704,12 +745,12 @@ XGBgrid1 <-  expand.grid(nrounds = c(500, 1000, 1500),
 # B) Second sequence of grid parameters
 ##########
 XGBgrid2 <-  expand.grid(nrounds = c(1500, 2000), 
-                        max_depth = c(6, 8), 
-                        eta = c(0.05, 0.01),
-                        gamma = 0,
-                        colsample_bytree = 1,
-                        min_child_weight = 1,
-                        subsample = 1)
+                         max_depth = c(6, 8), 
+                         eta = c(0.05, 0.01),
+                         gamma = 0,
+                         colsample_bytree = 1,
+                         min_child_weight = 1,
+                         subsample = 1)
 
 set.seed(1)
 trainControl <- trainControl(method = 'cv', number = 3, verboseIter = TRUE, allowParallel = TRUE)
@@ -729,7 +770,7 @@ xgb_tune <- train(x = train_and_val_X,
 ##########
 trainControl <- trainControl(method = 'adaptive_cv',
                              number = 10,
-                             repeats = 10,
+                             repeats = 5,
                              adaptive = list(min = 5, alpha = 0.05, method = "gls", complete = TRUE),
                              verboseIter = TRUE,
                              search = 'random',
@@ -738,24 +779,25 @@ trainControl <- trainControl(method = 'adaptive_cv',
 # 1) train the XG boosting model on the training data to do hyperparameter tuning
 set.seed(1)
 xgb.tune.rate <- train(x = train_X,
-                  y = train_y,
-                  method = 'xgbTree',
-                  trControl = trainControl,
-                  metric = 'RMSE',
-                  tuneLength = 25,
-                  verbose = TRUE
+                       y = train_y,
+                       method = 'xgbTree',
+                       trControl = trainControl,
+                       metric = 'RMSE',
+                       tuneLength = 100,
+                       verbose = TRUE
 )
 
 #close parallel
 stopCluster(cluster)
 
 # save model
-save(xgb.tune.rate, file = "models/xgb_model7_train.Rdata")
+save(xgb.tune.rate, file = "models/xgb_model_train_try.Rdata")
 
 # 2) We make predictions on the validation set, which results in an RMSE 
 XGB_pred_val <- predict(xgb.tune.rate, newdata = val_X)
 sqrt(mean((XGB_pred_val - val_y)^2))
 #RMSE = 18.95107
+# RMSE try2 = 17.44413
 
 
 ##############################################################
@@ -790,7 +832,7 @@ hyper_grid <- expand.grid(max_depth = max_depth,
 
 # We replicate a random search algorithm by sampling from the grid
 # parameter size determines how many models we test
-hyper_grid2 <- hyper_grid[sample(nrow(hyper_grid), size = 0.000001*nrow(hyper_grid)), ]
+hyper_grid2 <- hyper_grid[sample(nrow(hyper_grid), size = 0.0001*nrow(hyper_grid)), ]
 
 rmse_fit = list()
 rmse_predict = list()
@@ -828,46 +870,6 @@ for (j in 1:nrow(hyper_grid2)) {
 # Hyperparameters can be extracted from hyper_grid2 with index from rmse_predict
 
 stopCluster(cluster)
-
-##############################################################
-# 4.3 AdaBoost
-##############################################################
-#impossible i guess
-
-##########
-# Adaptive_cv + random search
-##########
-start <- Sys.time()
-trainControl <- trainControl(method = 'adaptive_cv',
-                             number = 5,
-                             repeats = 3,
-                             adaptive = list(min = 5, alpha = 0.05, method = "gls", complete = TRUE),
-                             verboseIter = TRUE,
-                             search = 'random',
-                             allowParallel = TRUE)
-
-# 1) train the AdaBoost model on the training data to do hyperparameter tuning
-set.seed(1)
-ada.tune.rate <- train(x = train_X,
-                       y = train_y,
-                       method = 'ada',
-                       trControl = trainControl,
-                       metric = 'RMSE',
-                       tuneLength = 25,
-                       verbose = TRUE
-)
-
-#close parallel
-stopCluster(cluster)
-
-# save model
-save(ada.tune.rate, file = "models/ada_model1_train.Rdata")
-
-# 2) We make predictions on the validation set, which results in an RMSE 
-ada_pred_val <- predict(ada.tune.rate, newdata = val_X)
-sqrt(mean((ada_pred_val - val_y)^2))
-stop <- Sys.time()
-stop - start
 
 ##############################################################
 # 5. Retrain the best performing model(s) of the decision trees 
@@ -950,7 +952,7 @@ svm.rate.all = svm(average_daily_rate ~ ., data = train_and_val, scale = FALSE)
 svm_pred_test <- predict(svm.rate.all, newdata = test_X)
 
 SVM_reg_pred_df <- data.frame(id = as.integer(test_X$id),
-                          average_daily_rate= svm_pred_test)
+                              average_daily_rate= svm_pred_test)
 
 
 colnames(SVM_reg_pred_df)[2] <- 'average_daily_rate'

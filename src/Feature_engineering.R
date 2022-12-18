@@ -385,6 +385,6 @@ test_data_after_FE <- test_X_final
 # str(training_data_after_FE)
 
 # Write
-write.csv(training_data_after_FE,"./data/gold_data/train_try2.csv", row.names = FALSE)
-write.csv(val_data_after_FE,"./data/gold_data/val_try2.csv", row.names = FALSE)
-write.csv(test_data_after_FE,"./data/gold_data/test_try2.csv", row.names = FALSE)
+write.csv(training_data_after_FE,"./data/gold_data/train.csv", row.names = FALSE)
+write.csv(val_data_after_FE,"./data/gold_data/val.csv", row.names = FALSE)
+write.csv(test_data_after_FE,"./data/gold_data/test.csv", row.names = FALSE)

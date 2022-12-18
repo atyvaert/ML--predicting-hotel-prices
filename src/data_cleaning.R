@@ -9,6 +9,9 @@ library(dummy)
 library(stringr)
 library(miscTools)
 
+
+#Sys.setlocale("LC_ALL","English")
+
 # import the data
 train <- read_csv('./data/bronze_data/train.csv')
 test_X <- read_csv('./data/bronze_data/test.csv')
@@ -396,6 +399,3 @@ test_data_after_data_cleaning <- test_X_outlier
 write.csv(training_data_after_data_cleaning,"./data/silver_data/train.csv", row.names = FALSE)
 write.csv(val_data_after_data_cleaning,"./data/silver_data/val.csv", row.names = FALSE)
 write.csv(test_data_after_data_cleaning,"./data/silver_data/test.csv", row.names = FALSE)
-
-
-
