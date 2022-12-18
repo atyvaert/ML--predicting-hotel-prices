@@ -1,0 +1,9 @@
+{
+  "dropout1": 0.4,
+  "neurons1": 32,
+  "neurons2": 64,
+  "neurons3": 16,
+  "neurons4": 8,
+  "lr": 0.01,
+  "maxnorm1": 0.5
+}

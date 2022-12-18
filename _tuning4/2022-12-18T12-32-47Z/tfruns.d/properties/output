@@ -1,0 +1,54 @@
+
+> # In essence, hypertuning is done through flags. Anywhere in your neural network, 
+> # you can replace a parameter with a flag
+> FLAGS <- flags(
++   .... [TRUNCATED] 
+
+> #
+> 
+> # build the neural network
+> four.layer.model <- function() {
++   model <- keras_model_sequential() 
++   model %>%
++     layer_dense(units =  .... [TRUNCATED] 
+
+> layer4_model <- four.layer.model()
+
+> layer4_model %>% summary()
+Model: "sequential"
+____________________________________________________________________________________________________
+Layer (type)                                 Output Shape                            Param #        
+====================================================================================================
+dense_4 (Dense)                              (None, 32)                              3296           
+____________________________________________________________________________________________________
+dropout_3 (Dropout)                          (None, 32)                              0              
+____________________________________________________________________________________________________
+dense_3 (Dense)                              (None, 16)                              528            
+____________________________________________________________________________________________________
+dropout_2 (Dropout)                          (None, 16)                              0              
+____________________________________________________________________________________________________
+dense_2 (Dense)                              (None, 32)                              544            
+____________________________________________________________________________________________________
+dropout_1 (Dropout)                          (None, 32)                              0              
+____________________________________________________________________________________________________
+dense_1 (Dense)                              (None, 32)                              1056           
+____________________________________________________________________________________________________
+dropout (Dropout)                            (None, 32)                              0              
+____________________________________________________________________________________________________
+dense (Dense)                                (None, 1)                               33             
+====================================================================================================
+Total params: 5,457
+Trainable params: 5,457
+Non-trainable params: 0
+____________________________________________________________________________________________________
+
+> # define early stop monitor
+> early_stop <- callback_early_stopping(monitor = "val_loss", patience = 20)
+
+> # define the number of epochs
+> epochs <- 150
+
+> # Fit the model and store training stats
+> history <- layer4_model %>%
++   fit(x_train, y_train, epochs = epochs, batch_size = 128,
++       validati .... [TRUNCATED] 
