@@ -1,7 +1,9 @@
 Hotel room price prediction
+
 Team 10 : Simon De Lange, Artur Tyvaert, Viktor Vandenbulcke, Stijn Van Ruymbeke
 ---------------------------------------------------------------------------------------------------
 INTRODUCTION
+---------------------------------------------------------------------------------------------------
 
 This project aims at creating predictive models to be albe to predict the average daily rates of hotel rooms. 
 This allows hotel managers to (dynamically) set the hotel room prices at an optimal level and thus maximize
@@ -10,6 +12,7 @@ these files serve. We will also explain how the users has to use these files.
 
 ---------------------------------------------------------------------------------------------------
 OVERVIEW OF FOLDERS AND FILES 
+---------------------------------------------------------------------------------------------------
 
 SRC (r files):
 - Data_exploration
@@ -31,6 +34,8 @@ Tuning
 
 ---------------------------------------------------------------------------------------------------
 USING THE FILES 
+---------------------------------------------------------------------------------------------------
+
 
 To be able to understand the reasoning behind some of the decisions that were made, it's important that the user 
 goes through the R files in the same order as the creators of the files. So in this section we will state in what 
@@ -44,6 +49,8 @@ Modelling file contains simpler models and the neural networks are quite complex
 PURPOSE OF THE FILES
 ---------------------------------------------------------------------------------------------------
 DATA_EXPLORATION 
+---------------------------------------------------------------------------------------------------
+
 
 In this R file we take a first glance at the data that was given to us. We do this by plotting barplots, 
 boxplots and histograms, depending on whether the variables is categrorical or numerical. We also checked
@@ -52,6 +59,8 @@ our data preprocessing.
 
 ---------------------------------------------------------------------------------------------------
 DATA_CLEANING 
+---------------------------------------------------------------------------------------------------
+
 
 In this R file we missing values, outliers and regular expression were treated. To treat missing 
 values in an effictient way, we created a function that was able to detect missing values. When the missing 
@@ -65,11 +74,15 @@ variables were transformed into useful parts using regular expressions.
 
 ---------------------------------------------------------------------------------------------------
 FEATURE_ENGINEERING
+---------------------------------------------------------------------------------------------------
+
 
 
 
 ---------------------------------------------------------------------------------------------------
 MODELLING
+---------------------------------------------------------------------------------------------------
+
 
 In this section we fit multiple models on our data. To do this in an efficient way, we splitted the training 
 set into a train set and validation set, with 80% and 20% of the observations respectively. The new train 
@@ -151,12 +164,18 @@ In Random Forests, a large number of trees is grown where a split only considers
 
 ---------------------------------------------------------------------------------------------------
 NEURAL_NETWORKS
+---------------------------------------------------------------------------------------------------
+
 
 ---------------------------------------------------------------------------------------------------
 LAYERX_MODEL
+---------------------------------------------------------------------------------------------------
+
 
 ---------------------------------------------------------------------------------------------------
 MODELS
+---------------------------------------------------------------------------------------------------
+
 
 Because some models had to train for a long time, we stored these models as a workspace object after they 
 were trained. In this way the user is able to load these models into the workspace if retraining would be 
@@ -164,6 +183,8 @@ necessary. The folder called models contains all these workspace objects of the 
 
 ---------------------------------------------------------------------------------------------------
 BRONZE DATA 
+---------------------------------------------------------------------------------------------------
+
 
 This folder contains our test an train dataset. These datasets are the sets containing the raw data 
 that were given to us for the assignment. No preprocessing steps have been applied to this data. 
@@ -171,18 +192,24 @@ This data will be used in the data_exploration and data_cleaning file.
 
 --------------------------------------------------------------------------------------------------
 SILVER DATA 
+---------------------------------------------------------------------------------------------------
+
 
 This folder contains the train, test and validation set of our data after it was cleaned in the 
 data_cleaning file. This data will be used in the feature_engineering file. 
 
 -------------------------------------------------------------------------------------------------
 GOLD DATA 
+---------------------------------------------------------------------------------------------------
+
 
 This folder contains the train, test and validation set of our data after feature engineerig was 
 performed in the feature_engineering file. This data will be used in the modelling and Neural network file.
 
 --------------------------------------------------------------------------------------------------
 SAMPLE SUBMISSIONS 
+---------------------------------------------------------------------------------------------------
+
 
 In the X folder there are also multiple CSV files that have the following naming convention:
 sample_submission_nameModel. These sample submissions contain the predictions on our test set of the 
