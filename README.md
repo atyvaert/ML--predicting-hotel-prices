@@ -5,7 +5,7 @@ Team 10 : Simon De Lange, Artur Tyvaert, Viktor Vandenbulcke, Stijn Van Ruymbeke
 INTRODUCTION
 ---------------------------------------------------------------------------------------------------
 
-This project aims at creating predictive models to be albe to predict the average daily rates of hotel rooms. 
+This project aims at creating predictive models that are able to predict the average daily rates of hotel rooms. 
 This allows hotel managers to (dynamically) set the hotel room prices at an optimal level and thus maximize
 there profits. In this README we will give an overview of the files present in this folder and what purpose 
 these files serve. We will also explain how the users has to use these files. 
