@@ -115,7 +115,8 @@ models
 
 1 LINEAR MODELS 
 
-1.1 LINEAR REGRESSION 
+1.1 LINEAR REGRESSION
+
 A linear model was used to regrees average_daily_rate on all other variables of the gold data. This model 
 resulted in RMSE of 30.71916 which served as a benchmark for this project.
 
