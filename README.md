@@ -65,15 +65,11 @@ our data preprocessing.
 DATA_CLEANING 
 ---------------------------------------------------------------------------------------------------
 
-In this R file missing values, outliers and regular expression were treated. To treat missing 
-values in an effictient way, a function was created that was able to detect missing values. When the missing 
-values were detected, these were imputed by the mean for numerical variables and the model for categorical 
-variables. For some cases missing values corresponded to a value of 0, which was derived from the data exploration, 
-in these cases the missing values were imputed by 0. Next to imputing these missing values flag function were also 
-created that created flag varaibles to indicate whether a certain variable was missing, as the absence of some 
-variables could be insightfull. Furthermore, functions were created to detect and handle outliers based on their 
-z-score. For some exceptions outlier boundaries were set arbitrary based on the data exploration. Lastly, some data 
-variables were transformed into useful parts using regular expressions. 
+In this R file missing values, outliers and regular expression were treated. When the missing 
+values were detected, these were imputed by the mean (numerical variables) and the mode (categorical 
+variables) computed on the training set. For some cases missing values corresponded to a value of 0, which was derived from the data exploration, 
+in these cases the missing values were imputed by 0. Next to imputing these missing values, flag variables were created to indicate whether a certain variable had missing values as missing information can provide insights. Furthermore, outliers of the training data were handled based on their 
+z-score. For some exceptions outlier boundaries were set arbitrary based on the data exploration. Lastly, the dates were parsed for all the datasets and some timing variables were extracted.
 
 ---------------------------------------------------------------------------------------------------
 FEATURE_ENGINEERING
@@ -81,10 +77,10 @@ FEATURE_ENGINEERING
 
 In this file feature engineering is performed. Feature engineering is the step in which features are created 
 from the data, these features are created to improve the performance of the models. Our data contained a lot of 
-categorical variables, for these variables we had to create dummy variables. To not have to many variables
-a maximum cardinality of 10 was imposedfor most of the variables. 
-3 additional variables were created aswell:
-- room_type_conflict: equals 1  if the assigned room isn't equal to the reserved room type.
+categorical variables, for these variables we had to create dummy variables. To not have to many variables,
+a maximum cardinality of 10 was imposed for most of these variables. 
+3 additional variables were created as well:
+- room_type_conflict: equals 1 if the assigned room isn't equal to the reserved room type.
 - time_between_arrival_checkout and time_between_arrival_cancel: difference in days between arrival and
 checkout (positive) or cancellation (negative). 
 - nr_weekdays and nr_weekenddays: decomposes nr_nights in weekdays and weeekend days. 
