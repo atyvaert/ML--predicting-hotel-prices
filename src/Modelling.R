@@ -1,6 +1,39 @@
 ##############################################################
 ##############################################################
-# Modelling
+# 0. Introduction of File
+##############################################################
+##############################################################
+
+# Content:
+#   36  Data Import
+#   83  Model structure
+#   100  Baseline linear models:
+#         Linear regression
+#         Stepwise selection:
+#             Forward
+#             Backward
+#             Seguential replacement
+#         Shrinkage methods:
+#             Ridge regression
+#             Lasso regression
+#   297 Moving beyond linearity
+#         Polynomial regression
+#         Splines
+#         Generalized Additive Models
+#   401 Tree based methods:
+#         Regression tree
+#         Bagging
+#         Random forest
+#         Boosting
+#         XGBoost
+#   741 Support vector machines
+#   781 Endnote
+
+
+
+##############################################################
+##############################################################
+# 1. Data Import
 ##############################################################
 ##############################################################
 
@@ -45,7 +78,6 @@ str(val)
 str(test_X)
 
 
-
 ##############################################################
 ##############################################################
 # STRUCTURE OF OUR MODELS
@@ -65,10 +97,9 @@ str(test_X)
 
 ##############################################################
 ##############################################################
-# BASELINE MODELS
+# BASELINE LINEAR MODELS
 ##############################################################
 ##############################################################
-
 
 ##############################################################
 # 1.1 Linear regression
@@ -266,6 +297,7 @@ write.csv(seqrep_preds_df, file = "./data/sample_submission_seqrepsel.csv", row.
 # 2 MOVING BEYOND LINEARITY
 ##############################################################
 ##############################################################
+
 # We can only perform polynomial functions, splines and GAMs on numerical features
 # First we will look at the numerical features
 par(mfrow = c(1, 1))
@@ -366,7 +398,7 @@ write.csv(spline_pred_df, file = "./data/sample_submission_Spline.csv", row.name
 
 ##############################################################
 ##############################################################
-# TREE-BASED METHODES
+# 3. TREE-BASED METHODS
 ##############################################################
 ##############################################################
 
@@ -605,7 +637,7 @@ gbmGrid <-  expand.grid(interaction.depth = c(11, 13, 15),
 # 1) train the boosting model on the training data to do hyperparameter tuning
 set.seed(1)
 trainControl <- trainControl(method = 'cv', number = 3, verboseIter = TRUE, allowParallel = TRUE)
-cv.boosting3.rate <- train(average_daily_rate ~ .,
+cv.boosting.rate <- train(average_daily_rate ~ .,
                            data = train,
                            method = 'gbm',
                            trControl = trainControl,
@@ -617,11 +649,12 @@ cv.boosting3.rate <- train(average_daily_rate ~ .,
 stopCluster(cluster)
 
 # save model
-save(cv.boosting3.rate, file = "models/cv_boosting_model_train.Rdata")
+save(cv.boosting.rate, file = "models/cv_boosting_model_train.Rdata")
 
 # 2) We make predictions on the validation set 
-cv_boosting3_pred_val <- predict(cv.boosting3.rate, newdata = val_X)
+cv_boosting_pred_val <- predict(cv.boosting.rate, newdata = val_X)
 sqrt(mean((cv_boosting3_pred_val - val_y)^2))
+# RMSE = 19.80656
 
 
 ##############################################################
@@ -691,7 +724,6 @@ xgb.rate.all <- xgboost(xgb.DMatrix(label = train_and_val_y, data = as.matrix(tr
 #save model
 save(xgb.rate.all, file="models/xgb_train_and_val.RData")
 
-# make predictions, bv:
 # make prediction on the test set and save
 xgb_pred_test <- predict(xgb.rate.all, newdata = xgb.DMatrix(as.matrix(test_X[, -1])))
 
@@ -704,12 +736,11 @@ str(xgb_df)
 write.csv(xgb_df, file = "./data/sample_submission_xgb.csv", row.names = F)
 
 
-
+##############################################################
 ##############################################################
 # SUPPORT VECTOR MACHINES
 ##############################################################
-
-#36 very bas
+##############################################################
 
 ##############################################################
 # 1. Perform standard regression with SVM
@@ -743,3 +774,13 @@ str(SVM_reg_pred_df)
 SVM_reg_pred_df
 # save submission file
 write.csv(SVM_reg_pred_df, file = "./data/sample_submission_SupportVectorRegression.csv", row.names = F)
+
+
+##############################################################
+##############################################################
+# End Note
+##############################################################
+##############################################################
+
+# This concludes the modeling part of this assignment.
+# Neural networks can be found in the separate file "Neural_networds"
