@@ -19,6 +19,7 @@ SRC (r files):
 - Data_exploration
 - Data_cleaning 
 - Feature engineering
+- Feature engineering2
 - Feature_engineering_PCA
 - Modelling 
 - Neural_networks 
