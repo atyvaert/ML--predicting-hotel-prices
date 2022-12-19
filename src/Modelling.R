@@ -370,11 +370,11 @@ write.csv(spline_pred_df, file = "./data/sample_submission_Spline.csv", row.name
 ##############################################################
 ##############################################################
 
+
 ##############################################################
+# 1. Regression tree
 ##############################################################
-# 1. FIT A REGRESSION TREE
-##############################################################
-##############################################################
+
 
 ##############################################################
 # 1.1 Fit a standard regression tree
@@ -451,6 +451,10 @@ sqrt(mean((rf_pred_val - val_y)^2))
 # 3.2 random Forest with CV 
 ###############################################
 
+##########
+# A) Grid search
+##########
+
 #We tune over 3 values of interaction depth around p/3 (=34)
 rfGrid <-  expand.grid(mtry = c(28, 31, 34, 37, 40))
 
@@ -471,9 +475,9 @@ cv_rf_pred_val <- predict(cv.rf.rate, newdata = val_X)
 sqrt(mean((cv_rf_pred_val - val_y)^2))
 
 
-###############################################
-# 3.3 random Forest with adaptiveCV 
-###############################################
+##########
+# B) Adaptive_cv + random search
+##########
 
 #We set up for parallel processing, change number of clusters according to CPU cores
 cluster <- makeCluster(detectCores()-1)
@@ -545,7 +549,7 @@ sqrt(mean((boosting_pred_val - val_y)^2))
 # HEBT MAAR BEST OOK VERMELDEN IN DE CODE
 
 ##########
-# A) Randomized search
+# A) Adaptive_cv + random search
 ##########
 
 #We set up for parallel processing, change number of clusters according to CPU cores
@@ -628,7 +632,7 @@ sqrt(mean((cv_boosting3_pred_val - val_y)^2))
 #https://www.analyticsvidhya.com/blog/2016/03/complete-guide-parameter-tuning-xgboost-with-codes-python/
 
 ##########
-# C) Adaptive_cv + random search
+# A) Adaptive_cv + random search
 ##########
 
 # We set up for parallel processing, change number of clusters according to CPU cores
