@@ -269,7 +269,7 @@ were trained. In this way the user is able to load these models into their envir
 necessary. The folder called models contains all these workspace objects of the models. 
 
 ---------------------------------------------------------------------------------------------------
-MODELS
+NN_MODELS
 ---------------------------------------------------------------------------------------------------
 
 This is the same as in the models folder. But here the models of each layer of the neural network are stored. 
