@@ -17,7 +17,8 @@ OVERVIEW OF FOLDERS AND FILES
 SRC (r files):
 - Data_exploration
 - Data_cleaning 
-- Feature engineering
+- Feature_engineering
+- Feature_engineering_PCA
 - Modelling 
 - Neural_networks 
 - LayerX_model
@@ -41,8 +42,11 @@ To be able to understand the reasoning behind some of the decisions that were ma
 goes through the R files in the same order as the creators of the files. So in this section we will state in what 
 order to go through the files. Firstly go through the Data_exploration file, secondly the Data_cleaning file and lastly 
 the Feature_engineering file. After these three files are run the order of the other files doesn't matter anymore, 
-although it might be better to first go through the Modelling file and afterwards the Nearal networks file. Because the 
-Modelling file contains simpler models and the neural networks are quite complex. 
+although it might be better to first go through the Modelling file and afterwards the nNeural networks file. Because the 
+Modelling file contains simpler models and the neural networks are quite complex.
+
+The file "Feature_engineering_PCA" contains extra code where the creators used PCA to reduce the number of numerical variables.
+They didn't end up using this as this only reduced the number of features by 2 and didn’t increase predictive performance on the validation set. 
 
 
 ---------------------------------------------------------------------------------------------------
@@ -78,6 +82,14 @@ FEATURE_ENGINEERING
 
 
 
+
+---------------------------------------------------------------------------------------------------
+FEATURE_ENGINEERING_PCA
+---------------------------------------------------------------------------------------------------
+
+Principal Component Analysis was tried to reduce the number of numerical features,
+but this only reduced the number of features by 2 and didn't increase predictive performance on the validation set.
+All submissions were based on the original "Feature_engineering" file.
 
 ---------------------------------------------------------------------------------------------------
 MODELLING
