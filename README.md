@@ -57,7 +57,7 @@ PURPOSE OF THE FILES
 ---------------------------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------------------------
-TRAM10_TECHNICAL_REPORT
+TREAM10_TECHNICAL_REPORT
 ---------------------------------------------------------------------------------------------------
 
 This is a technical report of the project. In this report the findings of the project are discussed in further detail, while using the CRISP-DM framwork. 
