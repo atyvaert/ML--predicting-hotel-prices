@@ -76,9 +76,7 @@ z-score. For some exceptions outlier boundaries were set arbitrary based on the 
 FEATURE_ENGINEERING
 ---------------------------------------------------------------------------------------------------
 
-In this file feature engineering is performed. Feature engineering is the step in which features are created 
-from the data, these features are created to improve the performance of the models. Our data contained a lot of 
-categorical variables, for these variables we had to create dummy variables. To not have to many variables,
+In this file feature engineering is performed. Feature engineering is the process of designing and creating new features from raw data that can improve the performance of models. Our data contained a lot of categorical variables, for these variables we had to create dummy variables. To limit the amount of features,
 a maximum cardinality of 10 was imposed for most of these variables. 
 3 additional variables were created as well:
 - room_type_conflict: equals 1 if the assigned room is not equal to the reserved room type.
@@ -111,7 +109,7 @@ MODELLING
 In this section multiple models are fitted on our data. To do this in an efficient way, the training set is split  
 into a train set and validation set, with 80% and 20% of the observations respectively. The new train 
 set was used to train the model and the validation set was used to make predictions and to compute the RMSE of 
-each model. Based on the RMSE the best performing models(s) of each category were selected and trained on 
+each model. Based on the RMSE the best performing model(s) of each category were selected and trained on 
 the complete train set (train + validation). Afterwards the test set was used to make predictions. 
 
 Now an overview of the used models will be given, the models are subdivided into linear and non-linear 
@@ -128,13 +126,13 @@ Stepwise selection is a procedure that constructs models, only with the best fea
 
 1.2.1 FORWARD STEPWISE SELECTION
 This method is a selection method that adds features once at a time starting with the most significant feature. 
-By using an evaluation metric it can identified how much parameters the optimal model has. In our case this is 95
+By using an evaluation metric the optimal number of features can be identified. In our case this is 95
 parameters. A model is fitted using these parameters. This resulted in a RMSE of 30.71786. 
 
 1.2.2 BACKWARD STEPWISE SELECTION 
 Backward stepwise selection is similar to forward stepwise selection, but with the opposite approach. It starts
 with a model with all features and removes one feature at a time, starting with the least significant. By using 
-an evaluation metric it can be identified how much parameters the optimal model has. In our case this is 95 parameters.
+an evaluation metric it can be identified how many features the optimal model has. In our case this is again 95 parameters.
 A model can be fitted using these parameters. This model resulted in a RMSE of 30.71776. 
 
 1.2.3 SEQUENTIAL REPLACEMENT SELECTION
@@ -148,13 +146,13 @@ Shrinkage methods constrain or shrink the coefficient estimates. To control the 
 and a penalty term are added to the minimization problem. 
 
 1.3.1 RIDGE REGRESSION
-In ridge regression the penalty term is defined as the square of the Euclidean norm of the coefficients. 
-The optimal λ was found by performing 10-fold cross validation and used to train a ridge model. This resulted 
+In ridge regression the penalty term (l2 norm) is defined as the square of the Euclidean norm of the coefficients. 
+The optimal λ was found by performing 10-fold cross validation and used this λ to train or ridge model. This resulted 
 in a RMSE of 32.33805. 
 
 1.3.2 LASSO REGRESSION 
 The difference between lasso and ridge is that for lasso the penalty term is defined as the sum of the absolute
-values of the model coefficients. Here, 10-fold cross validation was also used to find the optimal λ. This resulted
+values of the model coefficients. Here the same method was as for ridge to find the optimal model. This resulted
 in a RMSE of 30.71731. 
 
 2 NON-LINEAR MODELS 
@@ -164,19 +162,19 @@ In this section non-linear transformations were performed on numerical variables
 
 2.1.1 POLYNOMIAL REGRESSION 
 Polynomial regression models the relation between the independent and dependent variables as nth degree polynomial. 
-Models were constructed that contained all the variables, augmented with polynomial terms of our numerical 
+Models were constructed that contained all our variables and were augmented with polynomial terms of our numerical 
 variables, until the 4th degree. These models were compared in an anova table and found that the model till the 3th 
 degree had the best performance. This model resulted in a RMSE of 30.72.
 
 2.1.2 SPLINES 
 Splines are piecewise polynomials with smoothness conditions. Data is typically split into sections, defined by knots. 
-Because in this case the knots cannot be defined, the degrees of freedom (df) is taken as parameter. 
-The same is done as with polynomials but the models augmented with splines with df = 4, 5, 6. The models are compared
+Because in our case the knots cannot be defined, so degrees of freedom (df) is taken as parameter. 
+The same is done as with polynomials but the models are augmented with splines with df = 4, 5, 6. The models are compared
 in an anova table and the model with 5 df performs best. This model resulted in a RMSE of 30.72
 
 2.1.3 GENERALIZED ADDITIVE MODELS (GAMs)
 GAMs extend standard linear models by allowing non-linear functions, while maintaining additivity. Two GAMs were constructed 
-that contained all variables and a combination of polynomials and splines of the 
+that contained all variables and a combination of polynomials and splines of our 
 numerical variables. By comparing these models in an anova table it was found that they had similar performance. 
 With RMSE equal to 30.61176.
 
@@ -192,7 +190,7 @@ to make the final prediction. A RMSE of 21.83 was obtained which is a big improv
 
 2.2.3 XGBOOST
 XGBoost is a highly scalable implementation of gradient boosted decision trees. 
-To maximize the performance of our model hyperparameter tuning (adaptive CV) was performed, which resulted in the following parameters:
+To maximize the performance of our model hyperparameter tuning was performed, which resulted in the following parameters:
 - nrounds: 775
 - max_depth: 10
 - eta: 0.1095579
@@ -204,16 +202,16 @@ To maximize the performance of our model hyperparameter tuning (adaptive CV) was
 The model with the optimal parameters resulted in a RMSE of 17.44413 on the validation set. 
 
 2.2.4 RANDOM FOREST
-Random forest is an extension of bagging. Here a split only considers a random sample (mtry) of the p predictors. 
+Random forest is an extension of bagging, here a split only considers a random sample of (mtry) of the p predictors. 
 As a consequence, the trees are decorrelated. Because the authors thought random forest would have high predictive power, 
 different RF models were created 
 Model 1 was created with mtry = p/3 (default) predictors and ntree = 150. This resulted in a RMSE of 18.59
 Model 2 was run with 5-fold cross validation. A grid was used to tun mtry, mtry = c(28, 31, 34, 37, 40). 
-This resulted in a RMSE of 18.61, which is higher than model 1. This was quite surprising. 
+This resulted in a RMSE of 18.61, which is higher than model 1, what's quite surprising. 
 
 2.3 SUPPORT VECTOR MACHINES 
-Support vector machines are mainly used for classification purposes, but work in regression
-contexts as well. Therefore the authors decided to create a basic SVM. This resulted in a quit high RMSE of 36.42701
+Support vector machines are mainly used for classification purposes, but work relatively well in regression
+tasks. Therefore the authors decided to create a basic SVM. Which resulted in a quit high RMSE of 36.42701
 
 ---------------------------------------------------------------------------------------------------
 NEURAL_NETWORKS
