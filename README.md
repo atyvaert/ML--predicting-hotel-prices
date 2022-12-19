@@ -76,7 +76,9 @@ z-score. For some exceptions outlier boundaries were set arbitrary based on the 
 FEATURE_ENGINEERING
 ---------------------------------------------------------------------------------------------------
 
-In this file feature engineering is performed. Feature engineering is the process of designing and creating new features from raw data that can improve the performance of models. Our data contained a lot of categorical variables, for these variables we had to create dummy variables. To limit the amount of features,
+In this file feature engineering is performed. Feature engineering is the step in which features are created 
+from the data, these features are created to improve the performance of the models. Our data contained a lot of 
+categorical variables, for these variables we had to create dummy variables. To not have to many variables,
 a maximum cardinality of 10 was imposed for most of these variables. 
 3 additional variables were created as well:
 - room_type_conflict: equals 1 if the assigned room is not equal to the reserved room type.
@@ -109,7 +111,7 @@ MODELLING
 In this section multiple models are fitted on our data. To do this in an efficient way, the training set is split  
 into a train set and validation set, with 80% and 20% of the observations respectively. The new train 
 set was used to train the model and the validation set was used to make predictions and to compute the RMSE of 
-each model. Based on the RMSE the best performing model(s) of each category were selected and trained on 
+each model. Based on the RMSE the best performing models(s) of each category were selected and trained on 
 the complete train set (train + validation). Afterwards the test set was used to make predictions. 
 
 Now an overview of the used models will be given, the models are subdivided into linear and non-linear 
@@ -126,13 +128,13 @@ Stepwise selection is a procedure that constructs models, only with the best fea
 
 1.2.1 FORWARD STEPWISE SELECTION
 This method is a selection method that adds features once at a time starting with the most significant feature. 
-By using an evaluation metric the optimal number of features can be identified. In our case this is 95
+By using an evaluation metric it can identified how much parameters the optimal model has. In our case this is 95
 parameters. A model is fitted using these parameters. This resulted in a RMSE of 30.71786. 
 
 1.2.2 BACKWARD STEPWISE SELECTION 
 Backward stepwise selection is similar to forward stepwise selection, but with the opposite approach. It starts
 with a model with all features and removes one feature at a time, starting with the least significant. By using 
-an evaluation metric it can be identified how many features the optimal model has. In our case this is again 95 parameters.
+an evaluation metric it can be identified how much parameters the optimal model has. In our case this is 95 parameters.
 A model can be fitted using these parameters. This model resulted in a RMSE of 30.71776. 
 
 1.2.3 SEQUENTIAL REPLACEMENT SELECTION
@@ -216,35 +218,30 @@ tasks. Therefore the authors decided to create a basic SVM. Which resulted in a 
 ---------------------------------------------------------------------------------------------------
 NEURAL_NETWORKS
 ---------------------------------------------------------------------------------------------------
-To find the optimal neural network two variables need to be tuned: the number of hidden layer and the number of hidden units. To find the optimal number of hidden layers 
-the authors build models with one up until four hidden layers. Next, different parameters were tuned for these models with a grid search, including the number of hidden units per layer. 3 steps were used to tune the model: architecture, architecture regularization and learning convergence. 
+To find the optimal neural network architecture, different architectures were build. The authors build models with one up until four hidden layers. Next, different parameters were tuned for these models with a grid search, including the number of hidden units per layer. The models were constructed with the following guide:
 
 Architecture:
-Our approach to tune the parameters started by creating a wide model with few layers, evolving to less wide but deeper models that have more model complexity. So for the one layer model a grid search for values from 128 to 640 neurons was performed. For the models with multiple layers the same grid search was performed , but the number of neurons were gradually decreased for each layer in the model. 
+Our approach to tune the parameters started by creating a wide model with few layers, evolving to less wide but deeper models that have more model complexity. So for the one layer model, a grid search for values from 128 to 640 neurons was performed. For the models with multiple layers, there was also a grid search, but the number of neurons were gradually decreased for each layer in the model. 
 
 Architecture regularization:
-A dropout layer was added after each regular layer to reduce overfitting. An optimal dropout rate was found by performing a grid search with drop-out rate = 0.3 and 0.4. A maxnorm constraint was used as well, this technique reduces overfitting by limiting the maximum Euclidean norm of weights of the network. The evaluated values were 0.5, 1, 2 and 3. Lastly an early stopping criterion was used as well. If the MSE did not improve for 20 iterations, the training process was interrupted and the current model was used as the final model. 
+A dropout layer was added after each regular layer to reduce overfitting. An optimal dropout rate was found by performing a grid search with drop-out values of 0.3 and 0.4. A maxnorm constraint was used as well, this technique reduces overfitting by limiting the maximum Euclidean norm of weights of the network. The evaluated values were 0.5, 1, 2 and 3. Lastly an early stopping criterion was used as well. If the RMSE did not improve for 20 iterations, the training process was interrupted and the current model was used as the final model. 
 
 Learning convergence:
-The learning rate of our model was tuned by performing a grid search using values 0.01 and 0.001. The learning rate determines how quickly or slowly the model learns. Further, the batch size was set to 128. This parameter determines the number of observations used for each gradient step. Lastly, the number of epochs used to train each model had to be determined. This was done by visually checking the convergence rate of the models while it was running. For the one- and two-layer models, 200 epochs were used. For the three, four and five layered models, 150 epochs were used. When the optimal model was found for each model, the optimal model was retrained using 200 epochs as the one and two layered models still had incremental improvements after 200 epochs.
+The learning rate of our model was tuned by performing a grid search using values 0.01 and 0.001. The learning rate determines how quickly or slowly the model learns. Further, the batch size was set to 128. This parameter determines the number of observations used for each gradient step. Lastly, the number of epochs used to train each model had to be determined. This was done by visually checking the convergence rate of the models while it was running. For the one- and two-layer models, 200 epochs were used. For the three and four layered models, 150 epochs were used. When the optimal model was found for each model, the optimal model was retrained using 200 epochs as the one and two layered models still had incremental improvements after 200 epochs.
 
 After training all the models, the authors found that the one layer model with 512 neurons, dropout value = 0.4, maxnorm constraint = 1 and learning rate of 0.001, had the best performance with a RMSE of 22.26. For the other models the performance decreased substantially, with 2 layer = 51.49 , 3 layer =  35.88 and 4 layer = 32.19. This decrease in performance could be due to the fact that too much complexity was added to our models. Therefore, it is logical that the one-layer models yields the best performance. 
 
 ---------------------------------------------------------------------------------------------------
-LAYERX_MODEL
+LAYERX_MODEL AND TUNINGX
 ---------------------------------------------------------------------------------------------------
-In the folder there are r scripts called layer1_model, layer2_model, layer3_model,.... These r scripts were used for tuning by the main neural_networks file. When a tuning run was performed the main file used these R scripts to train a particular model with the corresponding grid search. 
-
----------------------------------------------------------------------------------------------------
-TUNINGX
----------------------------------------------------------------------------------------------------
-There are also folders called tuning, tuning2, tuning3,... In these folders the results of the tuning are stored. So, it is also possible that previous grid searches are stored in this directory. 
+In order to train the different neural networks, multiple R-files were used. First,
+the main file ‘Neural_networks’ defines the grid search parameters for each model. Furthermore, there are different R-scripts in which we define each model: layer1_model,layer2_model. . . When performing a tuning run, the main file uses these R-scripts to train a particular model with the corresponding grid search values. While tuning the models, the results are stored in the tuning directory of each layer: _tuning, _tuning2, _tuning3 and _tuning4
 
 ---------------------------------------------------------------------------------------------------
 MODELS
 ---------------------------------------------------------------------------------------------------
 
-Because some models had to train for a long time, these models were saved as a workspace object after they 
+Because some models had to train for a long time, these models were as a workspace object after they 
 were trained. In this way the user is able to load these models into their environment if retraining would be 
 necessary. The folder called models contains all these workspace objects of the models. 
 
@@ -252,27 +249,27 @@ necessary. The folder called models contains all these workspace objects of the 
 BRONZE DATA 
 ---------------------------------------------------------------------------------------------------
 
-This folder contains our test and train dataset. These datasets are the sets containing the raw data 
-that were given to the authors for the assignment. No preprocessing steps have been applied to this data. 
-This data will be used in the data_exploration and data_cleaning files.
+This folder contains our test an train dataset. These datasets are the sets containing the raw data 
+that were given to us for the assignment. No preprocessing steps have been applied to this data. 
+This data will be used in the data_exploration and data_cleaning file.
 
 --------------------------------------------------------------------------------------------------
 SILVER DATA 
 ---------------------------------------------------------------------------------------------------
-This folder contains the train, test and validation set of the data after it was cleaned in the 
+This folder contains the train, test and validation set of our data after it was cleaned in the 
 data_cleaning file. This data will be used in the feature_engineering file. 
 
 -------------------------------------------------------------------------------------------------
 GOLD DATA 
 ---------------------------------------------------------------------------------------------------
-This folder contains the train, test and validation set of the data after feature engineering was 
+This folder contains the train, test and validation set of our data after feature engineering was 
 performed in the feature_engineering file. This data will be used in the modelling and Neural network file.
 
 --------------------------------------------------------------------------------------------------
 SAMPLE SUBMISSIONS 
 ---------------------------------------------------------------------------------------------------
 In the X folder there are also multiple CSV files that have the following naming convention:
-sample_submission_nameModel. These sample submissions contain the predictions on the test set of the 
+sample_submission_nameModel. These sample submissions contain the predictions on our test set of the 
 models with the best performance on the validation set for each category. These are the files that 
 were handed in, in the Kaggle competition (only the best performing models).
 
