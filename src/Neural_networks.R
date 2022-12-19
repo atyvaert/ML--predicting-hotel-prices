@@ -21,7 +21,6 @@ if(!require('tfruns')) install.packages('tfruns')
 library(tfruns)
 
 # import data
-rm(list = ls())
 train <- read.csv('./data/gold_data/train.csv')
 val <- read.csv('./data/gold_data/val.csv')
 test_X <- read.csv('./data/gold_data/test.csv')
@@ -337,7 +336,7 @@ par <- list(
 
 
 # perform runs
-runs4 <- tuning_run('./src/layer4_model.R', sample = 0.1, runs_dir = '_tuning4.2', flags = par)
+runs4 <- tuning_run('./src/layer4_model.R', sample = 0.2, runs_dir = '_tuning4.2', flags = par)
 
 
 # Finally, I simply list all the runs, by referring to its running directory, where all the information 
@@ -403,13 +402,13 @@ par <- list(
   neurons2 = c(32,64, 128),
   neurons3 = c(16, 32, 64),
   neurons4 = c(8, 16, 32),
-  neurons4 = c(4, 8, 16),
+  neurons5 = c(4, 8, 16),
   lr = c(0.001,0.01),
   maxnorm1 = c(0.5,1,2, 3)
 )
 
 # perform runs
-runs5 <- tuning_run('./src/layer5_model.R', sample = 0.1, runs_dir = '_tuning5.2', flags = par)
+runs5 <- tuning_run('./src/layer5_model.R', sample = 0.2, runs_dir = '_tuning5.2', flags = par)
 
 
 # Finally, I simply list all the runs, by referring to its running directory, where all the information 
