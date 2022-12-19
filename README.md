@@ -1,6 +1,7 @@
 Hotel room price prediction
 
 Team 10 : Simon De Lange, Artur Tyvaert, Viktor Vandenbulcke, Stijn Van Ruymbeke
+
 ---------------------------------------------------------------------------------------------------
 INTRODUCTION
 ---------------------------------------------------------------------------------------------------
@@ -48,7 +49,9 @@ The file "Feature_engineering_PCA" contains extra code where the creators used P
 They didn't end up using this as this only reduced the number of features by 2 and didn't increase predictive performance on the validation set. 
 
 ---------------------------------------------------------------------------------------------------
+
 PURPOSE OF THE FILES
+
 ---------------------------------------------------------------------------------------------------
 DATA_EXPLORATION 
 ---------------------------------------------------------------------------------------------------
@@ -229,6 +232,7 @@ After training all the models, the authors found that the one layer model with 5
 LAYERX_MODEL
 ---------------------------------------------------------------------------------------------------
 In the folder there are r scripts called layer1_model, layer2_model, layer3_model,.... These r scripts were used for tuning by the main neural_networks file. When a tuning run was performed the main file used theese r scripts to train a particular model with the corresponding grid serach. 
+
 ---------------------------------------------------------------------------------------------------
 TUNINGX
 ---------------------------------------------------------------------------------------------------
