@@ -467,7 +467,7 @@ sqrt(mean((bagging_pred_val - val_y)^2))
 
 # 1) train the bagging model on the training data to do hyperparameter tuning
 set.seed(1)
-rf.rate <- randomForest(average_daily_rate ~ ., data = train, mtry = 33,  ntree = 150, importance = TRUE)
+rf.rate <- randomForest(average_daily_rate ~ ., data = train, mtry = 34,  ntree = 150, importance = TRUE)
 
 # save the model
 save(rf.rate, file = "models/rf_model_train.Rdata")
@@ -745,13 +745,14 @@ write.csv(xgb_df, file = "./data/sample_submissions/sample_submission_xgb.csv", 
 #####
 
 # Train the model X on all the data (train + val) 
-mtry <- 33
+mtry <- 34
 ntrees <- 150
 
+set.seed(1)
 rf.rate.all <- rf.rate <- randomForest(average_daily_rate ~ ., data = train_and_val, mtry = mtry,  ntree = ntrees, importance = TRUE)
 
 #save model
-save(xgb.rate.all, file="models/rf_train_and_val.RData")
+save(rf.rate.all, file="models/rf_train_and_val.RData")
 
 # make prediction on the test set and save
 rf_pred_test <- predict(rf.rate.all, newdata = test_X[, -1])
