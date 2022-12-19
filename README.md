@@ -83,14 +83,17 @@ In this file feature engineering is performed. Feature engineering is the step i
 from the data, these features are created to improve the performance of the models. Our data contained a lot of 
 categorical variables, for these variables we had to create dummy variables. To not have to many variables
 a maximum cardinality of 10 was imposedfor most of the variables. 
-3 additional variables were created aswell:
+4 additional variables were created aswell:
 - room_type_conflict: equals 1  if the assigned room isn't equal to the reserved room type.
+- week_of_month: indicates in which part of the month the arrival date is located the month was split in 4-5 parts, alwats splitting after the seventh day. 
 - time_between_arrival_checkout and time_between_arrival_cancel: difference in days between arrival and
 checkout (positive) or cancellation (negative). 
 - nr_weekdays and nr_weekenddays: decomposes nr_nights in weekdays and weeekend days. 
 
+Futhermore, indicaters variables were created. One for the number of babies and one for the number of children. 
+
 Next to that, variables that have a high correlation were deleted. Lastly, log transformations were performed
-on some variables to make them less skewed. 
+on some variables to make them less skewed. On the other numerical variables normalization was applied. 
 
 ---------------------------------------------------------------------------------------------------
 FEATURE_ENGINEERING_PCA
