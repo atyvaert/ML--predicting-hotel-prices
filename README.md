@@ -235,7 +235,7 @@ After training all the models, the authors found that the one layer model with 5
 LAYERX_MODEL AND TUNINGX
 ---------------------------------------------------------------------------------------------------
 In order to train the different neural networks, multiple R-files were used. First,
-the main file ‘Neural_networks’ defines the grid search parameters for each model. Furthermore, there are different R-scripts in which we define each model: layer1_model,layer2_model... When performing a tuning run, the main file uses these R-scripts to train a particular model with the corresponding grid search values. While tuning the models, the results are stored in the tuning directory of each layer: _tuning, _tuning2, _tuning3 and _tuning4
+the main file ‘Neural_networks’ defines the grid search parameters for each model. Furthermore, there are different R-scripts in which we define each model: layer1_model,layer2_model... When performing a tuning run, the main file uses these R-scripts to train a particular model with the corresponding grid search values. While tuning the models, the results are stored in the tuning directory of each layer: _tuning, _tuning2, _tuning3 and _tuning4.
 
 ---------------------------------------------------------------------------------------------------
 MODELS
