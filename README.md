@@ -15,7 +15,7 @@ these files serve. It will also explained how the users have to use these files.
 OVERVIEW OF FOLDERS AND FILES 
 ---------------------------------------------------------------------------------------------------
 
-TRAM10_TECHNICAL_REPORT (pdf)
+TEAM10_TECHNICAL_REPORT (pdf)
 
 SRC (r files):
 - Data_exploration
@@ -57,7 +57,7 @@ PURPOSE OF THE FILES
 ---------------------------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------------------------
-TREAM10_TECHNICAL_REPORT
+TEAM10_TECHNICAL_REPORT
 ---------------------------------------------------------------------------------------------------
 
 This is a technical report of the project. In this report the findings of the project are discussed in further detail, while using the CRISP-DM framwork. 
