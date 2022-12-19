@@ -425,6 +425,6 @@ nn_df <- data.frame(id = as.integer(test_X$id),
 colnames(nn_df)[2] <- 'average_daily_rate'
 str(nn_df)
 # save submission file
-write.csv(nn_df, file = "./data/sample_submission_nn.csv", row.names = F)
+write.csv(nn_df, file = "./data/sample_submissions/sample_submission_nn.csv", row.names = F)
 
 
