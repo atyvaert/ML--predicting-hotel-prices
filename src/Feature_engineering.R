@@ -433,3 +433,8 @@ write.csv(test_data_after_FE,"./data/gold_data/test.csv", row.names = FALSE)
 # This is the end of the Feature Engineering section of the assignment.
 # After this, the authors now begin the process of modeling
 # as proposed by the CRISP-DM framework.
+
+# In "Feature_engineering_PCA" PCA was performed to reduce the number of
+# numerical features. The authors didn't end up using this as
+# this only reduced the number of features by 2 and 
+# didn’t increase predictive performance on the validation set.
