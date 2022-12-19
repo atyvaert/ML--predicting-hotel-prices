@@ -51,9 +51,7 @@ The file "Feature_engineering_PCA" contains extra code where the creators used P
 They didn't end up using this as this only reduced the number of features by 2 and didn't increase predictive performance on the validation set. 
 
 ---------------------------------------------------------------------------------------------------
-
 PURPOSE OF THE FILES
-
 ---------------------------------------------------------------------------------------------------
 DATA_EXPLORATION 
 ---------------------------------------------------------------------------------------------------
