@@ -15,7 +15,7 @@ these files serve. It will also explained how the users have to use these files.
 OVERVIEW OF FOLDERS AND FILES 
 ---------------------------------------------------------------------------------------------------
 
-TEAM10_TECHNICAL_REPORT
+TEAM10_TECHNICAL_REPORT (pdf)
 
 SRC (r files):
 - Data_exploration
@@ -27,7 +27,7 @@ SRC (r files):
 - Neural_networks 
 - LayerX_model
 
-TUNINGX
+TUNINGX (folders)
 
 MODELS (r workspace)
 
@@ -274,7 +274,7 @@ This folder contains the train, test and validation set of our data after featur
 performed in the feature_engineering file. This data will be used in the modelling and Neural network file.
 
 --------------------------------------------------------------------------------------------------
-SAMPLE SUBMISSIONS 
+SAMPLE_SUBMISSIONS 
 ---------------------------------------------------------------------------------------------------
 In the sample_submissions folder there are also multiple CSV files that have the following naming convention:
 sample_submission_nameModel. These sample submissions contain the predictions on our test set of the 
