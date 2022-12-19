@@ -289,7 +289,7 @@ seqrep_preds_df <- data.frame(id = as.integer(test_X$id),
                               average_daily_rate= seqrep_pred_test)
 
 # save submission file
-write.csv(seqrep_preds_df, file = "./data/sample_submission_seqrepsel.csv", row.names = F)
+write.csv(seqrep_preds_df, file = "./data/sample_submissions/sample_submission_seqrepsel.csv", row.names = F)
 
 
 ##############################################################
@@ -394,7 +394,7 @@ spline_pred_test <- predict(spline5.all, newdata = test_X)
 # save 
 spline_pred_df <- data.frame(id = as.integer(test_X$id),
                              average_daily_rate= spline_pred_test)
-write.csv(spline_pred_df, file = "./data/sample_submission_Spline.csv", row.names = F)
+write.csv(spline_pred_df, file = "./data/sample_submissions/sample_submission_Spline.csv", row.names = F)
 
 ##############################################################
 ##############################################################
@@ -709,6 +709,10 @@ sqrt(mean((XGB_pred_val - val_y)^2))
 # and make predictions on the test set
 ##############################################################
 
+#####
+#XGBoost
+#####
+
 # Train the model X on all the data (train + val) 
 load(file = "models/xgb_model_train_try.Rdata")
 xgb.tune.rate$bestTune
@@ -733,7 +737,32 @@ xgb_df <- data.frame(id = as.integer(test_X$id),
 colnames(xgb_df)[2] <- 'average_daily_rate'
 str(xgb_df)
 # save submission file
-write.csv(xgb_df, file = "./data/sample_submission_xgb.csv", row.names = F)
+write.csv(xgb_df, file = "./data/sample_submissions/sample_submission_xgb.csv", row.names = F)
+
+
+#####
+#random forest
+#####
+
+# Train the model X on all the data (train + val) 
+mtry <- 33
+ntrees <- 150
+
+rf.rate.all <- rf.rate <- randomForest(average_daily_rate ~ ., data = train_and_val, mtry = mtry,  ntree = ntrees, importance = TRUE)
+
+#save model
+save(xgb.rate.all, file="models/rf_train_and_val.RData")
+
+# make prediction on the test set and save
+rf_pred_test <- predict(rf.rate.all, newdata = test_X[, -1])
+
+
+rf_df <- data.frame(id = as.integer(test_X$id),
+                     average_daily_rate= rf_pred_test)
+colnames(rf_df)[2] <- 'average_daily_rate'
+str(rf_df)
+# save submission file
+write.csv(rf_df, file = "./data/sample_submissions/sample_submission_rf.csv", row.names = F)
 
 
 ##############################################################
@@ -773,7 +802,7 @@ colnames(SVM_reg_pred_df)[2] <- 'average_daily_rate'
 str(SVM_reg_pred_df)
 SVM_reg_pred_df
 # save submission file
-write.csv(SVM_reg_pred_df, file = "./data/sample_submission_SupportVectorRegression.csv", row.names = F)
+write.csv(SVM_reg_pred_df, file = "./data/sample_submissions/sample_submission_SupportVectorRegression.csv", row.names = F)
 
 
 ##############################################################
