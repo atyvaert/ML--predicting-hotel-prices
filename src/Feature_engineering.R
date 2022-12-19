@@ -80,19 +80,9 @@ train_X_encode <- train_X
 val_X_encode <- val_X
 test_X_encode <- test_X
 
-##############################################################
-# 2.1 Ordinal data: integer encoding
-##############################################################
-# No ordinal data
 
 ##############################################################
-# 2.2 Nominal data: one-hot encoding
-##############################################################
-# We use the dummmy package to treat nominal data as this is a more flexible approach
-# and we have a lot of variables with a lot of levels
-
-##############################################################
-# 2.3 Special cases
+# 2.1 Add additional features
 ##############################################################
 
 # Before the one-hot encoding, we create a new feature. 
@@ -127,8 +117,15 @@ val_X_encode$week_of_month <- as.factor(floor(val_X_encode$day_of_month_arrival/
 test_X_encode$week_of_month <- as.factor(floor(test_X_encode$day_of_month_arrival/7)+1)
 
 ##############################################################
-# 2.4 Other features
+# 2.2 Ordinal data: integer encoding
 ##############################################################
+# No ordinal data
+
+##############################################################
+# 2.3 Nominal data: one-hot encoding
+##############################################################
+# We use the dummmy package to treat nominal data as this is a more flexible approach
+# and we have a lot of variables with a lot of levels
 # get categories and dummies
 # we only select the top 10 levels with highest frequency so the model does not explode
 # For all cases, this includes most of the data
