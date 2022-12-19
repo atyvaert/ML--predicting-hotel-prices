@@ -15,6 +15,8 @@ these files serve. It will also explained how the users have to use these files.
 OVERVIEW OF FOLDERS AND FILES 
 ---------------------------------------------------------------------------------------------------
 
+TEAM10_TECHNICAL_REPORT
+
 SRC (r files):
 - Data_exploration
 - Data_cleaning 
@@ -33,7 +35,7 @@ DATA (csv files)
 - Bronze_data 
 - Silver_data
 - Gold_data 
-- Sample Submission
+- Sample-SubmissionS
 
 ---------------------------------------------------------------------------------------------------
 USING THE FILES 
@@ -50,8 +52,14 @@ The file "Feature_engineering_PCA" contains extra code where the creators used P
 They didn't end up using this as this only reduced the number of features by 2 and didn't increase predictive performance on the validation set. 
 
 ---------------------------------------------------------------------------------------------------
-
 PURPOSE OF THE FILES
+---------------------------------------------------------------------------------------------------
+
+--------------------------------------------------------------------------------------------------
+TEAM10_TECHNICAL_REPORT
+---------------------------------------------------------------------------------------------------
+
+This is a technical report of the project. In this report the findings of the project are discussed in further detail, while using the CRISP-DM framework.
 
 ---------------------------------------------------------------------------------------------------
 DATA_EXPLORATION 
@@ -266,9 +274,9 @@ This folder contains the train, test and validation set of our data after featur
 performed in the feature_engineering file. This data will be used in the modelling and Neural network file.
 
 --------------------------------------------------------------------------------------------------
-SAMPLE SUBMISSIONS 
+SAMPLE_SUBMISSIONS 
 ---------------------------------------------------------------------------------------------------
-In the X folder there are also multiple CSV files that have the following naming convention:
+In the sample_submissions folder there are also multiple CSV files that have the following naming convention:
 sample_submission_nameModel. These sample submissions contain the predictions on our test set of the 
 models with the best performance on the validation set for each category. These are the files that 
 were handed in, in the Kaggle competition (only the best performing models).
