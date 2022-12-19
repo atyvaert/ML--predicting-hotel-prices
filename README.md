@@ -252,27 +252,27 @@ necessary. The folder called models contains all these workspace objects of the 
 BRONZE DATA 
 ---------------------------------------------------------------------------------------------------
 
-This folder contains our test an train dataset. These datasets are the sets containing the raw data 
-that were given to us for the assignment. No preprocessing steps have been applied to this data. 
-This data will be used in the data_exploration and data_cleaning file.
+This folder contains our test and train dataset. These datasets are the sets containing the raw data 
+that were given to the authors for the assignment. No preprocessing steps have been applied to this data. 
+This data will be used in the data_exploration and data_cleaning files.
 
 --------------------------------------------------------------------------------------------------
 SILVER DATA 
 ---------------------------------------------------------------------------------------------------
-This folder contains the train, test and validation set of our data after it was cleaned in the 
+This folder contains the train, test and validation set of the data after it was cleaned in the 
 data_cleaning file. This data will be used in the feature_engineering file. 
 
 -------------------------------------------------------------------------------------------------
 GOLD DATA 
 ---------------------------------------------------------------------------------------------------
-This folder contains the train, test and validation set of our data after feature engineering was 
+This folder contains the train, test and validation set of the data after feature engineering was 
 performed in the feature_engineering file. This data will be used in the modelling and Neural network file.
 
 --------------------------------------------------------------------------------------------------
 SAMPLE SUBMISSIONS 
 ---------------------------------------------------------------------------------------------------
 In the X folder there are also multiple CSV files that have the following naming convention:
-sample_submission_nameModel. These sample submissions contain the predictions on our test set of the 
+sample_submission_nameModel. These sample submissions contain the predictions on the test set of the 
 models with the best performance on the validation set for each category. These are the files that 
 were handed in, in the Kaggle competition (only the best performing models).
 
