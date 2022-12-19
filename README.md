@@ -80,20 +80,20 @@ from the data, these features are created to improve the performance of the mode
 categorical variables, for these variables we had to create dummy variables. To not have to many variables,
 a maximum cardinality of 10 was imposed for most of these variables. 
 3 additional variables were created as well:
-- room_type_conflict: equals 1 if the assigned room isn't equal to the reserved room type.
+- room_type_conflict: equals 1 if the assigned room is not equal to the reserved room type.
 - time_between_arrival_checkout and time_between_arrival_cancel: difference in days between arrival and
 checkout (positive) or cancellation (negative). 
 - nr_weekdays and nr_weekenddays: decomposes nr_nights in weekdays and weeekend days. 
 
 Next to that, variables that have a high correlation were deleted. Lastly, log transformations were performed
-on some variables to make them less skewed. 
+on some variables to make them less skewed and reduce the range of their data. 
 
 ---------------------------------------------------------------------------------------------------
 FEATURE_ENGINEERING2
 ---------------------------------------------------------------------------------------------------
 Same as Feature_engineering, but the variable day_of_month_arrival is added. The authors created a separate file
-because all information in the report is on the first version of FE. We only decided to add this because of the 
-better prediction.
+because all information in the report is on the first version of FE. We only decided to add this variable because of the 
+better model performance.
 
 ---------------------------------------------------------------------------------------------------
 FEATURE_ENGINEERING_PCA
