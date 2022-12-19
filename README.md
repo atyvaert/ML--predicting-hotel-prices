@@ -42,7 +42,7 @@ To be able to understand the reasoning behind some of the decisions that were ma
 goes through the R files in the same order as the creators of the files. So in this section it will be stated in what 
 order to go through the files. Firstly go through the Data_exploration file, secondly the Data_cleaning file and lastly 
 the Feature_engineering file. After these three files are run the order of the other files doesn't matter anymore, 
-although it might be better to first go through the Modelling file and afterwards the Nearal networks file. Because the 
+although it might be better to first go through the Modelling file and afterwards the Neural networks file. Because the 
 Modelling file contains simpler models and the neural networks are quite complex. 
 
 The file "Feature_engineering_PCA" contains extra code where the creators used PCA to reduce the number of numerical variables.
