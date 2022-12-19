@@ -4,6 +4,11 @@
 ##############################################################
 ##############################################################
 
+# (The authors included the variable day\_of\_month\_arrival and this proved to provide 
+# a better prediction using XGBoost.
+# As this feature was only included at the end of the assignment,
+# they added a second import statement for gold data 2.)
+
 # Content:
 #   36  Data Import
 #   83  Model structure
@@ -51,13 +56,18 @@ library(xgboost)
 library(e1071)
 library(splines)
 library(mgcv)
-library(lightgbm)
 
-# import data
+# import gold data
 rm(list = ls())
 train <- read.csv('./data/gold_data/train.csv')
 val <- read.csv('./data/gold_data/val.csv')
 test_X <- read.csv('./data/gold_data/test.csv')
+
+# import gold data 2 with day_of_month variable
+#rm(list = ls())
+#train <- read.csv('./data/gold_data/train.csv')
+#val <- read.csv('./data/gold_data/val.csv')
+#test_X <- read.csv('./data/gold_data/test.csv')
 
 # separate dependent and independent variables for training and validation set
 train_X <- subset(train, select = -c(average_daily_rate))
@@ -700,8 +710,8 @@ save(xgb.tune.rate, file = "models/xgb_model_train.Rdata")
 # 2) We make predictions on the validation set, which results in an RMSE 
 XGB_pred_val <- predict(xgb.tune.rate, newdata = val_X)
 sqrt(mean((XGB_pred_val - val_y)^2))
-# RMSE = 17.44413
-# 17.63677
+# RMSE = 17.63677
+# RMSE on gold data 2 = 16.80325
 
 
 ##############################################################
@@ -714,7 +724,7 @@ sqrt(mean((XGB_pred_val - val_y)^2))
 #####
 
 # Train the model X on all the data (train + val) 
-load(file = "models/xgb_model_train_try.Rdata")
+load(file = "models/xgb_model_train.Rdata")
 xgb.tune.rate$bestTune
 xgb.rate.all <- xgboost(xgb.DMatrix(label = train_and_val_y, data = as.matrix(train_and_val_X)),
                         nrounds = xgb.tune.rate$bestTune$nrounds,
