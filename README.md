@@ -251,7 +251,7 @@ The learning rate of our model was tuned by performing a grid search using value
 
 Because the model is quite complex, a lot of combinations are possible in the grid search. The parameter 'sample' was used to reduce the number of possible combinations that are tested. For the one-layer sample was set to 0.4, for the two layer to 0.3 an the others to 0.2, due to the increase in number of combinations. 
 
-After training all the models, the authors found that the one layer model with 512 neurons, dropout value = 0.4, maxnorm constraint = 1 and learning rate of 0.001, had the best performance with a RMSE of 22.14. For the other models the performance decreased substantially, with 2 layer = 51.49626, 3 layer = , 4 layer = 32.19931. This decrease in performance could be due to the fact that too much complexity was added to our models. Therefore, it is logical that the one-layer models yields the best performance. 
+After training all the models, the authors found that the one layer model with 512 neurons, dropout value = 0.4, maxnorm constraint = 1 and learning rate of 0.001, had the best performance with a RMSE of 22.14. For the other models the performance decreased substantially, with 2 layer = 51.49626, 3 layer = 35.8843, 4 layer = 32.19931. This decrease in performance could be due to the fact that too much complexity was added to our models. Therefore, it is logical that the one-layer models yields the best performance. 
 
 ---------------------------------------------------------------------------------------------------
 LAYERX_MODEL
