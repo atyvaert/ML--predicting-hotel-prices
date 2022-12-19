@@ -244,7 +244,7 @@ There are also folders called tuning, tuning2, tuning3,... In these folders the 
 MODELS
 ---------------------------------------------------------------------------------------------------
 
-Because some models had to train for a long time, these models were as a workspace object after they 
+Because some models had to train for a long time, these models were saved as a workspace object after they 
 were trained. In this way the user is able to load these models into their environment if retraining would be 
 necessary. The folder called models contains all these workspace objects of the models. 
 
