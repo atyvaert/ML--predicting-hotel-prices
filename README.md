@@ -15,8 +15,6 @@ these files serve. It will also explained how the users have to use these files.
 OVERVIEW OF FOLDERS AND FILES 
 ---------------------------------------------------------------------------------------------------
 
-TEAM10_TECHNICAL_REPORT (pdf)
-
 SRC (r files):
 - Data_exploration
 - Data_cleaning 
@@ -27,7 +25,7 @@ SRC (r files):
 - Neural_networks 
 - LayerX_model
 
-TUNINGX (folders)
+TUNINGX
 
 MODELS (r workspace)
 
@@ -35,7 +33,7 @@ DATA (csv files)
 - Bronze_data 
 - Silver_data
 - Gold_data 
-- Sample_Submission
+- Sample Submission
 
 ---------------------------------------------------------------------------------------------------
 USING THE FILES 
@@ -52,14 +50,8 @@ The file "Feature_engineering_PCA" contains extra code where the creators used P
 They didn't end up using this as this only reduced the number of features by 2 and didn't increase predictive performance on the validation set. 
 
 ---------------------------------------------------------------------------------------------------
+
 PURPOSE OF THE FILES
----------------------------------------------------------------------------------------------------
-
----------------------------------------------------------------------------------------------------
-TEAM10_TECHNICAL_REPORT
----------------------------------------------------------------------------------------------------
-
-This is a technical report of the project. In this report the findings of the project are discussed in further detail, while using the CRISP-DM framework.
 
 ---------------------------------------------------------------------------------------------------
 DATA_EXPLORATION 
@@ -243,14 +235,14 @@ After training all the models, the authors found that the one layer model with 5
 LAYERX_MODEL AND TUNINGX
 ---------------------------------------------------------------------------------------------------
 In order to train the different neural networks, multiple R-files were used. First,
-the main file ‘Neural_networks’ defines the grid search parameters for each model. Furthermore, there are different R-scripts in which we define each model: layer1_model,layer2_model. . . When performing a tuning run, the main file uses these R-scripts to train a particular model with the corresponding grid search values. While tuning the models, the results are stored in the tuning directory of each layer: _tuning, _tuning2, _tuning3 and _tuning4
+the main file ‘Neural_networks’ defines the grid search parameters for each model. Furthermore, there are different R-scripts in which we define each model: layer1_model,layer2_model... When performing a tuning run, the main file uses these R-scripts to train a particular model with the corresponding grid search values. While tuning the models, the results are stored in the tuning directory of each layer: _tuning, _tuning2, _tuning3 and _tuning4
 
 ---------------------------------------------------------------------------------------------------
 MODELS
 ---------------------------------------------------------------------------------------------------
 
-Because some models had to train for a long time, these models were as a workspace object after they 
-were trained. In this way the user is able to load these models into their environment if retraining would be 
+Because some models had to train for a long time, these models were saved as a workspace object after they 
+were trained. In this way, the user is able to load these models into their environment if retraining would be 
 necessary. The folder called models contains all these workspace objects of the models. 
 
 ---------------------------------------------------------------------------------------------------
@@ -274,9 +266,9 @@ This folder contains the train, test and validation set of our data after featur
 performed in the feature_engineering file. This data will be used in the modelling and Neural network file.
 
 --------------------------------------------------------------------------------------------------
-SAMPLE_SUBMISSIONS 
+SAMPLE SUBMISSIONS 
 ---------------------------------------------------------------------------------------------------
-In the sample_submissions folder there are also multiple CSV files that have the following naming convention:
+In the X folder there are also multiple CSV files that have the following naming convention:
 sample_submission_nameModel. These sample submissions contain the predictions on our test set of the 
 models with the best performance on the validation set for each category. These are the files that 
 were handed in, in the Kaggle competition (only the best performing models).
