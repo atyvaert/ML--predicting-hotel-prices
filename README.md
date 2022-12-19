@@ -268,7 +268,7 @@ performed in the feature_engineering file. This data will be used in the modelli
 --------------------------------------------------------------------------------------------------
 SAMPLE SUBMISSIONS 
 ---------------------------------------------------------------------------------------------------
-In the_sample submission folder there are also multiple CSV files that have the following naming convention:
+In the sample_submission folder there are also multiple CSV files that have the following naming convention:
 sample_submission_nameModel. These sample submissions contain the predictions on our test set of the 
 models with the best performance on the validation set for each category. These are the files that 
 were handed in, in the Kaggle competition (only the best performing models).
