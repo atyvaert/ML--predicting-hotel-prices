@@ -586,9 +586,12 @@ RMSE =
 ##########
 
 # Number of tested combinations is limited because of limited resources
-# Randomized search (above) provided better predictions
 
-# After running some grids, we increased the values for interaction depth. This was our final grid: 
+# We set up for parallel processing, change number of clusters according to CPU cores
+cluster <- makeCluster(detectCores()-1)
+registerDoParallel(cluster)
+
+# After running some other grids, we increased the values for interaction depth. This was our final grid: 
 
 gbmGrid <-  expand.grid(interaction.depth = c(11, 13, 15), 
                         n.trees = 3000, 
