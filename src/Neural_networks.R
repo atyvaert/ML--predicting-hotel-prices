@@ -44,12 +44,6 @@ str(val)
 str(test_X)
 nrow(train)
 
-#####@
-# AAN TE PASSEN:
-# 1) FOR EACH MODEL: DO HYPERPARAMETER TUNING ON TRAIN SET WITH CROSS VALIDATION
-# 2) RETRAIN ON TRAIN SET WITH OPTIMAL PARAMETERS AND PREDICT ON VALIDATION SET
-# 3) RETRAIN BEST-PERFORMING MODEL ON TRAIN + VAL SET TO PREDICT ON TEST SET
-
 
 ##############################################################
 ##############################################################
@@ -68,49 +62,34 @@ registerDoParallel(cluster)
 #stopCluster(cluster)
 
 
-# Transform the data in the right format
+# Transform the data in the right format to train neural networks
+# for training set
 x_train <- model.matrix(average_daily_rate ~ ., data = train)[, -1]
 y_train <- train$average_daily_rate
 
+# for validation set
 x_val <- model.matrix(average_daily_rate ~ ., data = val)[, -1]
 y_val <- val$average_daily_rate
 
+# for training and validation set
 x_train_and_val <-model.matrix(average_daily_rate ~ ., data = train_and_val)[, -1]
 y_train_and_val <- train_and_val_y
 
-#####################################################################
-#####################################################################
-# IDEEEN EN TO DO:
-# best model is momenteel 1 layer met 512 neurons: kijk naar meer neurons
-# best run moet nog gefixt worden
-# kijk naar andere mogelijkheden om overfitting tegen te gaan
-# 1) Overfit:  speel met nr of hidden layers en nr of hidden units
-# 2) Look at learning convergence
-# => stel epochs in per model (soms veel soms weinig nodig)
-# learning rate wordt hier ook bekeken bij ons via grid
-# 3) regularization tuning parameters
-# drop out  rate al gebruikt hier
-# Stopping criteria for early stopping al gebruikt hier
-# kijk ook nog eens naar de rest:
-# => maximum value for maxnorm
-# => lasso and ridge penalty
-# maxnorm works well with dropout staat er in de slides
-#####################################################################
-#####################################################################
-
 
 #####################################################################
 #####################################################################
-# STRUCTURE: First look at models how long it takes before reaching max
-# look at validation curve to check learning convergence
-# adjust the number of epochs in the file of the model
-# play with the architecture (start wide and go narrow)
+# STRUCTURE:
+# In this file, we build four different neural networks. From neural networks with one layer
+# up until four layers. For each layer, we perform a grid search with the values that are mentioned
+# in the beginning of each model. The function tuning run is used to tune the different models.
+# This function uses the models defined in other scripts to find the optimal set of parameters. It also
+# writes away the tuned models for each layer.
 #####################################################################
 #####################################################################
 
 
 
-# Use this guide
+# For more information, consult this blog on how to hypertune a neural network in R
 # https://www.roelpeters.be/using-keras-in-r-hypertuning-a-model/
 
 
@@ -131,23 +110,25 @@ FLAGS <- flags(
 #####################################################################
 #####################################################################
 # 1. ONE LAYER MODEL
-# build a wide model that overfits the data and regularize with dropout and maxnorm
+# build a wide model one layer model that overfits the data and regularize with dropout and maxnorm
 #####################################################################
 #####################################################################
-
 # In the following lines of code I define the possible values of all the parameters I want to hypertune. 
 # This will produce a lot of possible combinations of parameters. 
-# That’s why in the tuning_run() function, I specify I only want to try 10% of the possible combinations (sampled).
+# That’s why in the tuning_run() function, I specify I only want to try 40% of the possible combinations (sampled).
 par <- list(
   dropout1 = c(0.3,0.4),
   neurons1 = c(128,256, 384, 512, 640),
   lr = c(0.001,0.01),
   maxnorm1 = c(0.5, 1,2, 3)
 )
+
+# This code accesses the model written in R-script layer1_model and writes away the results
+# of tuning the one layer model in the '_tuning' directory.
+set.seed(1)
 runs1 <- tuning_run('./src/layer1_model.R', runs_dir = '_tuning', flags = par, sample = 0.4)
 
-
-# Finally, I simply list all the runs, by referring to its running directory, where all the information 
+# Finally, I simply list all the tuning runs, by referring to its running directory, where all the information 
 # from the run is stored and I ask for it to be ordered according to the mean squared error.
 ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning')
 
@@ -155,7 +136,7 @@ ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tunin
 # The best model has a dropout value of 0.4, 512 neurons and a learning rate of 0.001 and a maxnorm of 1
 best_run1 <- ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning')[1,]
 
-# Run the best model again and save the model
+# Run the model with the optimal parameters again to make predictions on the validation set
 layer1_model <- keras_model_sequential()
 layer1_model %>%
   layer_dense(units = best_run1$flag_neurons1, activation = "relu",
@@ -180,19 +161,23 @@ history <- layer1_model %>%
       callbacks = list(early_stop))
 
 # predict on validation set
+# RMSE: 22.26
 nn_run1_pred_val <- layer1_model %>% predict(x_val)
 score1 <- sqrt(mean((nn_run1_pred_val - val_y)^2))
 score1
 
-# save
-save(layer1_model, file = './nn_models/layer1.Rdata')
 
 #####################################################################
 #####################################################################
 # 2. TWO LAYER MODEL
-# build a wide model that overfits the data and regularize with dropout and maxnorm
+# In our second model, we again go wide, but not wider than the optimal solution of the 
+# previous layer. Besides, we also parameters for the number of neurons in the second layer.
 #####################################################################
 #####################################################################
+
+# In the following lines of code I define the possible values of all the parameters I want to hypertune. 
+# This will produce a lot of possible combinations of parameters (more than in the one layer model)
+# That’s why in the tuning_run() function, I specify I only want to try 30% of the possible combinations (sampled).
 par <- list(
   dropout1 = c(0.3,0.4),
   neurons1 = c(64,128,256, 384, 512),
@@ -201,7 +186,9 @@ par <- list(
   maxnorm1 = c(0.5,1,2, 3)
 )
 
-# perform runs
+# This code accesses the model written in R-script layer2_model and writes away the results
+# of tuning the two layer model in the '_tuning2' directory.
+set.seed(1)
 runs2 <- tuning_run('./src/layer2_model.R', sample = 0.3, runs_dir = '_tuning2', flags = par)
 
 
@@ -210,11 +197,11 @@ runs2 <- tuning_run('./src/layer2_model.R', sample = 0.3, runs_dir = '_tuning2',
 ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning2')
 
 # Finally, I select the best model parameters and I train the model with it.
-# The best model has a dropout value of 0.3, 256 neurons in the first layer, 64 in the second and a learning rate of 0.001
+# The best model has a dropout value of 0.3, 384 neurons in the first layer and 128 in the second.
+# Besides, it has a learning rate of 0.001 and a maxnorm value of 1
 best_run2 <- ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning2')[1,]
 
-# hier nog probleem: run the best model again lukt nog niet
-# Run the best model again and save the model
+# Run the model with the optimal parameters again to make predictions on the validation set
 layer2_model <- keras_model_sequential()
 layer2_model %>%
   layer_dense(units = best_run2$flag_neurons1, activation = "relu",
@@ -240,22 +227,24 @@ history <- layer2_model %>%
       verbose = 1,
       callbacks = list(early_stop))
 
-
-
 # predict on validation set
+# RMSE: 51.49
 nn_layer2_pred_val <- layer2_model %>% predict(x_val)
 score2 <- sqrt(mean((nn_layer2_pred_val - val_y)^2))
 score2
 
-# save
-save(layer2_model, file = './nn_models/layer2.Rdata')
 
 #####################################################################
 #####################################################################
 # 3. THREE LAYER MODEL
-# build a model that is balanced between width and depth
+# In our third model, we again go wide, but not wider than the optimal solution of the 
+# previous layer. We use less neurons per layer as we already increase the model complexity by adding a new layer.
 #####################################################################
 #####################################################################
+
+# In the following lines of code I define the possible values of all the parameters I want to hypertune. 
+# As we add a third layer, the number of possible combinations grows rapidly.
+# Therefore, I specify I only want to try 20% of the possible combinations (sampled).
 par <- list(
   dropout1 = c(0.3,0.4),
   neurons1 = c(64,128, 256, 384),
@@ -265,7 +254,9 @@ par <- list(
   maxnorm1 = c(0.5,1,2, 3)
 )
 
-# perform runs
+# This code accesses the model written in R-script layer3_model and writes away the results
+# of tuning the three layer model in the '_tuning3' directory.
+set.seed(1)
 runs3 <- tuning_run('./src/layer3_model.R', sample = 0.2, runs_dir = '_tuning3', flags = par)
 
 
@@ -274,11 +265,11 @@ runs3 <- tuning_run('./src/layer3_model.R', sample = 0.2, runs_dir = '_tuning3',
 ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning3')
 
 # Finally, I select the best model parameters and I train the model with it.
-# The best model has a dropout value, 512 neurons and a learning rate of 0.001
+# The best model has a dropout value of 0.3, 384 neurons in the first layer, 64 in the second and 64 in the third layer.
+# Besides, it has a learning rate of 0.001 and a maxnorm value of 0.5.
 best_run3 <- ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning3')[1,]
 
-# hier nog probleem: run the best model again lukt nog niet
-# Run the best model again and save the model
+# Run the model with the optimal parameters again to make predictions on the validation set
 layer3_model <- keras_model_sequential()
 layer3_model %>%
   layer_dense(units = best_run3$flag_neurons1, activation = "relu",
@@ -309,25 +300,23 @@ history <- layer3_model %>%
 
 
 # predict on validation set
+# RMSE: 35.88
 nn_layer3_pred_val <- layer3_model %>% predict(x_val)
 score3 <- sqrt(mean((nn_layer3_pred_val - val_y)^2))
 score3
 
 
-# save
-save(layer3_model, file = './nn_models/layer3.Rdata')
-
-
 #####################################################################
 #####################################################################
 # 4. FOUR LAYER MODEL
-# build a less wide model with more depth
+# Finally, we build a model with four layers. Here, we used less neurons per layer,
+# but complexity is adde by using multiple layers.
 #####################################################################
 #####################################################################
 par <- list(
   dropout1 = c(0.3,0.4),
-  neurons1 = c(64,128, 256, 512),
-  neurons2 = c(32,64, 128),
+  neurons1 = c(32, 64,128),
+  neurons2 = c(16,32, 64),
   neurons3 = c(8,16, 32, 64),
   neurons4 = c(8, 16, 32),
   lr = c(0.001,0.01),
@@ -335,20 +324,22 @@ par <- list(
 )
 
 
-# perform runs
-runs4 <- tuning_run('./src/layer4_model.R', sample = 0.2, runs_dir = '_tuning4.2', flags = par)
+# This code accesses the model written in R-script layer4_model and writes away the results
+# of tuning the four layer model in the '_tuning4' directory.
+set.seed(1)
+runs4 <- tuning_run('./src/layer4_model.R', sample = 0.2, runs_dir = '_tuning4', flags = par)
 
 
 # Finally, I simply list all the runs, by referring to its running directory, where all the information 
 # from the run is stored and I ask for it to be ordered according to the mean squared error.
-ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning4.2')
+ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning4')
 
 # Finally, I select the best model parameters and I train the model with it.
-# The best model has a dropout value, 512 neurons and a learning rate of 0.001
-best_run4 <- ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning4.2')[1,]
+# The best model has a dropout value of 0.3, 128 neurons in the first layer, 64 in the second and 32 in the third layer
+# and 32 neurons in the fourth layer. Besides, it has a learning rate of 0.001 and a maxnorm value of 1.
+best_run4 <- ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning4')[1,]
 
-# hier nog probleem: run the best model again lukt nog niet
-# Run the best model again and save the model
+# Run the model with the optimal parameters again to make predictions on the validation set
 layer4_model <- keras_model_sequential()
 layer4_model %>%
   layer_dense(units = best_run4$flag_neurons1, activation = "relu",
@@ -382,95 +373,21 @@ history <- layer4_model %>%
 
 
 # predict on validation set
+# RMSE: 32.199
 nn_layer4_pred_val <- layer4_model %>% predict(x_val)
 score4 <- sqrt(mean((nn_layer4_pred_val - val_y)^2))
 score4
 
 
-# save
-save(layer4_model, file = './nn_models/layer4_run2.Rdata')
-
 #####################################################################
 #####################################################################
-# 5. FIVE LAYER MODEL
-# build a less wide model with more depth
+# 5. Train the best model on all the available data
+# When evaluating our models, we saw that the one layer model with its optimal parameters
+# had the lowest RMSE on the validation set. Therefore, we retrain this model on
+# all the available data (training and validation set). Then, we can use this model
+# to make predictions on the test set.
 #####################################################################
 #####################################################################
-par <- list(
-  dropout1 = c(0.3,0.4),
-  neurons1 = c(64,128, 256),
-  neurons2 = c(32,64, 128),
-  neurons3 = c(16, 32, 64),
-  neurons4 = c(8, 16, 32),
-  neurons5 = c(4, 8, 16),
-  lr = c(0.001,0.01),
-  maxnorm1 = c(0.5,1,2, 3)
-)
-
-# perform runs
-runs5 <- tuning_run('./src/layer5_model.R', sample = 0.2, runs_dir = '_tuning5.2', flags = par)
-
-
-# Finally, I simply list all the runs, by referring to its running directory, where all the information 
-# from the run is stored and I ask for it to be ordered according to the mean squared error.
-ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning5.2')
-
-# Finally, I select the best model parameters and I train the model with it.
-# The best model has a dropout value, 512 neurons and a learning rate of 0.001
-best_run5 <- ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning5.2')[1,]
-
-# hier nog probleem: run the best model again lukt nog niet
-# Run the best model again and save the model
-layer5_model <- keras_model_sequential()
-layer5_model %>%
-  layer_dense(units = best_run5$flag_neurons1, activation = "relu",
-              input_shape = ncol(x_train),
-              constraint_maxnorm(max_value = best_run5$flag_maxnorm, axis = 0)) %>%
-  layer_dropout(rate = best_run5$flag_dropout1) %>%
-  layer_dense(units = best_run5$flag_neurons2, activation = "relu",
-              constraint_maxnorm(max_value = best_run5$flag_maxnorm, axis = 0)) %>%
-  layer_dropout(rate = best_run5$flag_dropout1) %>%
-  layer_dense(units = best_run5$flag_neurons3, activation = "relu",
-              constraint_maxnorm(max_value = best_run5$flag_maxnorm, axis = 0)) %>%
-  layer_dropout(rate = best_run5$flag_dropout1) %>%
-  layer_dense(units = best_run5$flag_neurons4, activation = "relu",
-              constraint_maxnorm(max_value = best_run5$flag_maxnorm, axis = 0)) %>%
-  layer_dropout(rate = best_run5$flag_dropout1) %>%
-  layer_dense(units = best_run5$flag_neurons5, activation = "relu",
-              constraint_maxnorm(max_value = best_run5$flag_maxnorm, axis = 0)) %>%
-  layer_dropout(rate = best_run5$flag_dropout1) %>%
-  layer_dense(units = 1, activation = "linear")
-layer5_model
-
-layer5_model %>% compile(loss = "mse",
-                         optimizer = optimizer_rmsprop(learning_rate = best_run5$flag_lr),
-                         metrics = list("mean_squared_error"))
-# define early stop monitor
-early_stop <- callback_early_stopping(monitor = "val_loss", patience = 20)
-
-# Fit the model and store training stats
-history <- layer5_model %>%
-  fit(x_train, y_train, epochs = 300, batch_size = 128,
-      validation_split = 0.2,
-      verbose = 1,
-      callbacks = list(early_stop))
-
-
-
-# predict on validation set
-nn_layer5_pred_val <- layer5_model %>% predict(x_val)
-score5 <- sqrt(mean((nn_layer5_pred_val - val_y)^2))
-score5
-
-
-# save
-save(layer5_model, file = './nn_models/layer5_run2.Rdata')
-
-
-
-#######################
-# to test the best model
-#######################
 
 # Run the best model again and save the model
 layer1_model <- keras_model_sequential()
