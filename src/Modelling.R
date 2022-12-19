@@ -582,7 +582,7 @@ sqrt(mean((cv_boosting1_pred_val - val_y)^2))
 RMSE = 
 
 ##########
-# A) Grid search
+# B) Grid search
 ##########
 
 # Number of tested combinations is limited because of limited resources
@@ -608,6 +608,9 @@ cv.boosting3.rate <- train(average_daily_rate ~ .,
                            metric = 'RMSE',
                            tuneGrid = gbmGrid
 )
+
+#close parallel
+stopCluster(cluster)
 
 # save model
 save(cv.boosting3.rate, file = "models/cv_boosting_model_train.Rdata")
