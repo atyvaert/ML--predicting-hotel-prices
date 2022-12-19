@@ -143,6 +143,10 @@ cats <- categories(train_X_encode[, c('booking_distribution_channel',
 # We either use our own knowledge or the expert opinion of the TA
 # e.g.: month_arrival separate because we want all 12 categories here
 
+# We make this variable factorial
+train_X_encode$day_of_month_arrival <- as.factor(train_X_encode$day_of_month_arrival)
+
+
 cats <- append(cats, categories(train_X_encode['month_arrival']))
 cats <- append(cats, categories(train_X_encode['day_of_month_arrival']))
 cats <- append(cats, categories(train_X_encode['country'], p = 15))
@@ -201,7 +205,7 @@ dummies_test <- subset(dummies_test, select = -c(booking_distribution_channel_Di
                                                  last_status_Check.Out, market_segment_Online.travel.agent, year_arrival_2015,
                                                  meal_booked_meal.package.NOT.booked, reserved_room_type_A, month_arrival_January,
                                                  arrival_date_weekday_Mon, booking_company_40, booking_agent_240,
-                                                 last_status_Canceled, week_of_month_5, day_of_month_arrival))
+                                                 last_status_Canceled, week_of_month_5, day_of_month_arrival_1))
 
 # Remove the original predictors and merge them with the other predictors
 # Train set
@@ -210,7 +214,7 @@ train_X_encode <- subset(train_X_encode, select = -c(booking_distribution_channe
                                                      hotel_type, is_repeated_guest, last_status,
                                                      market_segment, meal_booked, reserved_room_type,
                                                      month_arrival, arrival_date_weekday, booking_agent,
-                                                     booking_company, week_of_month, day_of_month))
+                                                     booking_company, week_of_month, day_of_month_arrival))
 train_X_encode <- cbind(train_X_encode, dummies_train)
 
 # Val set
@@ -219,7 +223,7 @@ val_X_encode <- subset(val_X_encode, select = -c(booking_distribution_channel,
                                                  hotel_type, is_repeated_guest, last_status,
                                                  market_segment, meal_booked, reserved_room_type,
                                                  month_arrival, arrival_date_weekday, booking_agent,
-                                                 booking_company, week_of_month, day_of_month))
+                                                 booking_company, week_of_month, day_of_month_arrival))
 val_X_encode <- cbind(val_X_encode, dummies_val)
 
 # Test set
@@ -228,7 +232,7 @@ test_X_encode <- subset(test_X_encode, select = -c(booking_distribution_channel,
                                                    hotel_type, is_repeated_guest, last_status,
                                                    market_segment, meal_booked, reserved_room_type,
                                                    month_arrival, arrival_date_weekday, booking_agent,
-                                                   booking_company, week_of_month, day_of_month))
+                                                   booking_company, week_of_month, day_of_month_arrival))
 test_X_encode <- cbind(test_X_encode, dummies_test)
 
 
@@ -421,8 +425,6 @@ test_data_after_FE <- test_X_final
 write.csv(training_data_after_FE,"./data/gold_data/train2.csv", row.names = FALSE)
 write.csv(val_data_after_FE,"./data/gold_data/val2.csv", row.names = FALSE)
 write.csv(test_data_after_FE,"./data/gold_data/test2.csv", row.names = FALSE)
-
-
 
 
 ##############################################################
