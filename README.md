@@ -242,9 +242,11 @@ Architecture:
 Our approach to tune the parameters started by creating a wide model with few layers, evolving to less wide but deeper models that have more model complexity. So for the one layer model a grid search for values from 128 to 640 neurons was performed (with steps of 128). For the models with multiple layers the same gridsearch was performed , but the number of neruons were gradually decreased for each layer in the model. 
 
 Architecture regularization:
+
 A dropout layer was added after each regular layer to reduce overfitting. An optimal dropout rate was found by performing a grid search with drop-out rate = 0.3 and 0.4. A maxnorm constraint was used aswell, this technique reduces overfitting by limiting the maximum Euclidean norm of weights of the network. The evaluated values were 0.5, 1, 2 and 3. Lastly an early stopping criterion was used aswell. If the MSE did not improve for 20 iterations, the training process was interrupted and the current model was used as the final model. 
 
 Learning convergence:
+
 The learning rate of our model was tuned by performing a grid search using values 0.01 and 0.001. The learning rate determines how quickly or slowly the model learns. Further, the bach size was set to 128. This parameter determines the number of observations used for each gradient step. Lastly, the number of epochs used to train each model had to be determined. This was done by visually checking the convergenge rate of the models while it was running. For the one- and two-layer models, 200 epochs were used. For the three, four and five layered models, 150 epochs were used. When the optimal model was found for each model, the optimal model was retrained using 200 epochs as the one and two layered model still had incremental improvements after 200 epochs.
 
 Because the model is quite complex, a lot of combinations are possible in the grid search. The parameter 'sample' was used to reduce the number of possible combinations that are tested. For the one-layer sample was set to 0.4, for the two layer to 0.3 an the others to 0.2, due to the increase in number of combinations. 
