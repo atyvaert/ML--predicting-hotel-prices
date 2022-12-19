@@ -365,9 +365,9 @@ test_X_outlier$year_arrival <- as.factor(format(test_X_outlier$posix_arrival, fo
 ##############################################################
 # Special case imputation: 'last_status_date'
 ##############################################################
-# To impute NA we calculate the mean of the difference between arrival_date and last_status_date for each category
-# -> add this value to arrival_date and impute in NA rows
-#(this needed to happen after dates parsing)
+# To impute NA we calculate the mean of the differences between arrival_date and last_status_date for each category of last_status
+# -> add this value to arrival_date and impute in NA rows of last_status_date
+# (this needed to happen after dates parsing)
 
 # train
 train_X_outlier$posix_last_status <- as.POSIXlt(train_X_outlier$last_status_date, format='%Y-%m-%dT %H:%M:%S')

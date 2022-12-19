@@ -1,6 +1,39 @@
 ##############################################################
 ##############################################################
-# Modelling
+# 0. Introduction of File
+##############################################################
+##############################################################
+
+# Content:
+#   36  Data Import
+#   83  Model structure
+#   100  Baseline linear models:
+#         Linear regression
+#         Stepwise selection:
+#             Forward
+#             Backward
+#             Seguential replacement
+#         Shrinkage methods:
+#             Ridge regression
+#             Lasso regression
+#   297 Moving beyond linearity
+#         Polynomial regression
+#         Splines
+#         Generalized Additive Models
+#   401 Tree based methods:
+#         Regression tree
+#         Bagging
+#         Random forest
+#         Boosting
+#         XGBoost
+#   741 Support vector machines
+#   781 Endnote
+
+
+
+##############################################################
+##############################################################
+# 1. Data Import
 ##############################################################
 ##############################################################
 
@@ -45,7 +78,6 @@ str(val)
 str(test_X)
 
 
-
 ##############################################################
 ##############################################################
 # STRUCTURE OF OUR MODELS
@@ -65,10 +97,9 @@ str(test_X)
 
 ##############################################################
 ##############################################################
-# BASELINE MODELS
+# BASELINE LINEAR MODELS
 ##############################################################
 ##############################################################
-
 
 ##############################################################
 # 1.1 Linear regression
@@ -266,6 +297,7 @@ write.csv(seqrep_preds_df, file = "./data/sample_submission_seqrepsel.csv", row.
 # 2 MOVING BEYOND LINEARITY
 ##############################################################
 ##############################################################
+
 # We can only perform polynomial functions, splines and GAMs on numerical features
 # First we will look at the numerical features
 par(mfrow = c(1, 1))
@@ -366,15 +398,15 @@ write.csv(spline_pred_df, file = "./data/sample_submission_Spline.csv", row.name
 
 ##############################################################
 ##############################################################
-# TREE-BASED METHODES
+# 3. TREE-BASED METHODS
 ##############################################################
 ##############################################################
 
+
 ##############################################################
+# 1. Regression tree
 ##############################################################
-# 1. FIT A REGRESSION TREE
-##############################################################
-##############################################################
+
 
 ##############################################################
 # 1.1 Fit a standard regression tree
@@ -448,8 +480,36 @@ sqrt(mean((rf_pred_val - val_y)^2))
 
 
 ###############################################
-# 3.2 random Forest with adaptiveCV 
+# 3.2 random Forest with CV 
 ###############################################
+
+##########
+# A) Grid search
+##########
+
+#We tune over 3 values of interaction depth around p/3 (=34)
+rfGrid <-  expand.grid(mtry = c(28, 31, 34, 37, 40))
+
+# 1) train the random forest model on the training data to do hyperparameter tuning
+set.seed(1)
+trainControl <- trainControl(method = 'cv', number = 5, verboseIter = TRUE, allowParallel = TRUE)
+cv.rf.rate <- train(average_daily_rate ~ .,
+                    data = train,
+                    method = 'rf',
+                    trControl = trainControl,
+                    metric = 'RMSE',
+                    tuneGrid = rfGrid
+)
+# save the model
+save(cv.rf.rate, file = "models/cv_rf_model_train.Rdata")
+# 2) We make predictions on the validation set, which results in an RMSE 
+cv_rf_pred_val <- predict(cv.rf.rate, newdata = val_X)
+sqrt(mean((cv_rf_pred_val - val_y)^2))
+
+
+##########
+# B) Adaptive_cv + random search
+##########
 
 #We set up for parallel processing, change number of clusters according to CPU cores
 cluster <- makeCluster(detectCores()-1)
@@ -459,7 +519,7 @@ registerDoParallel(cluster)
 set.seed(1)
 trainControl <- trainControl(method = 'adaptive_cv',
                              number = 5,
-                             repeats = 3,
+                             repeats = 2,
                              adaptive = list(min = 5, alpha = 0.05, method = "gls", complete = TRUE),
                              verboseIter = TRUE,
                              search = 'random',
@@ -521,7 +581,7 @@ sqrt(mean((boosting_pred_val - val_y)^2))
 # HEBT MAAR BEST OOK VERMELDEN IN DE CODE
 
 ##########
-# A) Randomized search
+# A) Adaptive_cv + random search
 ##########
 
 #We set up for parallel processing, change number of clusters according to CPU cores
@@ -558,13 +618,16 @@ sqrt(mean((cv_boosting1_pred_val - val_y)^2))
 RMSE = 
 
 ##########
-# A) Grid search
+# B) Grid search
 ##########
 
 # Number of tested combinations is limited because of limited resources
-# Randomized search (above) provided better predictions
 
-# After running some grids, we increased the values for interaction depth. This was our final grid: 
+# We set up for parallel processing, change number of clusters according to CPU cores
+cluster <- makeCluster(detectCores()-1)
+registerDoParallel(cluster)
+
+# After running some other grids, we increased the values for interaction depth. This was our final grid: 
 
 gbmGrid <-  expand.grid(interaction.depth = c(11, 13, 15), 
                         n.trees = 3000, 
@@ -574,7 +637,7 @@ gbmGrid <-  expand.grid(interaction.depth = c(11, 13, 15),
 # 1) train the boosting model on the training data to do hyperparameter tuning
 set.seed(1)
 trainControl <- trainControl(method = 'cv', number = 3, verboseIter = TRUE, allowParallel = TRUE)
-cv.boosting3.rate <- train(average_daily_rate ~ .,
+cv.boosting.rate <- train(average_daily_rate ~ .,
                            data = train,
                            method = 'gbm',
                            trControl = trainControl,
@@ -582,12 +645,16 @@ cv.boosting3.rate <- train(average_daily_rate ~ .,
                            tuneGrid = gbmGrid
 )
 
+#close parallel
+stopCluster(cluster)
+
 # save model
-save(cv.boosting3.rate, file = "models/cv_boosting_model_train.Rdata")
+save(cv.boosting.rate, file = "models/cv_boosting_model_train.Rdata")
 
 # 2) We make predictions on the validation set 
-cv_boosting3_pred_val <- predict(cv.boosting3.rate, newdata = val_X)
+cv_boosting_pred_val <- predict(cv.boosting.rate, newdata = val_X)
 sqrt(mean((cv_boosting3_pred_val - val_y)^2))
+# RMSE = 19.80656
 
 
 ##############################################################
@@ -598,7 +665,7 @@ sqrt(mean((cv_boosting3_pred_val - val_y)^2))
 #https://www.analyticsvidhya.com/blog/2016/03/complete-guide-parameter-tuning-xgboost-with-codes-python/
 
 ##########
-# C) Adaptive_cv + random search
+# A) Adaptive_cv + random search
 ##########
 
 # We set up for parallel processing, change number of clusters according to CPU cores
@@ -628,12 +695,13 @@ xgb.tune.rate <- train(x = train_X,
 stopCluster(cluster)
 
 # save model
-save(xgb.tune.rate, file = "models/xgb_model_train_try.Rdata")
+save(xgb.tune.rate, file = "models/xgb_model_train.Rdata")
 
 # 2) We make predictions on the validation set, which results in an RMSE 
 XGB_pred_val <- predict(xgb.tune.rate, newdata = val_X)
 sqrt(mean((XGB_pred_val - val_y)^2))
 # RMSE = 17.44413
+# 17.63677
 
 
 ##############################################################
@@ -656,7 +724,6 @@ xgb.rate.all <- xgboost(xgb.DMatrix(label = train_and_val_y, data = as.matrix(tr
 #save model
 save(xgb.rate.all, file="models/xgb_train_and_val.RData")
 
-# make predictions, bv:
 # make prediction on the test set and save
 xgb_pred_test <- predict(xgb.rate.all, newdata = xgb.DMatrix(as.matrix(test_X[, -1])))
 
@@ -669,12 +736,11 @@ str(xgb_df)
 write.csv(xgb_df, file = "./data/sample_submission_xgb.csv", row.names = F)
 
 
-
+##############################################################
 ##############################################################
 # SUPPORT VECTOR MACHINES
 ##############################################################
-
-#36 very bas
+##############################################################
 
 ##############################################################
 # 1. Perform standard regression with SVM
@@ -690,6 +756,7 @@ save(svm.rate, file = "models/svm_model_train.Rdata")
 # 2) We make predictions on the validation set, which results in an RMSE 
 svm_pred_val <- predict(svm.rate, newdata = val_X)
 sqrt(mean((svm_pred_val - val_y)^2))
+# RMSE = 36.42701
 
 # 3) As this is the only model we make for SVM, we immediately train the model on all the data
 set.seed(1)
@@ -707,3 +774,13 @@ str(SVM_reg_pred_df)
 SVM_reg_pred_df
 # save submission file
 write.csv(SVM_reg_pred_df, file = "./data/sample_submission_SupportVectorRegression.csv", row.names = F)
+
+
+##############################################################
+##############################################################
+# End Note
+##############################################################
+##############################################################
+
+# This concludes the modeling part of this assignment.
+# Neural networks can be found in the separate file "Neural_networds"

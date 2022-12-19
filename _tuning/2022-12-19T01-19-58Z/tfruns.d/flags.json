@@ -1,0 +1,6 @@
+{
+  "dropout1": 0.4,
+  "neurons1": 384,
+  "lr": 0.001,
+  "maxnorm1": 0.5
+}

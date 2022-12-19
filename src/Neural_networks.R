@@ -20,9 +20,9 @@ library(keras)
 
 # import data
 rm(list = ls())
-train <- read.csv('./data/gold_data/train_try2.csv')
-val <- read.csv('./data/gold_data/val_try2.csv')
-test_X <- read.csv('./data/gold_data/test_try2.csv')
+train <- read.csv('./data/gold_data/train.csv')
+val <- read.csv('./data/gold_data/val.csv')
+test_X <- read.csv('./data/gold_data/test.csv')
 
 # separate dependent and independent variables for training and validation set
 train_X <- subset(train, select = -c(average_daily_rate))
@@ -74,7 +74,8 @@ y_train <- train$average_daily_rate
 x_val <- model.matrix(average_daily_rate ~ ., data = val)[, -1]
 y_val <- val$average_daily_rate
 
-
+x_train_and_val <-model.matrix(average_daily_rate ~ ., data = train_and_val)[, -1]
+y_train_and_val <- train_and_val_y
 
 #####################################################################
 #####################################################################
@@ -139,9 +140,9 @@ FLAGS <- flags(
 if(!require('tfruns')) install.packages('tfruns')
 library(tfruns)
 par <- list(
-  dropout1 = c(0.3,0.4,0.5),
-  neurons1 = c(64,128,256, 512, 700, 900),
-  lr = c(0.0001,0.001,0.01),
+  dropout1 = c(0.3,0.4),
+  neurons1 = c(128,256, 384, 512, 640),
+  lr = c(0.0001,0.001),
   maxnorm1 = c(0.5, 1,2, 3)
 )
 runs1 <- tuning_run('./src/layer1_model.R', runs_dir = '_tuning', flags = par, sample = 0.4)
@@ -174,7 +175,7 @@ early_stop <- callback_early_stopping(monitor = "val_loss", patience = 20)
 
 # Fit the model and store training stats
 history <- layer1_model %>%
-  fit(x_train, y_train, epochs = 500, batch_size = 128,
+  fit(x_train, y_train, epochs = 300, batch_size = 128,
       validation_split = 0.2,
       verbose = 1,
       callbacks = list(early_stop))
@@ -194,15 +195,15 @@ save(layer1_model, file = './nn_models/layer1.Rdata')
 #####################################################################
 #####################################################################
 par <- list(
-  dropout1 = c(0.3,0.4,0.5),
-  neurons1 = c(32,64,128,256),
-  neurons2 = c(16, 32,64,128),
+  dropout1 = c(0.3,0.4),
+  neurons1 = c(64,128,256, 384, 512),
+  neurons2 = c(32,64,128, 256),
   lr = c(0.001,0.01),
   maxnorm1 = c(0.5,1,2, 3)
 )
 
 # perform runs
-runs2 <- tuning_run('./src/layer2_model.R', sample = 0.2, runs_dir = '_tuning2', flags = par)
+runs2 <- tuning_run('./src/layer2_model.R', sample = 0.3, runs_dir = '_tuning2', flags = par)
 
 
 # Finally, I simply list all the runs, by referring to its running directory, where all the information 
@@ -210,7 +211,7 @@ runs2 <- tuning_run('./src/layer2_model.R', sample = 0.2, runs_dir = '_tuning2',
 ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning2')
 
 # Finally, I select the best model parameters and I train the model with it.
-# The best model has a dropout value, 512 neurons and a learning rate of 0.001
+# The best model has a dropout value of 0.3, 256 neurons in the first layer, 64 in the second and a learning rate of 0.001
 best_run2 <- ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning2')[1,]
 
 # hier nog probleem: run the best model again lukt nog niet
@@ -230,10 +231,15 @@ layer2_model
 layer2_model %>% compile(loss = "mse",
                          optimizer = optimizer_rmsprop(learning_rate = best_run2$flag_lr),
                          metrics = list("mean_squared_error"))
+# define early stop monitor
+early_stop <- callback_early_stopping(monitor = "val_loss", patience = 20)
+
+# Fit the model and store training stats
 history <- layer2_model %>%
-  fit(x_train, y_train, epochs = 500, batch_size = 128,
+  fit(x_train, y_train, epochs = 300, batch_size = 128,
       validation_split = 0.2,
-      verbose = 1)
+      verbose = 1,
+      callbacks = list(early_stop))
 
 
 
@@ -252,16 +258,16 @@ save(layer2_model, file = './nn_models/layer2.Rdata')
 #####################################################################
 #####################################################################
 par <- list(
-  dropout1 = c(0.3,0.4,0.5),
-  neurons1 = c(32, 64,128, 256),
+  dropout1 = c(0.3,0.4),
+  neurons1 = c(64,128, 256, 384),
   neurons2 = c(16, 32,64, 128),
-  neurons3 = c(8, 16, 32),
+  neurons3 = c(8, 16, 32, 64),
   lr = c(0.001,0.01),
   maxnorm1 = c(0.5,1,2, 3)
 )
 
 # perform runs
-runs3 <- tuning_run('./src/layer3_model.R', sample = 0.2, runs_dir = '_tuning3', flags = par)
+runs3 <- tuning_run('./src/layer3_model.R', sample = 0.3, runs_dir = '_tuning3', flags = par)
 
 
 # Finally, I simply list all the runs, by referring to its running directory, where all the information 
@@ -292,11 +298,15 @@ layer3_model
 layer3_model %>% compile(loss = "mse",
                          optimizer = optimizer_rmsprop(learning_rate = best_run3$flag_lr),
                          metrics = list("mean_squared_error"))
-history <- layer3_model %>%
-  fit(x_train, y_train, epochs = 500, batch_size = 128,
-      validation_split = 0.2,
-      verbose = 1)
+# define early stop monitor
+early_stop <- callback_early_stopping(monitor = "val_loss", patience = 20)
 
+# Fit the model and store training stats
+history <- layer3_model %>%
+  fit(x_train, y_train, epochs = 300, batch_size = 128,
+      validation_split = 0.2,
+      verbose = 1,
+      callbacks = list(early_stop))
 
 
 # predict on validation set
@@ -316,9 +326,9 @@ save(layer3_model, file = './nn_models/layer3.Rdata')
 #####################################################################
 #####################################################################
 par <- list(
-  dropout1 = c(0.3,0.4, 0.5),
-  neurons1 = c(32, 64,128),
-  neurons2 = c(16, 32,64),
+  dropout1 = c(0.3,0.4),
+  neurons1 = c(64,128, 256, 512),
+  neurons2 = c(32,64, 128),
   neurons3 = c(8,16, 32, 64),
   neurons4 = c(8, 16, 32),
   lr = c(0.001,0.01),
@@ -327,16 +337,16 @@ par <- list(
 
 
 # perform runs
-runs4 <- tuning_run('./src/layer4_model.R', sample = 0.2, runs_dir = '_tuning4', flags = par)
+runs4 <- tuning_run('./src/layer4_model.R', sample = 0.2, runs_dir = '_tuning4.2', flags = par)
 
 
 # Finally, I simply list all the runs, by referring to its running directory, where all the information 
 # from the run is stored and I ask for it to be ordered according to the mean squared error.
-ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning4')
+ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning4.2')
 
 # Finally, I select the best model parameters and I train the model with it.
 # The best model has a dropout value, 512 neurons and a learning rate of 0.001
-best_run4 <- ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning4')[1,]
+best_run4 <- ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning4.2')[1,]
 
 # hier nog probleem: run the best model again lukt nog niet
 # Run the best model again and save the model
@@ -352,7 +362,7 @@ layer4_model %>%
   layer_dense(units = best_run4$flag_neurons3, activation = "relu",
               constraint_maxnorm(max_value = best_run4$flag_maxnorm, axis = 0)) %>%
   layer_dropout(rate = best_run4$flag_dropout1) %>%
-  layer_dense(units = best_run4$flag_neurons5, activation = "relu",
+  layer_dense(units = best_run4$flag_neurons4, activation = "relu",
               constraint_maxnorm(max_value = best_run4$flag_maxnorm, axis = 0)) %>%
   layer_dropout(rate = best_run4$flag_dropout1) %>%
   layer_dense(units = 1, activation = "linear")
@@ -361,11 +371,15 @@ layer4_model
 layer4_model %>% compile(loss = "mse",
                          optimizer = optimizer_rmsprop(learning_rate = best_run4$flag_lr),
                          metrics = list("mean_squared_error"))
-history <- layer4_model %>%
-  fit(x_train, y_train, epochs = 500, batch_size = 128,
-      validation_split = 0.2,
-      verbose = 1)
+# define early stop monitor
+early_stop <- callback_early_stopping(monitor = "val_loss", patience = 20)
 
+# Fit the model and store training stats
+history <- layer4_model %>%
+  fit(x_train, y_train, epochs = 300, batch_size = 128,
+      validation_split = 0.2,
+      verbose = 1,
+      callbacks = list(early_stop))
 
 
 # predict on validation set
@@ -375,7 +389,7 @@ score4
 
 
 # save
-save(layer4_model, file = './nn_models/layer4.Rdata')
+save(layer4_model, file = './nn_models/layer4_run2.Rdata')
 
 #####################################################################
 #####################################################################
@@ -385,9 +399,9 @@ save(layer4_model, file = './nn_models/layer4.Rdata')
 #####################################################################
 par <- list(
   dropout1 = c(0.3,0.4),
-  neurons1 = c(32, 64,128),
-  neurons2 = c(16, 32,64),
-  neurons3 = c(8,16, 32),
+  neurons1 = c(64,128, 256),
+  neurons2 = c(32,64, 128),
+  neurons3 = c(16, 32, 64),
   neurons4 = c(8, 16, 32),
   neurons4 = c(4, 8, 16),
   lr = c(0.001,0.01),
@@ -395,16 +409,16 @@ par <- list(
 )
 
 # perform runs
-runs5 <- tuning_run('./src/layer5_model.R', sample = 0.2, runs_dir = '_tuning5', flags = par)
+runs5 <- tuning_run('./src/layer5_model.R', sample = 0.2, runs_dir = '_tuning5.2', flags = par)
 
 
 # Finally, I simply list all the runs, by referring to its running directory, where all the information 
 # from the run is stored and I ask for it to be ordered according to the mean squared error.
-ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning5')
+ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning5.2')
 
 # Finally, I select the best model parameters and I train the model with it.
 # The best model has a dropout value, 512 neurons and a learning rate of 0.001
-best_run5 <- ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning5')[1,]
+best_run5 <- ls_runs(order = metric_val_mean_squared_error, decreasing= F, runs_dir = '_tuning5.2')[1,]
 
 # hier nog probleem: run the best model again lukt nog niet
 # Run the best model again and save the model
@@ -432,10 +446,15 @@ layer5_model
 layer5_model %>% compile(loss = "mse",
                          optimizer = optimizer_rmsprop(learning_rate = best_run5$flag_lr),
                          metrics = list("mean_squared_error"))
+# define early stop monitor
+early_stop <- callback_early_stopping(monitor = "val_loss", patience = 20)
+
+# Fit the model and store training stats
 history <- layer5_model %>%
-  fit(x_train, y_train, epochs = 500, batch_size = 128,
+  fit(x_train, y_train, epochs = 300, batch_size = 128,
       validation_split = 0.2,
-      verbose = 1)
+      verbose = 1,
+      callbacks = list(early_stop))
 
 
 
@@ -446,27 +465,50 @@ score5
 
 
 # save
-save(layer5_model, file = './nn_models/layer5.Rdata')
+save(layer5_model, file = './nn_models/layer5_run2.Rdata')
 
 
 
-#######################@
+#######################
 # to test the best model
 #######################
 
-# plot the best models
-system.time(
-  history <- modelnn %>%
-    fit(x_train, y_train, epochs = 30, batch_size = 128,
-        validation_split = 0.2))
+# Run the best model again and save the model
+layer1_model <- keras_model_sequential()
+layer1_model %>%
+  layer_dense(units = best_run1$flag_neurons1, activation = "relu",
+              input_shape = ncol(x_train),
+              constraint_maxnorm(max_value = best_run1$flag_maxnorm, axis = 0)) %>%
+  layer_dropout(rate = best_run1$flag_dropout1) %>%
+  layer_dense(units = 1, activation = "linear")
+layer1_model
 
-history
-plot(history, smooth = FALSE)
+layer1_model %>% compile(loss = "mse",
+                         optimizer = optimizer_rmsprop(learning_rate = best_run1$flag_lr),
+                         metrics = list("mean_squared_error"))
+
+# define early stop monitor
+early_stop <- callback_early_stopping(monitor = "val_loss", patience = 20)
+
+# Fit the model and store training stats
+history <- layer1_model %>%
+  fit(x_train_and_val, y_train_and_val, epochs = 500, batch_size = 128,
+      validation_split = 0.2,
+      verbose = 1,
+      callbacks = list(early_stop))
 
 
+
+# predict on test set
 x_test <- as.matrix(test_X[, -1])
+nn_layer1_pred_test <- layer1_model %>% predict(x_test)
+nn_layer1_pred_test
 
-
-
+nn_df <- data.frame(id = as.integer(test_X$id),
+                     average_daily_rate= nn_layer1_pred_test)
+colnames(nn_df)[2] <- 'average_daily_rate'
+str(nn_df)
+# save submission file
+write.csv(nn_df, file = "./data/sample_submission_nn.csv", row.names = F)
 
 
